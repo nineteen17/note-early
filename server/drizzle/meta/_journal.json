@@ -1,0 +1,83 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1744276369531,
+      "tag": "0000_past_hellfire_club",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1744277456913,
+      "tag": "0001_small_changeling",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1744277608089,
+      "tag": "0002_cold_betty_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1744346797101,
+      "tag": "0003_old_misty_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1744452000000,
+      "tag": "0004_auto_admin_profile_creation",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1744461219381,
+      "tag": "0005_brainy_ender_wiggin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1744616997041,
+      "tag": "0006_light_hitman",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1744684993339,
+      "tag": "0007_many_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1744700407470,
+      "tag": "0008_rare_sugar_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1744984208440,
+      "tag": "0009_update-profile-trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1744985129524,
+      "tag": "0010_fix-profile-trigger",
+      "breakpoints": true
+    }
+  ]
+}

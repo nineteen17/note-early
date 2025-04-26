@@ -1,0 +1,2 @@
+ALTER TABLE "payment_history" ALTER COLUMN "user_id" SET DATA TYPE uuid USING "user_id"::uuid;
+ALTER TABLE "payment_history" ADD CONSTRAINT "payment_history_user_id_profiles_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE no action ON UPDATE no action;

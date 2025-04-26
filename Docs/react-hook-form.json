@@ -1,0 +1,58 @@
+{
+    "Getting Started": {
+      "Introduction": "https://react-hook-form.com/get-started",
+      "Register Fields": "https://react-hook-form.com/get-started#Registerfields",
+      "Apply Validation": "https://react-hook-form.com/get-started#Applyvalidation",
+      "Integrating Existing Forms": "https://react-hook-form.com/get-started#Integratinganexistingform",
+      "Schema Validation": "https://react-hook-form.com/get-started#Schemavalidation"
+    },
+    "API Reference": {
+      "useForm": "https://react-hook-form.com/api/useform",
+      "register": "https://react-hook-form.com/api/useform/register",
+      "unregister": "https://react-hook-form.com/api/useform/unregister",
+      "formState": "https://react-hook-form.com/api/useform/formstate",
+      "watch": "https://react-hook-form.com/api/useform/watch",
+      "handleSubmit": "https://react-hook-form.com/api/useform/handlesubmit",
+      "reset": "https://react-hook-form.com/api/useform/reset",
+      "resetField": "https://react-hook-form.com/api/useform/resetfield",
+      "setError": "https://react-hook-form.com/api/useform/seterror",
+      "clearErrors": "https://react-hook-form.com/api/useform/clearerrors",
+      "setValue": "https://react-hook-form.com/api/useform/setvalue",
+      "setFocus": "https://react-hook-form.com/api/useform/setfocus",
+      "getValues": "https://react-hook-form.com/api/useform/getvalues",
+      "getFieldState": "https://react-hook-form.com/api/useform/getfieldstate",
+      "trigger": "https://react-hook-form.com/api/useform/trigger",
+      "control": "https://react-hook-form.com/api/useform/control",
+      "Form": "https://react-hook-form.com/api/useform/form",
+      "useController": "https://react-hook-form.com/api/usecontroller",
+      "Controller": "https://react-hook-form.com/api/controller",
+      "useFormContext": "https://react-hook-form.com/api/useformcontext",
+      "FormProvider": "https://react-hook-form.com/api/formprovider",
+      "useWatch": "https://react-hook-form.com/api/usewatch",
+      "useFormState": "https://react-hook-form.com/api/useformstate",
+      "ErrorMessage": "https://react-hook-form.com/api/errormessage",
+      "useFieldArray": "https://react-hook-form.com/api/usefieldarray",
+      "createFormControl": "https://react-hook-form.com/api/createformcontrol"
+    },
+    "Advanced Usage": {
+      "Accessibility (A11y)": "https://react-hook-form.com/advanced-usage#Accessibility(A11y)",
+      "Error Messages": "https://react-hook-form.com/advanced-usage#Errormessages",
+      "Connect Form": "https://react-hook-form.com/advanced-usage#ConnectForm",
+      "FormProvider Performance": "https://react-hook-form.com/advanced-usage#FormProviderPerformance",
+      "Controlled Mixed with Uncontrolled Components": "https://react-hook-form.com/advanced-usage#ControlledmixedwithUncontrolledComponents"
+    },
+    "FAQs": {
+      "FAQs": "https://react-hook-form.com/faqs"
+    },
+    "Tools": {
+      "Form Builder": "https://react-hook-form.com/form-builder",
+      "DevTools": "https://react-hook-form.com/devtools"
+    },
+    "Resources": {
+      "Articles": "https://react-hook-form.com/resources#Articles",
+      "Videos": "https://react-hook-form.com/resources#Videos",
+      "Newsletters": "https://react-hook-form.com/resources#Newsletters",
+      "3rd Party Bindings": "https://react-hook-form.com/resources#3rdPartyBindings",
+      "form-validation-with-react-hook-form-zod-typescript": "https://catalins.tech/form-validation-with-react-hook-form-zod-typescript/"
+    }
+  }

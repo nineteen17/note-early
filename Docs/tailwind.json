@@ -1,0 +1,105 @@
+{
+    "Getting Started": {
+      "Installation": "https://tailwindcss.com/docs/installation",
+      "Editor Setup": "https://tailwindcss.com/docs/editor-setup",
+      "Compatibility": "https://tailwindcss.com/docs/compatibility",
+      "Upgrade Guide": "https://tailwindcss.com/docs/upgrade-guide"
+    },
+    "Core Concepts": {
+      "Styling with Utility Classes": "https://tailwindcss.com/docs/styling-with-utility-classes",
+      "Hover, Focus, and Other States": "https://tailwindcss.com/docs/hover-focus-and-other-states",
+      "Responsive Design": "https://tailwindcss.com/docs/responsive-design",
+      "Dark Mode": "https://tailwindcss.com/docs/dark-mode",
+      "Theme Variables": "https://tailwindcss.com/docs/theme-variables",
+      "Colors": "https://tailwindcss.com/docs/colors",
+      "Adding Custom Styles": "https://tailwindcss.com/docs/adding-custom-styles",
+      "Detecting Classes in Source Files": "https://tailwindcss.com/docs/detecting-classes-in-source-files",
+      "Functions and Directives": "https://tailwindcss.com/docs/functions-and-directives"
+    },
+    "Customization": {
+      "Configuration": "https://tailwindcss.com/docs/configuration",
+      "Content": "https://tailwindcss.com/docs/content-configuration",
+      "Theme": "https://tailwindcss.com/docs/theme",
+      "Screens": "https://tailwindcss.com/docs/screens",
+      "Colors": "https://tailwindcss.com/docs/colors",
+      "Spacing": "https://tailwindcss.com/docs/spacing",
+      "Plugins": "https://tailwindcss.com/docs/plugins",
+      "Presets": "https://tailwindcss.com/docs/presets"
+    },
+    "Base Styles": {
+      "Preflight": "https://tailwindcss.com/docs/preflight"
+    },
+    "Layout": {
+      "Aspect Ratio": "https://tailwindcss.com/docs/aspect-ratio",
+      "Container": "https://tailwindcss.com/docs/container",
+      "Columns": "https://tailwindcss.com/docs/columns",
+      "Break After": "https://tailwindcss.com/docs/break-after",
+      "Break Before": "https://tailwindcss.com/docs/break-before",
+      "Break Inside": "https://tailwindcss.com/docs/break-inside",
+      "Box Decoration Break": "https://tailwindcss.com/docs/box-decoration-break",
+      "Box Sizing": "https://tailwindcss.com/docs/box-sizing",
+      "Display": "https://tailwindcss.com/docs/display",
+      "Floats": "https://tailwindcss.com/docs/float",
+      "Clear": "https://tailwindcss.com/docs/clear",
+      "Isolation": "https://tailwindcss.com/docs/isolation",
+      "Object Fit": "https://tailwindcss.com/docs/object-fit",
+      "Object Position": "https://tailwindcss.com/docs/object-position",
+      "Overflow": "https://tailwindcss.com/docs/overflow",
+      "Overscroll Behavior": "https://tailwindcss.com/docs/overscroll-behavior",
+      "Position": "https://tailwindcss.com/docs/position",
+      "Top / Right / Bottom / Left": "https://tailwindcss.com/docs/top-right-bottom-left",
+      "Visibility": "https://tailwindcss.com/docs/visibility",
+      "Z-Index": "https://tailwindcss.com/docs/z-index"
+    },
+    "Flexbox & Grid": {
+      "Flex Basis": "https://tailwindcss.com/docs/flex-basis",
+      "Flex Direction": "https://tailwindcss.com/docs/flex-direction",
+      "Flex Wrap": "https://tailwindcss.com/docs/flex-wrap",
+      "Flex": "https://tailwindcss.com/docs/flex",
+      "Flex Grow": "https://tailwindcss.com/docs/flex-grow",
+      "Flex Shrink": "https://tailwindcss.com/docs/flex-shrink",
+      "Order": "https://tailwindcss.com/docs/order",
+      "Grid Template Columns": "https://tailwindcss.com/docs/grid-template-columns",
+      "Grid Column": "https://tailwindcss.com/docs/grid-column",
+      "Grid Template Rows": "https://tailwindcss.com/docs/grid-template-rows",
+      "Grid Row": "https://tailwindcss.com/docs/grid-row",
+      "Grid Auto Flow": "https://tailwindcss.com/docs/grid-auto-flow",
+      "Grid Auto Columns": "https://tailwindcss.com/docs/grid-auto-columns",
+      "Grid Auto Rows": "https://tailwindcss.com/docs/grid-auto-rows",
+      "Gap": "https://tailwindcss.com/docs/gap",
+      "Justify Content": "https://tailwindcss.com/docs/justify-content",
+      "Justify Items": "https://tailwindcss.com/docs/justify-items",
+      "Justify Self": "https://tailwindcss.com/docs/justify-self",
+      "Align Content": "https://tailwindcss.com/docs/align-content",
+      "Align Items": "https://tailwindcss.com/docs/align-items",
+      "Align Self": "https://tailwindcss.com/docs/align-self",
+      "Place Content": "https://tailwindcss.com/docs/place-content",
+      "Place Items": "https://tailwindcss.com/docs/place-items",
+      "Place Self": "https://tailwindcss.com/docs/place-self"
+    },
+    "Spacing": {
+      "Padding": "https://tailwindcss.com/docs/padding",
+      "Margin": "https://tailwindcss.com/docs/margin"
+    },
+    "Sizing": {
+      "Width": "https://tailwindcss.com/docs/width",
+      "Min-Width": "https://tailwindcss.com/docs/min-width",
+      "Max-Width": "https://tailwindcss.com/docs/max-width",
+      "Height": "https://tailwindcss.com/docs/height",
+      "Min-Height": "https://tailwindcss.com/docs/min-height",
+      "Max-Height": "https://tailwindcss.com/docs/max-height"
+    },
+    "Typography": {
+      "Font Family": "https://tailwindcss.com/docs/font-family",
+      "Font Size": "https://tailwindcss.com/docs/font-size",
+      "Font Smoothing": "https://tailwindcss.com/docs/font-smoothing",
+      "Font Style": "https://tailwindcss.com/docs/font-style",
+      "Font Weight": "https://tailwindcss.com/docs/font-weight",
+      "Font Stretch": "https://tailwindcss.com/docs/font-stretch",
+      "Font Variant Numeric": "https://tailwindcss.com/docs/font-variant-numeric",
+      "Letter Spacing": "https://tailwindcss.com/docs/letter-spacing",
+      "Line Clamp": "https://tailwindcss.com/docs/line-clamp",
+      "Line Height": "https://tailwindcss.com/docs/line-height",
+      "List Style Image": "https://tailwindcss.com/docs/list-style-image"
+    }
+  }

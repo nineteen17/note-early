@@ -1,0 +1,14 @@
+{
+    "Introduction": {
+      "Home": "https://zustand.docs.pmnd.rs/"
+    },
+    "Guides": {
+      "Updating State": "https://zustand.docs.pmnd.rs/guides/updating-state",
+      "Maps and Sets Usage": "https://zustand.docs.pmnd.rs/guides/maps-and-sets-usage",
+      "Setup with Next.js": "https://zustand.docs.pmnd.rs/guides/nextjs",
+      "TypeScript Guide": "https://zustand.docs.pmnd.rs/guides/typescript"
+    },
+    "API Reference": {
+      "create": "https://zustand.docs.pmnd.rs/apis/create"
+    }
+  }

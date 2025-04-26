@@ -1,0 +1,66 @@
+{
+    "Introduction": {
+      "Home": "https://zod.dev/"
+    },
+    "Getting Started": {
+      "Installation": "https://zod.dev/?id=installation",
+      "Basic Usage": "https://zod.dev/?id=basic-usage"
+    },
+    "API Reference": {
+      "Primitive Types": {
+        "String": "https://zod.dev/?id=string",
+        "Number": "https://zod.dev/?id=number",
+        "Boolean": "https://zod.dev/?id=boolean",
+        "Date": "https://zod.dev/?id=date",
+        "BigInt": "https://zod.dev/?id=bigint",
+        "Symbol": "https://zod.dev/?id=symbol"
+      },
+      "Complex Types": {
+        "Object": "https://zod.dev/?id=object",
+        "Array": "https://zod.dev/?id=array",
+        "Tuple": "https://zod.dev/?id=tuple",
+        "Union": "https://zod.dev/?id=union",
+        "Intersection": "https://zod.dev/?id=intersection",
+        "Record": "https://zod.dev/?id=record",
+        "Map": "https://zod.dev/?id=map",
+        "Set": "https://zod.dev/?id=set",
+        "Function": "https://zod.dev/?id=function",
+        "Promise": "https://zod.dev/?id=promise",
+        "Enum": "https://zod.dev/?id=enum",
+        "Literal": "https://zod.dev/?id=literal",
+        "NativeEnum": "https://zod.dev/?id=nativeenum",
+        "Nullable": "https://zod.dev/?id=nullable",
+        "Optional": "https://zod.dev/?id=optional",
+        "Default": "https://zod.dev/?id=default",
+        "Catch": "https://zod.dev/?id=catch",
+        "Transform": "https://zod.dev/?id=transform",
+        "Refine": "https://zod.dev/?id=refine",
+        "Preprocess": "https://zod.dev/?id=preprocess",
+        "Readonly": "https://zod.dev/?id=readonly",
+        "Brand": "https://zod.dev/?id=brand",
+        "Lazy": "https://zod.dev/?id=lazy",
+        "Discriminated Union": "https://zod.dev/?id=discriminated-union",
+        "Coerce": "https://zod.dev/?id=coerce",
+        "Any": "https://zod.dev/?id=any",
+        "Unknown": "https://zod.dev/?id=unknown",
+        "Never": "https://zod.dev/?id=never",
+        "Void": "https://zod.dev/?id=void"
+      }
+    },
+    "Guides and Concepts": {
+      "Type Inference": "https://zod.dev/?id=type-inference",
+      "Generic Functions": "https://zod.dev/?id=writing-generic-functions",
+      "Error Handling": "https://zod.dev/?id=error-handling",
+      "Error Formatting": "https://zod.dev/?id=error-formatting"
+    },
+    "Comparison": {
+      "Joi": "https://zod.dev/?id=joi",
+      "Yup": "https://zod.dev/?id=yup",
+      "io-ts": "https://zod.dev/?id=io-ts",
+      "Runtypes": "https://zod.dev/?id=runtypes",
+      "Ow": "https://zod.dev/?id=ow"
+    },
+    "Changelog": {
+      "Changelog": "https://zod.dev/?id=changelog"
+    }
+  }

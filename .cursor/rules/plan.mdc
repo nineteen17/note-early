@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+
+ALwyas refer to the following files
+[NoteEarly-CSR-Frontend-Implementation-Guide.md](mdc:Plan/client/NoteEarly-CSR-Frontend-Implementation-Guide.md)
+[NoteEarly-swagger-2.json](mdc:Plan/client/NoteEarly-swagger-2.json)
+[Themes.md](mdc:Plan/client/Themes.md)
+
+[react-hook-form.json](mdc:Docs/react-hook-form.json)
+[tanstack-query.json](mdc:Docs/tanstack-query.json)
+[zustand.json](mdc:Docs/zustand.json)

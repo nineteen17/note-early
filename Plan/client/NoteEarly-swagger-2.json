@@ -1,0 +1,2208 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "NoteEarly API Documentation (Zod-Generated)",
+    "version": "1.0.0",
+    "description": "API documentation for the NoteEarly platform (schemas generated from Zod)."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000/api/v1",
+      "description": "Development server (V1)"
+    }
+  ],
+  "components": {
+    "components": {
+      "schemas": {
+        "AdminSignupInput": {
+          "type": "object",
+          "properties": {
+            "email": { "type": "string", "format": "email" },
+            "password": { "type": "string", "minLength": 8 },
+            "fullName": { "type": "string", "minLength": 2 }
+          },
+          "required": ["email", "password", "fullName"]
+        },
+        "AdminLoginInput": {
+          "type": "object",
+          "properties": {
+            "email": { "type": "string", "format": "email" },
+            "password": { "type": "string", "minLength": 1 }
+          },
+          "required": ["email", "password"]
+        },
+        "StudentLoginInput": {
+          "type": "object",
+          "properties": {
+            "studentId": { "type": "string", "format": "uuid" },
+            "pin": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 4,
+              "pattern": "^\\d+$"
+            }
+          },
+          "required": ["studentId", "pin"]
+        },
+        "CreateStudentInput": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string", "minLength": 2 },
+            "pin": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 4,
+              "pattern": "^\\d+$"
+            }
+          },
+          "required": ["fullName", "pin"]
+        },
+        "ResetStudentPinInput": {
+          "type": "object",
+          "properties": {
+            "studentId": { "type": "string", "format": "uuid" },
+            "newPin": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 4,
+              "pattern": "^\\d+$"
+            }
+          },
+          "required": ["studentId", "newPin"]
+        },
+        "CreateModuleInput": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string", "minLength": 1 },
+            "structuredContent": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "index": { "type": "integer", "minimum": 0, "exclusiveMinimum": true },
+                  "text": { "type": "string", "minLength": 1 }
+                },
+                "required": ["index", "text"]
+              },
+              "minItems": 1
+            },
+            "level": { "type": "integer", "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+            "genre": {
+              "type": "string",
+              "enum": ["History", "Adventure", "Science", "Non-Fiction", "Fantasy", "Biography", "Mystery", "Science-Fiction", "Folktale", "Custom"]
+            },
+            "language": {
+              "type": "string",
+              "enum": ["UK", "US"]
+            },
+            "description": { "type": "string", "nullable": true },
+            "imageUrl": { "type": "string", "nullable": true, "format": "uri" },
+            "estimatedReadingTime": { "type": "integer", "nullable": true, "minimum": 0, "exclusiveMinimum": true },
+            "isActive": { "type": "boolean" }
+          },
+          "required": ["title", "structuredContent", "level", "genre", "language"]
+        },
+        "UpdateModuleInput": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string", "minLength": 1 },
+            "structuredContent": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "index": { "type": "integer", "minimum": 0, "exclusiveMinimum": true },
+                  "text": { "type": "string", "minLength": 1 }
+                },
+                "required": ["index", "text"]
+              },
+              "minItems": 1
+            },
+            "level": { "type": "integer", "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+            "genre": {
+              "type": "string",
+              "enum": ["History", "Adventure", "Science", "Non-Fiction", "Fantasy", "Biography", "Mystery", "Science-Fiction", "Folktale", "Custom"]
+            },
+            "language": {
+              "type": "string",
+              "enum": ["UK", "US"]
+            },
+            "description": { "type": "string", "nullable": true },
+            "imageUrl": { "type": "string", "nullable": true, "format": "uri" },
+            "estimatedReadingTime": { "type": "integer", "nullable": true, "minimum": 0, "exclusiveMinimum": true },
+            "isActive": { "type": "boolean" }
+          }
+        },
+        "CreateCuratedModuleInput": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string", "minLength": 1 },
+            "structuredContent": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "index": { "type": "integer", "minimum": 0, "exclusiveMinimum": true },
+                  "text": { "type": "string", "minLength": 1 }
+                },
+                "required": ["index", "text"]
+              },
+              "minItems": 1
+            },
+            "level": { "type": "integer", "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+            "genre": {
+              "type": "string",
+              "enum": ["History", "Adventure", "Science", "Non-Fiction", "Fantasy", "Biography", "Mystery", "Science-Fiction", "Folktale", "Custom"]
+            },
+            "language": {
+              "type": "string",
+              "enum": ["UK", "US"]
+            },
+            "description": { "type": "string", "nullable": true },
+            "imageUrl": { "type": "string", "nullable": true, "format": "uri" },
+            "estimatedReadingTime": { "type": "integer", "nullable": true, "minimum": 0, "exclusiveMinimum": true },
+            "isActive": { "type": "boolean" }
+          },
+          "required": ["title", "structuredContent", "level", "genre", "language"]
+        },
+        "IdParam": {
+          "type": "object",
+          "properties": { "id": { "type": "string", "format": "uuid" } },
+          "required": ["id"]
+        },
+        "Paragraph": {
+          "type": "object",
+          "properties": {
+            "index": { "type": "integer", "minimum": 0, "exclusiveMinimum": true },
+            "text": { "type": "string", "minLength": 1 }
+          },
+          "required": ["index", "text"]
+        },
+        "UpdateProgressInput": {
+          "description": "Input data for a Student updating their progress on a module",
+          "type": "object",
+          "required": ["moduleId"],
+          "properties": {
+            "moduleId": { "type": "string", "format": "uuid" },
+            "completed": { "type": "boolean", "nullable": true },
+            "score": { "type": "integer", "format": "int32", "nullable": true },
+            "timeSpentMinutes": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true,
+              "description": "Time spent in this session"
+            },
+            "summaryText": { "type": "string", "nullable": true }
+          }
+        },
+        "StartModuleInput": {
+          "type": "object",
+          "properties": { "moduleId": { "type": "string", "format": "uuid" } },
+          "required": ["moduleId"]
+        },
+        "SubmitSummaryInput": {
+          "description": "Input for submitting a paragraph summary",
+          "type": "object",
+          "properties": {
+            "moduleId": { "type": "string", "format": "uuid" },
+            "paragraphIndex": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "paragraphSummary": { "type": "string", "minLength": 1 },
+            "cumulativeSummary": { "type": "string", "minLength": 1 }
+          },
+          "required": [
+            "moduleId",
+            "paragraphIndex",
+            "paragraphSummary",
+            "cumulativeSummary"
+          ]
+        },
+        "ProgressIdParam": {
+          "type": "object",
+          "properties": { "progressId": { "type": "string", "format": "uuid" } },
+          "required": ["progressId"]
+        },
+        "StudentIdParam": {
+          "type": "object",
+          "properties": { "studentId": { "type": "string", "format": "uuid" } },
+          "required": ["studentId"]
+        },
+        "ModuleIdParam": {
+          "type": "object",
+          "properties": { "moduleId": { "type": "string", "format": "uuid" } },
+          "required": ["moduleId"]
+        },
+        "AdminUpdateProgressInputSchema": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "type": "integer",
+              "nullable": true,
+              "minimum": 0,
+              "maximum": 100
+            },
+            "teacherFeedback": { "type": "string", "nullable": true },
+            "completed": { "type": "boolean" }
+          }
+        },
+        "StudentProgressSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "studentId": { "type": "string", "format": "uuid" },
+            "moduleId": { "type": "string", "format": "uuid" },
+            "completed": { "type": "boolean" },
+            "score": { "type": "integer", "nullable": true },
+            "highestParagraphIndexReached": { "type": "integer", "nullable": true },
+            "finalSummary": { "type": "string", "nullable": true },
+            "startedAt": { "type": "string", "nullable": true },
+            "completedAt": { "type": "string", "nullable": true },
+            "timeSpentMinutes": { "type": "integer", "nullable": true },
+            "createdAt": { "type": "string" },
+            "updatedAt": { "type": "string" },
+            "teacherFeedback": { "type": "string", "nullable": true },
+            "teacherFeedbackAt": { "type": "string", "nullable": true }
+          },
+          "required": [
+            "id",
+            "studentId",
+            "moduleId",
+            "completed",
+            "score",
+            "highestParagraphIndexReached",
+            "finalSummary",
+            "startedAt",
+            "completedAt",
+            "timeSpentMinutes",
+            "createdAt",
+            "updatedAt",
+            "teacherFeedback",
+            "teacherFeedbackAt"
+          ]
+        },
+        "ParagraphSubmissionSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "studentProgressId": { "type": "string", "format": "uuid" },
+            "paragraphIndex": {
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true
+            },
+            "paragraphSummary": { "type": "string" },
+            "cumulativeSummary": { "type": "string" },
+            "submittedAt": { "type": "string" },
+            "createdAt": { "type": "string" },
+            "updatedAt": { "type": "string" }
+          },
+          "required": [
+            "id",
+            "studentProgressId",
+            "paragraphIndex",
+            "paragraphSummary",
+            "cumulativeSummary",
+            "submittedAt",
+            "createdAt",
+            "updatedAt"
+          ]
+        },
+        "StudentProgressDetailsDTOSchema": {
+          "type": "object",
+          "properties": {
+            "progress": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "studentId": { "type": "string", "format": "uuid" },
+                "moduleId": { "type": "string", "format": "uuid" },
+                "completed": { "type": "boolean" },
+                "score": { "type": "integer", "nullable": true },
+                "highestParagraphIndexReached": { "type": "integer", "nullable": true },
+                "finalSummary": { "type": "string", "nullable": true },
+                "startedAt": { "type": "string", "nullable": true },
+                "completedAt": { "type": "string", "nullable": true },
+                "timeSpentMinutes": { "type": "integer", "nullable": true },
+                "createdAt": { "type": "string" },
+                "updatedAt": { "type": "string" },
+                "teacherFeedback": { "type": "string", "nullable": true },
+                "teacherFeedbackAt": { "type": "string", "nullable": true }
+              },
+              "required": [
+                "id",
+                "studentId",
+                "moduleId",
+                "completed",
+                "score",
+                "highestParagraphIndexReached",
+                "finalSummary",
+                "startedAt",
+                "completedAt",
+                "timeSpentMinutes",
+                "createdAt",
+                "updatedAt",
+                "teacherFeedback",
+                "teacherFeedbackAt"
+              ]
+            },
+            "submissions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "format": "uuid" },
+                  "studentProgressId": { "type": "string", "format": "uuid" },
+                  "paragraphIndex": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "paragraphSummary": { "type": "string" },
+                  "cumulativeSummary": { "type": "string" },
+                  "submittedAt": { "type": "string" },
+                  "createdAt": { "type": "string" },
+                  "updatedAt": { "type": "string" }
+                },
+                "required": [
+                  "id",
+                  "studentProgressId",
+                  "paragraphIndex",
+                  "paragraphSummary",
+                  "cumulativeSummary",
+                  "submittedAt",
+                  "createdAt",
+                  "updatedAt"
+                ]
+              }
+            }
+          },
+          "required": ["progress", "submissions"]
+        },
+        "ProfileIdParam": {
+          "type": "object",
+          "properties": { "profileId": { "type": "string", "format": "uuid" } },
+          "required": ["profileId"]
+        },
+        "ProfileUpdateRequest": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string", "minLength": 2 },
+            "avatarUrl": { "type": "string", "nullable": true, "format": "uri" }
+          }
+        },
+        "AdminUpdateStudentRequest": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string", "minLength": 2 },
+            "avatarUrl": { "type": "string", "nullable": true, "format": "uri" }
+          }
+        },
+        "ReadingModuleDTO": {
+          "description": "Data Transfer Object for Reading Modules",
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "adminId": { "type": "string", "format": "uuid", "nullable": true },
+            "title": { "type": "string" },
+            "structuredContent": {
+              "type": "array",
+              "items": { "$ref": "#/components/schemas/Paragraph" }
+            },
+            "paragraphCount": { "type": "integer" },
+            "level": { "type": "integer", "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+            "type": { "type": "string", "enum": ["curated", "custom"] },
+            "genre": {
+              "type": "string",
+              "enum": ["History", "Adventure", "Science", "Non-Fiction", "Fantasy", "Biography", "Mystery", "Science-Fiction", "Folktale", "Custom"]
+            },
+            "language": {
+              "type": "string",
+              "enum": ["UK", "US"]
+            },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "description": { "type": "string", "nullable": true },
+            "imageUrl": { "type": "string", "format": "url", "nullable": true },
+            "estimatedReadingTime": { "type": "integer", "format": "int32", "nullable": true }
+          },
+          "required": [
+            "id",
+            "title",
+            "structuredContent",
+            "paragraphCount",
+            "level",
+            "type",
+            "genre",
+            "language",
+            "createdAt"
+          ]
+        },
+        "ProfileDTO": {
+          "description": "Data Transfer Object for user profiles (Admin or Student)",
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "role": { "type": "string", "enum": ["ADMIN", "STUDENT", "SUPER_ADMIN"] },
+            "fullName": { "type": "string", "nullable": true },
+            "email": { "type": "string", "format": "email" },
+            "avatarUrl": { "type": "string", "format": "url", "nullable": true },
+            "stripeCustomerId": { "type": "string", "nullable": true },
+            "subscriptionStatus": {
+              "type": "string",
+              "enum": ["free", "active", "canceled", "past_due", "incomplete", "incomplete_expired"],
+              "nullable": true
+            },
+            "subscriptionPlan": {
+              "type": "string",
+              "enum": ["free", "home", "pro"],
+              "nullable": true
+            },
+            "subscriptionRenewalDate": { "type": "string", "format": "date-time", "nullable": true },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" },
+            "adminId": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true,
+              "description": "Link to managing admin (for students)"
+            },
+            "age": {
+              "type": "integer",
+              "format": "int32",
+              "nullable": true,
+              "description": "Student's age (only applicable if role is STUDENT)"
+            },
+            "readingLevel": {
+              "type": "integer", 
+              "nullable": true,
+              "description": "Student's reading level (only applicable if role is STUDENT)"
+            }
+          },
+          "required": ["id", "role", "email", "createdAt", "updatedAt"]
+        },
+        "SubscriptionPlan": {
+          "description": "Details of an available subscription plan",
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string", "nullable": true },
+            "price": { "type": "string" },
+            "interval": { "type": "string", "enum": ["month", "year"] },
+            "tier": { "type": "string", "enum": ["free", "home", "pro"] },
+            "studentLimit": { "type": "integer", "format": "int32" },
+            "moduleLimit": {
+              "type": "integer",
+              "format": "int32",
+              "description": "Limit for accessing curated modules"
+            },
+            "customModuleLimit": { "type": "integer", "format": "int32" },
+            "isActive": { "type": "boolean" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        },
+        "ProgressRecordDTO": {
+          "description": "Data Transfer Object for Student Progress Records",
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "studentId": { "type": "string", "format": "uuid" },
+            "moduleId": { "type": "string", "format": "uuid" },
+            "completed": { "type": "boolean" },
+            "score": { "type": "integer", "format": "int32", "nullable": true },
+            "highestParagraphIndexReached": { "type": "integer", "format": "int32", "nullable": true },
+            "finalSummary": { "type": "string", "nullable": true },
+            "startedAt": { "type": "string", "format": "date-time", "nullable": true },
+            "completedAt": { "type": "string", "format": "date-time", "nullable": true },
+            "timeSpentMinutes": { "type": "integer", "format": "int32", "nullable": true },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" },
+            "teacherFeedback": { "type": "string", "nullable": true },
+            "teacherFeedbackAt": { "type": "string", "format": "date-time", "nullable": true }
+          },
+          "required": [
+            "id",
+            "studentId",
+            "moduleId",
+            "completed",
+            "createdAt",
+            "updatedAt"
+          ]
+        },
+        "ParagraphSubmission": {
+          "description": "A student's submission for a specific paragraph",
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "studentProgressId": { "type": "string", "format": "uuid" },
+            "paragraphIndex": { "type": "integer", "format": "int32" },
+            "paragraphSummary": { "type": "string" },
+            "cumulativeSummary": { "type": "string" },
+            "submittedAt": { "type": "string", "format": "date-time" }
+          },
+          "required": [
+            "id",
+            "studentProgressId",
+            "paragraphIndex",
+            "paragraphSummary",
+            "cumulativeSummary",
+            "submittedAt"
+          ]
+        },
+        "ErrorResponse": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string", "example": "error" },
+            "message": { "type": "string" }
+          },
+          "required": ["message"]
+        },
+        "SuccessResponse": {
+          "type": "object",
+          "properties": { "message": { "type": "string" } }
+        },
+        "VocabularyEntryDTO": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The unique identifier for the vocabulary entry."
+            },
+            "moduleId": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The ID of the module this entry belongs to."
+            },
+            "paragraphIndex": {
+              "type": "integer",
+              "description": "The 1-based index of the paragraph this entry relates to.",
+              "minimum": 1
+            },
+            "word": {
+              "type": "string",
+              "description": "The word being defined."
+            },
+            "description": {
+              "type": "string",
+              "description": "The definition or description of the word."
+            }
+          },
+          "required": [
+            "id",
+            "moduleId",
+            "paragraphIndex",
+            "word",
+            "description"
+          ]
+        },
+        "VocabularyBodySchema": {
+          "type": "object",
+          "properties": {
+            "paragraphIndex": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-based index of the paragraph."
+            },
+            "word": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "The word being defined."
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "description": "The definition."
+            }
+          },
+          "required": [
+            "paragraphIndex",
+            "word",
+            "description"
+          ]
+        },
+        "UpdateVocabularyBodySchema": {
+          "type": "object",
+          "description": "At least one field must be provided for update.",
+          "properties": {
+            "paragraphIndex": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-based index of the paragraph."
+            },
+            "word": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "The word being defined."
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "description": "The definition."
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT",
+          "description": "Enter JWT token **_only_**"
+        }
+      },
+      "parameters": {
+        "ModuleIdParam": {
+          "in": "path",
+          "name": "moduleId",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "The UUID of the module."
+        },
+        "ProgressIdParam": {
+          "in": "path",
+          "name": "progressId",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "The UUID of the student progress record."
+        },
+        "ParagraphIndexParam": {
+          "in": "path",
+          "name": "paragraphIndex",
+          "required": true,
+          "schema": { "type": "integer", "format": "int32", "minimum": 1 },
+          "description": "The 1-based index of the paragraph within the module."
+        },
+        "IdParam": {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "The UUID of the reading module."
+        },
+        "ModuleId": {
+          "in": "path",
+          "name": "moduleId",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "The UUID of the reading module."
+        },
+        "ParagraphIndex": {
+          "in": "path",
+          "name": "paragraphIndex",
+          "required": true,
+          "schema": { "type": "integer", "minimum": 1 },
+          "description": "The 1-based index of the paragraph."
+        },
+        "VocabularyId": {
+          "in": "path",
+          "name": "vocabularyId",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "The UUID of the vocabulary entry."
+        }
+      }
+    }
+  },
+  "paths": {
+    "/analytics/dashboard": {
+      "get": {
+        "tags": ["Analytics - SuperAdmin"],
+        "summary": "Get teacher dashboard statistics",
+        "description": "Retrieves various statistics for the admin/teacher dashboard.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Dashboard statistics retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "example": {
+                    "totalStudents": 150,
+                    "activeSubscriptions": 120,
+                    "averageProgress": 65.5,
+                    "popularModule": "Introduction to Reading"
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Unauthorized (not a Super Admin)." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/analytics/students/{studentId}": {
+      "get": {
+        "tags": ["Analytics - SuperAdmin"],
+        "summary": "Get progress analytics for a specific student",
+        "description": "Retrieves detailed progress analytics for a single student by their ID.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "studentId",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/StudentIdParam" },
+            "description": "The UUID of the student."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Student progress analytics retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "example": {
+                    "studentName": "Jane Doe",
+                    "completedModules": 15,
+                    "averageScore": 88,
+                    "timeSpent": 1200
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid student ID format." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Unauthorized (not a Super Admin)." },
+          "404": { "description": "Student not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/analytics/modules/popular": {
+      "get": {
+        "tags": ["Analytics - SuperAdmin"],
+        "summary": "Get the most popular modules",
+        "description": "Retrieves a list of reading modules ordered by popularity (e.g., completion rate or number of students).",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Popular modules retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "example": {
+                      "moduleId": "uuid-module-1",
+                      "title": "Advanced Reading Techniques",
+                      "completionRate": 75.2
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Unauthorized (not a Super Admin)." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/analytics/subscriptions": {
+      "get": {
+        "tags": ["Analytics - SuperAdmin"],
+        "summary": "Get subscription statistics",
+        "description": "Retrieves statistics related to user subscriptions (e.g., counts per tier, revenue).",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Subscription statistics retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "example": {
+                    "totalActive": 120,
+                    "freeTier": 30,
+                    "homeTier": 50,
+                    "proTier": 40,
+                    "monthlyRevenue": 599.5
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Unauthorized (not a Super Admin)." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "tags": ["Auth - Public"],
+        "summary": "Register a new user (Admin/SuperAdmin)",
+        "description": "Creates a new user profile. Assigns SUPER_ADMIN role for specific emails (@noteearly.com, admin@example.com), otherwise assigns ADMIN role.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "fullName"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "User's email address."
+                  },
+                  "password": { "type": "string", "format": "password", "minLength": 8 },
+                  "fullName": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User account created successfully." },
+          "400": { "description": "Validation error or invalid input." },
+          "500": { "description": "Server error during signup." }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth - Public"],
+        "summary": "Log in an Admin or SuperAdmin user",
+        "description": "Logs in a user with ADMIN or SUPER_ADMIN role using email and password.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "format": "password" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful. Returns user info and sets access token cookie."
+          },
+          "401": {
+            "description": "Authentication failed (Invalid credentials or user not Admin/SuperAdmin)."
+          },
+          "500": { "description": "Server error during login." }
+        }
+      }
+    },
+    "/auth/google": {
+      "get": {
+        "tags": ["Auth - Public"],
+        "summary": "Initiate Google OAuth login",
+        "description": "Starts the Google OAuth flow. Users signing in with specific emails (@noteearly.com, admin@example.com) get SUPER_ADMIN role, others get ADMIN.",
+        "responses": {
+          "200": {
+            "description": "Returns the Google OAuth URL to redirect the user."
+          },
+          "500": { "description": "Failed to generate OAuth URL." }
+        }
+      }
+    },
+    "/auth/callback": {
+      "get": {
+        "tags": ["Auth - Public"],
+        "summary": "Handle Google OAuth callback",
+        "description": "Processes the callback from Google after user authentication. Sets access token cookie and redirects.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "code",
+            "schema": { "type": "string" },
+            "required": true,
+            "description": "The authorization code provided by Google."
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirects to the appropriate dashboard page after successful authentication."
+          },
+          "400": { "description": "Invalid or missing authorization code." },
+          "500": { "description": "Server error during OAuth callback processing." }
+        }
+      }
+    },
+    "/auth/student/login": {
+      "post": {
+        "tags": ["Auth - Student"],
+        "summary": "Log in a Student user",
+        "description": "Logs in a student user using their assigned ID and PIN. Returns a student-specific token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["studentId", "pin"],
+                "properties": {
+                  "studentId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The student's unique ID."
+                  },
+                  "pin": { "type": "string", "description": "The student's PIN." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Student login successful. Returns student profile and token."
+          },
+          "401": { "description": "Authentication failed (Invalid studentId or PIN)." },
+          "404": { "description": "Student profile not found." },
+          "500": { "description": "Server error during student login." }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth - Public"],
+        "summary": "Refresh access token using refresh token cookie",
+        "description": "Attempts to refresh the Supabase session using the httpOnly refresh-token cookie. Returns a new access token if successful.",
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully. Returns new access token."
+          },
+          "401": { "description": "Refresh token missing, invalid, or expired." },
+          "500": { "description": "Server error during token refresh." }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth - Admin"],
+        "summary": "Log out an Admin/SuperAdmin user",
+        "description": "Logs out the currently authenticated Admin or SuperAdmin user by invalidating their session/token.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": { "description": "Logout successful." },
+          "401": { "description": "Authentication required." },
+          "500": { "description": "Server error during logout." }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": ["Auth - Admin"],
+        "summary": "Reset Admin/SuperAdmin password",
+        "description": "Allows a logged-in Admin or SuperAdmin to reset their own password.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["currentPassword", "newPassword"],
+                "properties": {
+                  "currentPassword": { "type": "string", "format": "password" },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password reset successfully." },
+          "400": { "description": "Validation error (e.g., new password too short)." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Current password incorrect." },
+          "500": { "description": "Server error during password reset." }
+        }
+      }
+    },
+    "/auth/admin/student": {
+      "post": {
+        "tags": ["Auth - Admin"],
+        "summary": "Create a new student profile (Admin/SuperAdmin only)",
+        "description": "Allows a logged-in Admin or SuperAdmin to create a new student profile associated with their account.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fullName", "pin"],
+                "properties": {
+                  "fullName": { "type": "string" },
+                  "pin": { "type": "string", "minLength": 4, "maxLength": 6 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Student created successfully." },
+          "400": { "description": "Validation error or invalid input." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Student limit reached based on subscription plan." },
+          "500": { "description": "Server error during student creation." }
+        }
+      }
+    },
+    "/auth/admin/student/reset-pin": {
+      "post": {
+        "tags": ["Auth - Admin"],
+        "summary": "Reset a student's PIN (Admin/SuperAdmin only)",
+        "description": "Allows a logged-in Admin or SuperAdmin to reset the PIN for a student associated with their account.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["studentId", "newPin"],
+                "properties": {
+                  "studentId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The ID of the student whose PIN needs resetting."
+                  },
+                  "newPin": {
+                    "type": "string",
+                    "minLength": 4,
+                    "maxLength": 6,
+                    "description": "The new PIN for the student."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Student PIN reset successfully." },
+          "400": { "description": "Validation error." },
+          "401": { "description": "Admin authentication required." },
+          "403": {
+            "description": "Admin does not have permission to reset PIN for this student (e.g., student belongs to another admin)."
+          },
+          "404": { "description": "Student profile not found." },
+          "500": { "description": "Server error during PIN reset." }
+        }
+      }
+    },
+    "/api/v1/progress/start": {
+      "post": {
+        "tags": ["Progress - Student"],
+        "summary": "Start progress on a module (Student)",
+        "description": "Creates a progress record for the authenticated student on a specific module if one doesn't exist. Idempotent.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StartModuleInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Progress tracking started or retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "progress": { "$ref": "#/components/schemas/StudentProgressSchema" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation Error." },
+          "401": { "description": "Authentication required (Student context)." },
+          "404": { "description": "Module or Student not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/progress/submit-summary": {
+      "post": {
+        "tags": ["Progress - Student"],
+        "summary": "Submit a paragraph summary (Student)",
+        "description": "Submits an individual and cumulative summary for a specific paragraph within a module the student has started.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SubmitSummaryInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Summary submitted successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "submissionId": { "type": "string", "format": "uuid" },
+                    "progressStatus": {
+                      "type": "object",
+                      "properties": {
+                        "completed": { "type": "boolean" },
+                        "highestParagraphIndexReached": { "type": "integer", "nullable": true },
+                        "finalSummary": { "type": "string", "nullable": true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation Error, or Module already completed, or paragraph index mismatch."
+          },
+          "401": { "description": "Authentication required (Student context)." },
+          "404": { "description": "Module or Progress record not found for this student." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/progress/details/{moduleId}": {
+      "get": {
+        "tags": ["Progress - Student"],
+        "summary": "Get my detailed progress for a module (Student)",
+        "description": "Retrieves the overall progress record and all paragraph submissions for the authenticated student on a specific module.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          { "$ref": "#/components/parameters/ModuleIdParam" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed progress information for the student.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentProgressDetailsDTOSchema" }
+              }
+            }
+          },
+          "400": { "description": "Invalid Module ID format." },
+          "401": { "description": "Authentication required (Student context)." },
+          "404": { "description": "Progress record not found for this student/module." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/progress/my-progress": {
+      "get": {
+        "tags": ["Progress - Student"],
+        "summary": "Get all my progress records (Student)",
+        "description": "Retrieves a list of all progress records (across different modules) for the currently authenticated student.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "A list of the student's progress records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/StudentProgressSchema" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required (Student context)." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/progress/admin/update/{progressId}": {
+      "patch": {
+        "tags": ["Progress - Admin"],
+        "summary": "Update progress record (Admin/SuperAdmin)",
+        "description": "Allows an Admin/SuperAdmin to update specific fields (e.g., feedback, score, completion status) on a student's progress record they manage.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          { "$ref": "#/components/parameters/ProgressIdParam" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AdminUpdateProgressInputSchema" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Progress record updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentProgressSchema" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error or Invalid ID." },
+          "401": { "description": "Authentication required." },
+          "403": {
+            "description": "Forbidden (Admin/SuperAdmin access required, or does not manage the student associated with this progress)."
+          },
+          "404": { "description": "Progress record not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/progress/admin/module/{moduleId}": {
+      "get": {
+        "tags": ["Progress - Admin"],
+        "summary": "Get all progress for a module (Admin/SuperAdmin)",
+        "description": "Retrieves all student progress records associated with a specific module, accessible only to Admins/SuperAdmins.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          { "$ref": "#/components/parameters/ModuleIdParam" }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of all progress records for the specified module.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/StudentProgressSchema" }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid Module ID format." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Admin/SuperAdmin access required." },
+          "404": { "description": "Module not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules/active": {
+      "get": {
+        "tags": ["Reading Modules - Public"],
+        "summary": "Get active reading modules (Public)",
+        "description": "Retrieves a list of active reading modules available to all users.",
+        "responses": {
+          "200": {
+            "description": "A list of active reading modules.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReadingModuleDTO" }
+                }
+              }
+            }
+          },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules/{id}": {
+      "get": {
+        "tags": ["Reading Modules - Public"],
+        "summary": "Get a specific module by ID (Public)",
+        "description": "Retrieves details for a specific reading module by its UUID. Access may be restricted based on module status.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "The UUID of the reading module."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reading module details.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadingModuleDTO" }
+              }
+            }
+          },
+          "400": { "description": "Invalid ID format." },
+          "404": { "description": "Module not found or not accessible." },
+          "500": { "description": "Internal server error." }
+        }
+      },
+      "patch": {
+        "tags": ["Reading Modules - Admin"],
+        "summary": "Update a specific module (Admin/SuperAdmin)",
+        "description": "Allows an authenticated admin/superadmin to update their own custom reading module. SuperAdmins might have broader update capabilities via controller logic.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "The UUID of the reading module to update."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateModuleInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Module updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadingModuleDTO" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error or Invalid ID." },
+          "401": { "description": "Authentication required." },
+          "403": {
+            "description": "Forbidden (User does not own this module and is not SuperAdmin)."
+          },
+          "404": { "description": "Module not found." },
+          "500": { "description": "Internal server error." }
+        }
+      },
+      "delete": {
+        "tags": ["Reading Modules - Admin"],
+        "summary": "Delete a specific module (Admin/SuperAdmin)",
+        "description": "Allows an authenticated admin/superadmin to delete their own custom reading module. SuperAdmins might have broader delete capabilities via controller logic.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "The UUID of the reading module to delete."
+          }
+        ],
+        "responses": {
+          "204": { "description": "Module deleted successfully." },
+          "401": { "description": "Authentication required." },
+          "403": {
+            "description": "Forbidden (User does not own this module and is not SuperAdmin)."
+          },
+          "404": { "description": "Module not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules/{moduleId}/paragraph/{paragraphIndex}": {
+      "get": {
+        "tags": ["Reading Modules - Public"],
+        "summary": "Get a specific paragraph from a module (Public)",
+        "description": "Retrieves the text content and index of a single paragraph within a reading module. Assumes module is accessible.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moduleId",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "The UUID of the reading module."
+          },
+          {
+            "in": "path",
+            "name": "paragraphIndex",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 1 },
+            "description": "The 1-based index of the paragraph."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paragraph details.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Paragraph" }
+              }
+            }
+          },
+          "400": { "description": "Invalid ID or index format." },
+          "404": { "description": "Module or Paragraph not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules/my-modules": {
+      "get": {
+        "tags": ["Reading Modules - Admin"],
+        "summary": "Get modules created by the logged-in admin (Admin/SuperAdmin)",
+        "description": "Retrieves a list of custom reading modules created by the currently authenticated admin or superadmin.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "A list of the user's custom reading modules.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReadingModuleDTO" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules": {
+      "post": {
+        "tags": ["Reading Modules - Admin"],
+        "summary": "Create a new custom reading module (Admin/SuperAdmin)",
+        "description": "Allows an authenticated admin or superadmin to create a new custom reading module.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateModuleInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Custom module created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadingModuleDTO" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden (e.g., Subscription limit reached)." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules/curated": {
+      "post": {
+        "tags": ["Reading Modules - SuperAdmin"],
+        "summary": "Create a new curated reading module (SuperAdmin Only)",
+        "description": "Allows a Super Admin to create a new curated (system) reading module.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCuratedModuleInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Curated module created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadingModuleDTO" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden (User is not a Super Admin)." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules/curated/{id}": {
+      "patch": {
+        "tags": ["Reading Modules - SuperAdmin"],
+        "summary": "Update any module (SuperAdmin Only)",
+        "description": "Allows a Super Admin to update *any* reading module, including curated ones.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateModuleInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Module updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadingModuleDTO" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error or Invalid ID." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden (User is not a Super Admin)." },
+          "404": { "description": "Module not found." },
+          "500": { "description": "Internal server error." }
+        }
+      },
+      "delete": {
+        "tags": ["Reading Modules - SuperAdmin"],
+        "summary": "Delete any module (SuperAdmin Only)",
+        "description": "Allows a Super Admin to delete *any* reading module, including curated ones.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "204": { "description": "Module deleted successfully." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden (User is not a Super Admin)." },
+          "404": { "description": "Module not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/subscriptions/plans": {
+      "get": {
+        "tags": ["Subscriptions - Admin"],
+        "summary": "Get available subscription plans (Admin/SuperAdmin)",
+        "description": "Retrieves a list of all available subscription plans from the database. Requires Admin/SuperAdmin privileges.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "A list of subscription plans.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SubscriptionPlan" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Admin/SuperAdmin access required." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/subscriptions/current": {
+      "get": {
+        "tags": ["Subscriptions - User"],
+        "summary": "Get current user's subscription details (Admin/SuperAdmin)",
+        "description": "Retrieves the active subscription details for the currently authenticated user.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Subscription details retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "data": { "$ref": "#/components/schemas/SubscriptionPlan" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "404": { "description": "Subscription not found for the user." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+     "/api/v1/subscriptions/checkout-session": {
+      "post": {
+        "tags": ["Subscriptions - User"],
+        "summary": "Create Stripe Checkout session for a specific plan (Admin/SuperAdmin)",
+        "description": "Creates and returns a Stripe Checkout Session ID and URL for a specific subscription plan selected by the user.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["planId"],
+                "properties": {
+                  "planId": {
+                    "type": "string",
+                    "description": "The Stripe Price ID of the plan to subscribe to.",
+                    "example": "price_12345ABCDE"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stripe Checkout session created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sessionId": { "type": "string", "description": "The ID of the Stripe Checkout Session." },
+                        "url": { "type": "string", "format": "url", "description": "The URL to redirect the user to for completing the checkout." }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid input (e.g., missing planId)." },
+          "401": { "description": "Authentication required." },
+          "404": { "description": "User profile or plan not found." },
+          "500": { "description": "Internal server error (e.g., Stripe API error)." }
+        }
+      }
+    },
+    "/api/v1/subscriptions/cancel": {
+      "post": {
+        "tags": ["Subscriptions - User"],
+        "summary": "Request subscription cancellation (Admin/SuperAdmin)",
+        "description": "Initiates the cancellation process for the current user's active subscription at the end of the billing period.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Subscription cancellation requested successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "404": { "description": "Active subscription not found to cancel." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/subscriptions/reactivate": {
+      "post": {
+        "tags": ["Subscriptions - User"],
+        "summary": "Request subscription reactivation (Admin/SuperAdmin)",
+        "description": "Reactivates a previously canceled subscription for the current user.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Subscription reactivation requested successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "404": { "description": "Canceled subscription not found or not eligible for reactivation." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+     "/api/v1/subscriptions/payments": {
+      "get": {
+        "tags": ["Subscriptions - User"],
+        "summary": "Get user's payment history (Admin/SuperAdmin)",
+        "description": "Retrieves a list of past payments associated with the current user's subscription.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Payment history retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "example": { "id": "pi_123", "amount": 1000, "currency": "usd", "created": 1678886400, "status": "succeeded" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/subscriptions/manage": {
+      "post": {
+        "tags": ["Subscriptions - User"],
+        "summary": "Create Stripe Customer Portal session (Admin/SuperAdmin)",
+        "description": "Creates and returns a URL for the Stripe Customer Portal, allowing the authenticated Admin/SuperAdmin user to manage their subscription.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Stripe Customer Portal session URL created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "url",
+                      "description": "The URL to redirect the user to the Stripe Customer Portal."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "404": { "description": "User profile or Stripe customer ID not found." },
+          "500": { "description": "Internal server error (e.g., Stripe API error)." }
+        }
+      }
+    },
+    "/api/v1/subscriptions/stripe-webhook": {
+      "post": {
+        "tags": ["Subscriptions - Webhook"],
+        "summary": "Handle Stripe webhook events (Public)",
+        "description": "Receives events from Stripe (e.g., checkout completed, subscription updated/canceled) and updates the application state accordingly. Access is public but requires a valid Stripe signature.",
+        "requestBody": {
+          "required": true,
+          "description": "Raw event payload from Stripe with signature in header.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Generic Stripe event object structure."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook received and processed successfully (or acknowledged for later processing).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "received": { "type": "boolean", "example": true } }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (e.g., invalid signature, missing Stripe-Signature header, malformed payload)."
+          },
+          "500": { "description": "Internal server error during webhook processing." }
+        }
+      }
+    },
+    "/api/v1/profiles/me": {
+      "get": {
+        "tags": ["Profiles - Self"],
+        "summary": "Get current user's profile (Self)",
+        "description": "Retrieves the profile details of the currently authenticated user.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProfileDTO" }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "404": { "description": "Profile not found." },
+          "500": { "description": "Internal server error." }
+        }
+      },
+      "patch": {
+        "tags": ["Profiles - Self"],
+        "summary": "Update current user's profile (Self)",
+        "description": "Allows the currently authenticated user (Admin/SuperAdmin) to update their own profile details (e.g., name, avatar). Students cannot update their profile.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProfileUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProfileDTO" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden (Students cannot update profiles)." },
+          "404": { "description": "Profile not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/profiles/admin/students": {
+      "get": {
+        "tags": ["Profiles - Admin"],
+        "summary": "Get profiles managed by the admin (Admin/SuperAdmin)",
+        "description": "Retrieves a list of profiles managed by the currently authenticated Admin or SuperAdmin. Use query params to filter (e.g., ?role=STUDENT).",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "List of profiles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ProfileDTO" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Admin or SuperAdmin role required." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/profiles/admin/students/{profileId}": {
+      "get": {
+        "tags": ["Profiles - Admin"],
+        "summary": "Get a specific student profile (Admin/SuperAdmin)",
+        "description": "Allows an authenticated Admin/SuperAdmin to retrieve the profile details of a specific profile (typically a student) they manage.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profileId",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "The UUID of the profile."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProfileDTO" }
+              }
+            }
+          },
+          "400": { "description": "Invalid profile ID format." },
+          "401": { "description": "Authentication required." },
+          "403": {
+            "description": "Admin/SuperAdmin access required or profile not managed by this user."
+          },
+          "404": { "description": "Profile not found." },
+          "500": { "description": "Internal server error." }
+        }
+      },
+      "patch": {
+        "tags": ["Profiles - Admin"],
+        "summary": "Update a specific student profile (Admin/SuperAdmin)",
+        "description": "Allows a logged-in Admin/SuperAdmin to update the profile details (e.g., name) of a specific profile (typically a student) they manage.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profileId",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "The UUID of the profile to update."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AdminUpdateStudentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProfileDTO" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error or Invalid ID." },
+          "401": { "description": "Authentication required." },
+          "403": {
+            "description": "Admin/SuperAdmin access required or profile not managed by this user."
+          },
+          "404": { "description": "Profile not found." },
+          "500": { "description": "Internal server error." }
+        }
+      },
+      "delete": {
+        "tags": ["Profiles - Admin"],
+        "summary": "Delete a specific student profile (Admin/SuperAdmin)",
+        "description": "Allows a logged-in Admin/SuperAdmin to delete the profile of a specific student they manage. Use with caution!",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profileId",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "The UUID of the profile to delete."
+          }
+        ],
+        "responses": {
+          "200": { "description": "Profile deleted successfully." },
+          "400": { "description": "Invalid profile ID format." },
+          "401": { "description": "Authentication required." },
+          "403": {
+            "description": "Admin/SuperAdmin access required or profile not managed by this user."
+          },
+          "404": { "description": "Profile not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules/{moduleId}/paragraphs/{paragraphIndex}/vocabulary": {
+      "get": {
+        "tags": ["Reading Modules - Public", "Vocabulary"],
+        "summary": "Get vocabulary for a specific paragraph (Public)",
+        "description": "Retrieves vocabulary definitions relevant to a specific paragraph within a module.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ModuleId" },
+          { "$ref": "#/components/parameters/ParagraphIndex" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vocabulary definitions for the paragraph.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/VocabularyEntryDTO" }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid ID or index format." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/reading-modules/{moduleId}/vocabulary": {
+      "post": {
+        "tags": ["Reading Modules - Admin", "Vocabulary"],
+        "summary": "Create a vocabulary entry for a module (Admin/SuperAdmin)",
+        "description": "Adds a new vocabulary word and definition linked to a specific paragraph within a module. Requires Admin or SuperAdmin role.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          { "$ref": "#/components/parameters/ModuleId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VocabularyBodySchema" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Vocabulary entry created successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VocabularyEntryDTO" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error (Invalid input, paragraph index out of bounds)." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden (User does not have permission to modify this module)." },
+          "404": { "description": "Module not found." },
+          "409": { "description": "Conflict (Word already defined for this paragraph)." },
+          "500": { "description": "Internal server error." }
+        }
+      },
+      "get": {
+        "tags": ["Reading Modules - Admin", "Vocabulary"],
+        "summary": "Get all vocabulary entries for a module (Admin/SuperAdmin)",
+        "description": "Retrieves all vocabulary definitions associated with a specific reading module. Requires Admin or SuperAdmin role.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          { "$ref": "#/components/parameters/ModuleId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of vocabulary entries for the module.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/VocabularyEntryDTO" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden." },
+          "404": { "description": "Module not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    },
+    "/api/v1/vocabulary/{vocabularyId}": {
+      "put": {
+        "tags": ["Vocabulary"],
+        "summary": "Update a specific vocabulary entry (Admin/SuperAdmin)",
+        "description": "Updates an existing vocabulary definition by its unique ID. Requires Admin or SuperAdmin role with permission for the associated module.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          { "$ref": "#/components/parameters/VocabularyId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateVocabularyBodySchema" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vocabulary entry updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VocabularyEntryDTO" }
+              }
+            }
+          },
+          "400": { "description": "Validation Error (Invalid input, must provide at least one field)." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden (User does not have permission)." },
+          "404": { "description": "Vocabulary entry not found." },
+          "500": { "description": "Internal server error." }
+        }
+      },
+      "delete": {
+        "tags": ["Vocabulary"],
+        "summary": "Delete a specific vocabulary entry (Admin/SuperAdmin)",
+        "description": "Deletes a vocabulary definition by its unique ID. Requires Admin or SuperAdmin role with permission for the associated module.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          { "$ref": "#/components/parameters/VocabularyId" }
+        ],
+        "responses": {
+          "204": { "description": "Vocabulary entry deleted successfully." },
+          "401": { "description": "Authentication required." },
+          "403": { "description": "Forbidden (User does not have permission)." },
+          "404": { "description": "Vocabulary entry not found." },
+          "500": { "description": "Internal server error." }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Analytics - SuperAdmin",
+      "description": "Analytics endpoints requiring Super Admin privileges."
+    },
+    { "name": "Auth - Public", "description": "Authentication endpoints accessible without login." },
+    {
+      "name": "Auth - Admin",
+      "description": "Authentication endpoints for Admin and SuperAdmin users."
+    },
+    { "name": "Auth - Student", "description": "Authentication endpoints for Student users." },
+    {
+      "name": "Progress - Student",
+      "description": "Endpoints for students to manage and view their own progress."
+    },
+    {
+      "name": "Progress - Admin",
+      "description": "Endpoints for Admin/SuperAdmin users to view and manage student progress."
+    },
+    {
+      "name": "Reading Modules - Public",
+      "description": "Reading module operations accessible without login."
+    },
+    {
+      "name": "Reading Modules - Admin",
+      "description": "Reading module operations for Admin and SuperAdmin users."
+    },
+    {
+      "name": "Reading Modules - SuperAdmin",
+      "description": "Reading module operations restricted to SuperAdmin users."
+    },
+    {
+      "name": "Subscriptions - Admin",
+      "description": "Subscription management endpoints for Admin/SuperAdmin users."
+    },
+    {
+      "name": "Subscriptions - User",
+      "description": "Subscription management endpoints for authenticated users (Admin/SuperAdmin)."
+    },
+    {
+      "name": "Subscriptions - Webhook",
+      "description": "Endpoint for receiving Stripe webhook events (Public, validated by Stripe)."
+    },
+    {
+      "name": "Profiles - Self",
+      "description": "Operations related to the currently authenticated user's own profile."
+    },
+    {
+      "name": "Profiles - Admin",
+      "description": "Operations for Admin/SuperAdmin users to manage profiles (especially students)."
+    },
+    {
+      "name": "Vocabulary",
+      "description": "Operations for managing vocabulary entries within reading modules."
+    }
+  ]
+}
