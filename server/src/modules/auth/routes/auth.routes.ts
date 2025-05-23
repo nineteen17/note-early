@@ -163,6 +163,53 @@ authRouter.post('/student/login', authController.loginStudent);
 
 /**
  * @swagger
+ * /auth/student/refresh:
+ *   post:
+ *     tags: [Auth - Student]
+ *     summary: Refresh Student access token using HttpOnly cookie
+ *     description: Uses the student_refresh_token HttpOnly cookie to generate a new student access token.
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully. Returns new access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse' # Assuming a standard success response structure
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     accessToken:
+ *                       type: string
+ *                       description: The new JWT access token for the student.
+ *       401:
+ *         description: Refresh token missing, invalid, or expired.
+ *       500:
+ *         description: Server error during token refresh.
+ */
+authRouter.post('/student/refresh', authController.refreshStudentToken);
+
+/**
+ * @swagger
+ * /auth/student/logout:
+ *   post:
+ *     tags: [Auth - Student]
+ *     summary: Log out a Student user
+ *     description: Clears the student_refresh_token cookie.
+ *     responses:
+ *       200:
+ *         description: Student logout successful.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       500:
+ *         description: Server error during logout.
+ */
+authRouter.post('/student/logout', authController.logoutStudent);
+
+/**
+ * @swagger
  * /auth/refresh:
  *   post:
  *     tags: [Auth - Public]

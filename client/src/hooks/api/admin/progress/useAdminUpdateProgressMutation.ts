@@ -1,62 +1,66 @@
 'use client';
 
-import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/apiClient'; // Import api object
+import { AdminUpdateProgressFormInput } from '@/lib/schemas/progress';
+import { StudentProgressSchema } from '@/types/api'; // Import actual type
 import { toast } from 'sonner';
-import { api, ApiError } from '@/lib/apiClient';
-import type { StudentProgressSchema, AdminUpdateProgressInput } from '@/types/api';
 
-// Define the payload type for the mutation function
 interface UpdateProgressPayload {
-    progressId: string;
-    data: AdminUpdateProgressInput;
+  progressId: string;
+  data: AdminUpdateProgressFormInput;
 }
 
-// Define the API call function
-const updateAdminProgress = async ({ progressId, data }: UpdateProgressPayload): Promise<StudentProgressSchema> => {
-    try {
-        // Correct endpoint according to Swagger: PATCH /progress/admin/update/{progressId}
-        const response = await api.patch<StudentProgressSchema>(`/progress/admin/update/${progressId}`, data);
-        return response;
-    } catch (error) {
-        console.error('Error updating admin progress:', error);
-        throw error; // Re-throw ApiError from interceptor
-    }
+/**
+ * API function to update a student's progress record (Admin action).
+ * @param progressId - The UUID of the progress record to update.
+ * @param data - The update payload.
+ * @returns Promise resolving to the updated StudentProgress record.
+ */
+const updateAdminStudentProgress = async (
+  progressId: string,
+  data: AdminUpdateProgressFormInput
+): Promise<StudentProgressSchema> => {
+  if (!progressId) throw new Error("Progress ID is required for updateAdminStudentProgress");
+  if (Object.keys(data).length === 0) {
+    console.warn("Attempting to update progress with empty data object.");
+    // Decide if you should throw an error or return early based on your needs
+    // For now, let the API call proceed and let the backend potentially handle it
+  }
+  // Use the generic api.patch method
+  return api.patch<StudentProgressSchema>(`/api/v1/progress/admin/update/${progressId}`, data);
 };
 
-// Define the custom hook
-export const useAdminUpdateProgressMutation = (
-    // We might need moduleId if we want to invalidate the module-specific progress list
-    moduleId?: string 
-): UseMutationResult<StudentProgressSchema, ApiError, UpdateProgressPayload> => {
-    const queryClient = useQueryClient();
 
-    return useMutation<StudentProgressSchema, ApiError, UpdateProgressPayload>({ // <TData, TError, TVariables>
-        mutationFn: updateAdminProgress,
-        onSuccess: (updatedProgress, variables) => {
-            // Invalidate queries related to progress
-            // 1. Invalidate the general progress list for the specific module (if moduleId provided)
-            if (moduleId) {
-                queryClient.invalidateQueries({ queryKey: ['adminModuleProgress', moduleId] });
-            }
-            // 2. Invalidate the specific student's overall progress list (if we have a hook for that)
-            // queryClient.invalidateQueries({ queryKey: ['studentProgressList', updatedProgress.studentId] }); 
-            // 3. Invalidate any query fetching this specific progress record by its ID (if exists)
-            queryClient.invalidateQueries({ queryKey: ['progressDetail', variables.progressId] }); 
+/**
+ * Custom hook mutation to update a student's progress record (Admin action).
+ */
+export const useAdminUpdateProgressMutation = () => {
+  const queryClient = useQueryClient();
 
-            // Optional: Update the cache directly
-            // Can update both the module progress list and potentially a detail view
-            if (moduleId) {
-                 queryClient.setQueryData<StudentProgressSchema[]>(['adminModuleProgress', moduleId], (oldData) => 
-                     oldData?.map(p => p.id === updatedProgress.id ? updatedProgress : p) ?? []
-                 );
-            }
-            // queryClient.setQueryData(['progressDetail', variables.progressId], updatedProgress);
+  // Use the correct type StudentProgressSchema for the mutation result
+  return useMutation<StudentProgressSchema, Error, UpdateProgressPayload>({
+    // Call the locally defined update function
+    mutationFn: ({ progressId, data }: UpdateProgressPayload) => {
+      return updateAdminStudentProgress(progressId, data);
+    },
+    onSuccess: (updatedProgress, variables) => {
+      toast.success('Progress updated successfully!');
 
-            toast.success(`Progress record updated successfully!`);
-        },
-        onError: (error) => {
-            toast.error(`Failed to update progress: ${error.message}`);
-            console.error('Failed to update progress record:', error);
-        },
-    });
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'studentModuleDetail', updatedProgress.studentId, updatedProgress.moduleId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'studentProgressList', updatedProgress.studentId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'studentProfile', updatedProgress.studentId]
+      });
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update progress.');
+      console.error("Error updating progress:", error);
+    },
+  });
 }; 

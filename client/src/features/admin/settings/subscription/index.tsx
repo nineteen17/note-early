@@ -1,7 +1,8 @@
 import React from 'react';
-import { useProfileQuery } from '@/hooks/api/profile/useProfileQuery';
 import { useManageSubscriptionMutation } from '@/hooks/api/profile/useManageSubscriptionMutation';
 import { useSubscriptionPlansQuery } from '@/hooks/api/admin/subscriptions/useSubscriptionPlansQuery';
+import { useCurrentSubscriptionQuery } from '@/hooks/api/admin/subscriptions/useCurrentSubscriptionQuery';
+import { useAdminStudentsQuery } from '@/hooks/api/admin/students/useAdminStudentsQuery';
 import { useCreateCheckoutSessionMutation } from '@/hooks/api/admin/subscriptions/useCreateCheckoutSessionMutation';
 import { SubscriptionPlan } from '@/types/api';
 import { Button } from "@/components/ui/button";
@@ -31,13 +32,16 @@ const groupPlansByTier = (plans: SubscriptionPlan[] | undefined): Record<string,
 
 // Renamed function to reflect its role as a tab content
 export function SubscriptionTab() { 
-    const { data: profile, isLoading: isLoadingProfile, isError: isErrorProfile, error: errorProfile } = useProfileQuery(); // Get profile data for status
-    const manageSubMutation = useManageSubscriptionMutation();
+    const { data: currentSubscriptionData, isLoading: isLoadingSubscription, isError: isErrorSubscription, error: errorSubscription } = useCurrentSubscriptionQuery();
+    const { data: adminStudentsData, isLoading: isLoadingAdminStudents, isError: isErrorAdminStudents, error: errorAdminStudents } = useAdminStudentsQuery();
     const { data: plans, isLoading: isLoadingPlans, isError: isErrorPlans, error: errorPlans } = useSubscriptionPlansQuery();
+    const manageSubMutation = useManageSubscriptionMutation();
     const createCheckoutSessionMutation = useCreateCheckoutSessionMutation();
 
-    // --- DEBUG: Log profile data --- 
-    console.log('Profile Data:', profile);
+    // --- DEBUG: Log data --- 
+    console.log('Current Subscription Data:', currentSubscriptionData);
+    console.log('Admin Students Data:', adminStudentsData);
+    console.log('Plans Data:', plans);
 
     const handleManageSubscription = () => {
         manageSubMutation.mutate(); // No arguments needed
@@ -47,10 +51,35 @@ export function SubscriptionTab() {
         createCheckoutSessionMutation.mutate({ planId });
     };
 
-    const isLoading = isLoadingProfile || isLoadingPlans;
+    const isLoading = isLoadingSubscription || isLoadingAdminStudents || isLoadingPlans;
+    const isError = isErrorSubscription || isErrorAdminStudents || isErrorPlans;
+    const error = errorSubscription || errorAdminStudents || errorPlans;
 
     // --- Group plans after fetching --- 
     const groupedPlans = groupPlansByTier(plans);
+
+    // --- Extract Data --- //
+    // Get the plan and subscription objects from the query data
+    const currentPlan = currentSubscriptionData?.plan;
+    const currentSubscription = currentSubscriptionData?.subscription;
+
+    // Current Subscription details
+    // Access properties from the nested objects
+    const currentStatus = currentSubscription?.status;
+    const currentPlanTier = currentPlan?.tier;
+    const renewalDate = currentSubscription?.currentPeriodEnd;
+    const formattedRenewalDate = renewalDate 
+        ? new Date(renewalDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) 
+        : null;
+    const currentPlanDisplayName = currentPlan?.name || 
+                                 (currentPlanTier ? currentPlanTier.charAt(0).toUpperCase() + currentPlanTier.slice(1) : 'Free');
+
+    // Usage Limits
+    // Access properties from the nested objects
+    const customModuleLimit = currentPlan?.customModuleLimit ?? 0;
+    const customModulesCreated = currentSubscription?.customModulesCreatedThisPeriod ?? 0;
+    const studentLimit = currentPlan?.studentLimit ?? 0;
+    const currentStudentCount = adminStudentsData?.length ?? 0;
 
     if (isLoading) {
         return (
@@ -77,32 +106,19 @@ export function SubscriptionTab() {
         );
     }
 
-    if (isErrorProfile || isErrorPlans) {
-        const errorToShow = errorProfile || errorPlans;
+    if (isError) {
         return (
             <CardContent className="pt-6">
                  <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error Loading Data</AlertTitle>
                     <AlertDescription>
-                        {errorToShow?.message || "Could not load subscription or plan details."}
+                        {error?.message || "Could not load subscription or plan details."}
                     </AlertDescription>
                 </Alert>
             </CardContent>
         );
     }
-
-    // --- Current Subscription Details --- //
-    const currentStatus = profile?.subscriptionStatus;
-    const currentPlanTier = profile?.subscriptionPlan;
-    const renewalDate = profile?.subscriptionRenewalDate;
-    const formattedRenewalDate = renewalDate 
-        ? new Date(renewalDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) 
-        : null;
-    // Find the specific active plan object if possible (might need planId on profile DTO for accuracy)
-    // For now, fallback to tier name capitalization
-    const currentPlanDisplayName = plans?.find(p => p.tier === currentPlanTier)?.name || 
-                                 (currentPlanTier ? currentPlanTier.charAt(0).toUpperCase() + currentPlanTier.slice(1) : 'Free');
 
     return (
         <CardContent className="pt-6 space-y-6"> 
@@ -116,19 +132,20 @@ export function SubscriptionTab() {
                         <span className="text-muted-foreground">Plan</span>
                         <span>{currentPlanDisplayName}</span>
                     </div>
+                    <Separator className="my-2" />
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Status</span>
                         <span className="capitalize font-medium">{currentStatus || 'N/A'}</span>
                     </div>
                     {formattedRenewalDate && (
                          <div className="flex justify-between items-center">
-                             <span className="text-muted-foreground">Renews/Expires</span>
+                             <span className="text-muted-foreground">{currentStatus === 'active' || currentStatus === 'trialing' ? 'Renews' : 'Expires'}</span>
                              <span>{formattedRenewalDate}</span>
                         </div>
                     )}
                 </CardContent>
                 <CardFooter>
-                    {profile?.stripeCustomerId ? (
+                    {currentSubscription?.stripeCustomerId ? (
                         <Button 
                             onClick={handleManageSubscription}
                             disabled={manageSubMutation.isPending}
@@ -138,12 +155,37 @@ export function SubscriptionTab() {
                             {manageSubMutation.isPending ? 'Loading Portal...' : 'Manage Billing in Portal'}
                         </Button>
                     ) : (
-                        <p className="text-sm text-muted-foreground">Billing is managed externally or not applicable.</p> // Optional message if no button
+                        currentPlanTier !== 'free' && <p className="text-sm text-muted-foreground">Billing management unavailable.</p>
                     )}
                 </CardFooter>
             </Card>
 
              <Separator />
+
+             {/* --- NEW: Usage Limits Card --- */} 
+             {(currentPlanTier && currentPlanTier !== 'free') && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Current Usage</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">{currentPlan?.interval === 'year' ? 'Yearly' : 'Monthly'} Custom Modules</span>
+                            <span>{customModulesCreated} / {customModuleLimit}</span>
+                        </div>
+                        {formattedRenewalDate && (
+                             <div className="text-sm text-muted-foreground text-right">
+                                Resets on {formattedRenewalDate}
+                            </div>
+                        )}
+                        <Separator className="my-2" />
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Managed Students</span>
+                            <span>{currentStudentCount} / {studentLimit}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+             )}
 
              {/* --- Refactored Available Plans Section (Grouped by Tier) --- */} 
              <div>

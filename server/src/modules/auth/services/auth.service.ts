@@ -9,7 +9,7 @@ import { AuthError, Session, User } from '@supabase/supabase-js';
 import { logger } from '@/utils/logger';
 import { AppError } from '@/utils/errors'; 
 import { SubscriptionService } from '@/modules/subscription/services/subscription.service'; 
-import { generateStudentToken } from '@/utils/jwt'; // Import the new utility function
+import { generateStudentAuthTokens, verifyStudentRefreshToken } from '@/utils/jwt'; // Import the new utility function
 
 // Define the type for the db instance (adjust path/type if needed)
 type DbInstanceType = typeof db;
@@ -92,54 +92,82 @@ export class AuthService {
   // Sign up with email (now for any public user)
   async signUpWithEmail(email: string, password: string, fullName: string): Promise<AuthResult> {
     try {
-      // Create user in Supabase Auth
+      // --- Pre-check using listUsers with pagination ---
+      logger.info(`Checking for existing user with email: ${email}`);
+      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1,
+        // No direct email filter here, we check the result
+      });
+
+      if (listError) {
+        logger.error('Error listing users during pre-check:', listError);
+        throw new AppError('Failed to verify email address. Please try again.', 500);
+      }
+
+      // Check if the first user returned matches the email
+      if (listData && listData.users && listData.users.length > 0) {
+        // Compare emails case-insensitively
+        if (listData.users[0].email?.toLowerCase() === email.toLowerCase()) {
+            logger.warn(`Signup attempt failed: Email ${email} already registered (found via listUsers).`);
+            throw new AppError('Email address is already registered.', 409);
+        }
+        // If the first user doesn't match, it's unlikely (though not impossible)
+        // that the target user exists further down the list if listUsers isn't
+        // ordered reliably by email. However, for most practical purposes,
+        // if the *very first* user doesn't match, we can assume the email is available.
+        // A more robust check might involve multiple pages if exact filtering fails,
+        // but that adds complexity. Let's proceed if the first user doesn't match.
+      }
+
+      logger.info(`Email ${email} appears not registered (or first user didn't match). Proceeding with signup attempt.`);
+      // --- END Pre-check ---
+
+      // If pre-check passed, proceed to create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName // Pass fullName if needed by trigger or elsewhere
+            full_name: fullName
           }
         }
       });
 
+      // Fallback check (in case of race conditions or other issues)
       if (authError) {
-          logger.error('Supabase signup error:', authError);
-          // Consider more specific error mapping based on authError.code/status
-          throw new AppError(`Authentication error: ${authError.message}`, authError.status || 400);
+          logger.error('Supabase signup error (after pre-check):', authError);
+          if (authError.message && authError.message.includes('User already registered')) {
+              throw new AppError('Email address is already registered.', 409);
+          } else {
+              throw new AppError(`Authentication error: ${authError.message}`, authError.status || 400);
+          }
       }
+
       if (!authData.user) throw new AppError('User creation failed after signup', 500);
-      // Session might not be immediately available or required depending on email verification settings
 
-      // The profile will be created automatically by our database trigger
-      // We can optimistically wait a bit and check, or rely on later profile fetch
-      await new Promise(resolve => setTimeout(resolve, 750)); // Increased delay slightly
+      await new Promise(resolve => setTimeout(resolve, 750));
 
-      // Check if profile was created
       const [profile] = await this.db
         .select()
         .from(schema.profiles)
         .where(eq(schema.profiles.id, authData.user.id));
-        
+
       if (!profile) {
-          // This might happen due to trigger delay or failure
           logger.warn(`Profile not found immediately after signup for user ${authData.user.id}`);
-          // Decide if this is an error or just needs later handling
       }
 
       return {
         user: authData.user,
-        session: authData.session, // Session might be null if email verification is on
+        session: authData.session,
         profile: profile || null
       };
     } catch (error) {
-      // Log the original error before potentially re-throwing a generic one
-      logger.error('Error during email signup:', error);
-      if (error instanceof AppError) {
-        throw error; // Re-throw known AppErrors
-      }
-      // Avoid exposing raw AuthError details potentially
-      throw new AppError(`Signup failed. Please try again.`, 500);
+       logger.error('Error during email signup:', error);
+       if (error instanceof AppError) {
+         throw error;
+       }
+       throw new AppError(`Signup failed. Please try again.`, 500);
     }
   }
 
@@ -301,46 +329,83 @@ export class AuthService {
     }
   }
 
-  // Student login with PIN - Correct return type Promise<{ profile: Profile, token: string }>
-  async loginStudent(studentId: string, pin: string): Promise<{ profile: Profile, token: string }> {
+  // Student login with PIN - MODIFIED
+  async loginStudent(studentId: string, pin: string): Promise<{ profile: Profile, accessToken: string, refreshToken: string }> {
     try {
       const [fetchedProfile] = await this.db
         .select()
         .from(schema.profiles)
         .where(eq(schema.profiles.id, studentId));
 
-      if (!fetchedProfile || fetchedProfile.role !== "STUDENT") {
-        // Use AppError
+      if (!fetchedProfile || fetchedProfile.role !== UserRole.STUDENT) {
         throw new AppError('Student profile not found', 401);
       }
       
       if (fetchedProfile.pin === null || fetchedProfile.adminId === null) {
           logger.error('Fetched student profile is missing required pin or adminId:', fetchedProfile);
-          // Use AppError
           throw new AppError('Student profile data is invalid.', 400); 
       }
 
       // Verify PIN
-      const isValidPin = await bcrypt.compare(pin, fetchedProfile.pin!);
+      const isValidPin = await bcrypt.compare(pin, fetchedProfile.pin);
       if (!isValidPin) {
-        // Use AppError
         throw new AppError('Invalid PIN', 401); 
       }
 
-      // --- Use utility to generate token --- 
-      const token = generateStudentToken(fetchedProfile);
+      // --- Generate BOTH tokens using the updated utility --- 
+      const { accessToken, refreshToken } = generateStudentAuthTokens(fetchedProfile);
       
-      // Return profile and the generated token
-      return { profile: fetchedProfile, token };
+      // Return profile and BOTH tokens
+      return { profile: fetchedProfile, accessToken, refreshToken };
 
     } catch (error) {
-       // Rethrow AppErrors, convert others
        if (error instanceof AppError) { 
            throw error; 
        }
        logger.error(`Error logging in student ${studentId}:`, error);
        const message = error instanceof Error ? error.message : String(error);
        throw new AppError(`Failed to login student: ${message}`, 500);
+    }
+  }
+  
+  // --- NEW METHOD for Student Refresh Token --- //
+  async refreshStudentToken(refreshToken: string): Promise<{ newAccessToken: string }> {
+    try {
+      // 1. Verify the refresh token
+      const verifiedPayload = verifyStudentRefreshToken(refreshToken);
+      const studentId = verifiedPayload.id;
+      logger.info(`Verified student refresh token for student ID: ${studentId}`);
+
+      // 2. Fetch the current student profile from DB
+      const [currentProfile] = await this.db
+        .select()
+        .from(schema.profiles)
+        .where(and(eq(schema.profiles.id, studentId), eq(schema.profiles.role, UserRole.STUDENT)));
+
+      // Ensure profile exists and is still valid/active (add checks if needed)
+      if (!currentProfile) {
+        logger.warn(`Refresh attempt failed: Student profile ${studentId} not found or invalid.`);
+        throw new AppError('Invalid refresh token: User not found', 401); 
+      }
+
+      // 3. Generate *only* a new access token
+      // We call generateStudentAuthTokens but only need the accessToken part
+      const { accessToken: newAccessToken } = generateStudentAuthTokens(currentProfile);
+
+       logger.info(`Generated new access token for student ID: ${studentId} via refresh.`);
+      return { newAccessToken };
+
+    } catch (error) {
+        // Log specific AppErrors from verification/DB fetch
+        if (error instanceof AppError) {
+             logger.error(`Student token refresh error: ${error.message} (Status: ${error.statusCode})`);
+             // Rethrow specific errors (like 401) to be handled by controller
+             throw error; 
+        }
+        // Log unexpected errors
+        logger.error('Unexpected error during student token refresh:', error);
+        // Throw generic error for unexpected issues
+        throw new AppError('Failed to refresh student session', 500); 
     }
   }
 

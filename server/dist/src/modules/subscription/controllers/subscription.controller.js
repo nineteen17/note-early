@@ -182,29 +182,31 @@ export class SubscriptionController {
      * Handle Stripe webhook events
      */
     async handleWebhook(req, res, next) {
+        // Use try-catch to handle errors from the service, including signature verification
         try {
-            // This endpoint requires raw body, which Express usually parses
-            const payload = req.body;
             const signature = req.headers['stripe-signature'];
+            // IMPORTANT: req.body should be the raw buffer/string due to express.raw()
+            const payload = req.body;
             if (!signature) {
-                res.status(400).json({
-                    status: 'error',
-                    message: 'Missing Stripe signature'
-                });
-                return;
+                return res.status(400).json({ status: 'error', message: 'Missing Stripe signature' });
             }
-            // Implement webhook handling logic here
-            // This would typically verify the webhook signature and process different event types
-            res.status(200).json({ received: true });
-            return;
+            if (!payload) {
+                return res.status(400).json({ status: 'error', message: 'Missing request body' });
+            }
+            // Call the service method to process the event
+            const result = await this.subscriptionService.processWebhookEvent(payload, signature);
+            // Send response back to Stripe
+            res.status(200).json(result); // result is { received: true }
         }
         catch (error) {
-            logger.error('Error handling webhook:', error);
-            res.status(400).json({
-                status: 'error',
-                message: 'Webhook error'
-            });
-            return;
+            // Log the error details from the service
+            logger.error('Error processing webhook in controller:', error instanceof Error ? error.message : error);
+            // If it's an AppError (like signature verification failure), use its status code
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({ status: 'error', message: error.message });
+            }
+            // For other unexpected errors, send a generic 500
+            return res.status(500).json({ status: 'error', message: 'Internal webhook processing error' });
         }
     }
     /**

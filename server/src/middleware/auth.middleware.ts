@@ -83,66 +83,77 @@ export const authenticateUser = async (
   next: NextFunction
 ): Promise<void> => {
   const authHeader = req.headers.authorization;
-  const studentToken = req.cookies?.student_token;
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return next(new AppError('No token provided', 401));
+  }
+
+  const token = authHeader.split(' ')[1].trim();
 
   try {
-    // --- Case 1: Bearer Token (Admin/SuperAdmin) ---
-    if (authHeader?.startsWith('Bearer ')) {
-      const rawToken = authHeader.split(' ')[1];
-      const token = rawToken.trim();
+    // --- Attempt 1: Verify as Student JWT ---
+    try {
+      const decoded = jwt.verify(token, env.JWT_SECRET) as { id: string; role: UserRole; adminId?: string };
       
-      logger.info('Middleware received token:', token);
-      
-      const getUserResult = await supabase.auth.getUser(token);
-      const user = getUserResult.data.user;
-      const error = getUserResult.error;
+      // Check if payload structure matches student access token
+      if (decoded && decoded.id && decoded.role === UserRole.STUDENT && decoded.adminId) {
+        // Optional: Verify student profile still exists in DB if needed for extra security
+        // const [studentProfile] = await db.select().from(profiles).where(eq(profiles.id, decoded.id));
+        // if (!studentProfile || studentProfile.role !== UserRole.STUDENT) {
+        //    throw new Error('Student profile not found or invalid for token'); 
+        // }
+        
+        logger.debug('Authenticated as Student via JWT');
+        req.user = { id: decoded.id, role: UserRole.STUDENT, isSuperAdmin: false };
+        return next(); // Success for Student JWT
+      } 
+      // If structure doesn't match student token, fall through to Supabase check
+      logger.debug('JWT payload did not match student structure, falling back to Supabase check.');
 
-      if (error || !user) {
-        // Log the specific Supabase error for debugging
-        logger.error('Supabase getUser error in middleware:', error?.message || 'No user returned');
-        return next(new AppError('Invalid or expired token', 401)); // Fail directly
+    } catch (jwtError) {
+      // If JWT verification fails (expired, invalid signature, etc.), 
+      // log it but proceed to check with Supabase. This is expected.
+      if (jwtError instanceof jwt.TokenExpiredError) {
+         logger.debug('Student JWT expired, falling back to Supabase check.');
+      } else if (jwtError instanceof jwt.JsonWebTokenError) {
+         logger.debug('Invalid student JWT signature/format, falling back to Supabase check.');
+      } else {
+        // Log unexpected JWT errors but still fallback
+        logger.warn('Unexpected error during student JWT verification, falling back to Supabase check:', jwtError);
       }
-
-      // Token is valid, fetch profile
-      const [profile] = await db.select().from(profiles).where(eq(profiles.id, user.id));
-      if (!profile) {
-        return next(new AppError('Profile not found for authenticated user', 404));
-      }
-
-      // Check if role is appropriate (Admin/SuperAdmin for Bearer tokens)
-      if (profile.role !== UserRole.ADMIN && profile.role !== UserRole.SUPER_ADMIN) {
-          return next(new AppError('User role not authorized for this token type', 403));
-      }
-
-      req.user = { id: user.id, role: profile.role as UserRole, isSuperAdmin: profile.role === UserRole.SUPER_ADMIN };
-      return next(); // Success for Bearer token
-
-    // --- Case 2: Student Token Cookie ---
-    } else if (studentToken) {
-      try {
-        const decoded = jwt.verify(studentToken, env.JWT_SECRET) as { id: string; role: UserRole; adminId?: string };
-
-        if (decoded && decoded.id && decoded.role === UserRole.STUDENT) {
-          // Optional: Verify student profile still exists in DB here if needed
-          req.user = { id: decoded.id, role: UserRole.STUDENT, isSuperAdmin: false };
-          return next(); // Success for Student token
-        } else {
-          return next(new AppError('Invalid student token payload', 401));
-        }
-      } catch (jwtError) {
-        // Log the JWT error message for clarity
-        const message = jwtError instanceof Error ? jwtError.message : 'Unknown JWT Error';
-        console.error('Student JWT verification failed:', message);
-        return next(new AppError('Invalid or expired student token', 401));
-      }
-
-    // --- Case 3: No Token ---
-    } else {
-      return next(new AppError('No token provided', 401));
     }
+
+    // --- Attempt 2: Verify with Supabase (Admin/SuperAdmin) ---
+    logger.debug('Attempting Supabase token verification.');
+    const { data: { user: supabaseUser }, error: supabaseError } = await supabase.auth.getUser(token);
+
+    if (supabaseError || !supabaseUser) {
+      logger.warn('Supabase getUser verification failed after JWT fallback:', supabaseError?.message || 'No user returned');
+      // Both attempts failed
+      return next(new AppError('Invalid or expired token', 401)); 
+    }
+
+    // Supabase token is valid, fetch profile
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, supabaseUser.id));
+    if (!profile) {
+       logger.error(`Profile not found for valid Supabase user ${supabaseUser.id}`);
+       return next(new AppError('Profile not found for authenticated user', 404));
+    }
+
+    // Check if role is Admin or SuperAdmin
+    if (profile.role === UserRole.ADMIN || profile.role === UserRole.SUPER_ADMIN) {
+       logger.debug(`Authenticated as ${profile.role} via Supabase`);
+       req.user = { id: supabaseUser.id, role: profile.role as UserRole, isSuperAdmin: profile.role === UserRole.SUPER_ADMIN };
+       return next(); // Success for Admin/SuperAdmin
+    } else {
+       // Valid Supabase token but unexpected role (e.g., maybe a student somehow got a Supabase session?)
+       logger.warn(`Valid Supabase token for user ${supabaseUser.id} but has unexpected role: ${profile.role}`);
+       return next(new AppError('User role not authorized for this endpoint', 403));
+    }
+
   } catch (error) {
-    // Catch potential errors from DB calls or unforeseen issues
-    console.error("Authentication middleware error:", error);
+    // Catch potential errors from DB calls or other unforeseen issues
+    logger.error("Authentication middleware error:", error);
     next(new AppError('Authentication failed', 500));
   }
 };

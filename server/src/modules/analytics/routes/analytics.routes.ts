@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AnalyticsController } from '../controllers/analytics.controller';
-import { authenticateSuperAdmin } from '@/middleware/auth.middleware';
+import { authenticateSuperAdmin, authenticateUser } from '@/middleware/auth.middleware';
 
 /**
  * @swagger
@@ -163,6 +163,83 @@ router.get('/modules/popular', authenticateSuperAdmin, (req, res, next) => {
 // @ts-ignore: Express typing issue with response objects
 router.get('/subscriptions', authenticateSuperAdmin, (req, res, next) => {
   analyticsController.getSubscriptionStats(req, res, next);
+});
+
+/**
+ * @swagger
+ * /analytics/my-activity:
+ *   get:
+ *     tags: [Student Progress]
+ *     summary: Get my activity calendar data
+ *     description: Get the current student's activity data for calendar display, including both active and completed modules
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: days
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 365
+ *           default: 30
+ *         description: Number of days to retrieve activity for
+ *     responses:
+ *       200:
+ *         description: Activity data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [success, error]
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     progressByDay:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           date:
+ *                             type: string
+ *                             format: date
+ *                             example: "2024-03-20"
+ *                           modulesActive:
+ *                             type: integer
+ *                             minimum: 0
+ *                             description: Total number of modules worked on that day
+ *                             example: 3
+ *                           modulesCompleted:
+ *                             type: integer
+ *                             minimum: 0
+ *                             description: Number of modules completed that day
+ *                             example: 2
+ *                           timeSpent:
+ *                             type: integer
+ *                             minimum: 0
+ *                             description: Total time spent in minutes
+ *                             example: 45
+ *                           averageScore:
+ *                             type: number
+ *                             minimum: 0
+ *                             maximum: 100
+ *                             description: Average score for the day
+ *                             example: 85.5
+ *                           lastActivity:
+ *                             type: string
+ *                             format: date-time
+ *                             description: Timestamp of last activity for the day
+ *                             example: "2024-03-20T15:30:00Z"
+ *       401:
+ *         description: Authentication required
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/my-activity', authenticateUser , (req, res, next) => {
+  analyticsController.getStudentActivity(req, res, next);
 });
 
 export default router; 

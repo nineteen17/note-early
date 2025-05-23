@@ -9,7 +9,7 @@ export interface AuthState {
   isLoading: boolean;
   profile: ProfileDTO | null;
   setToken: (token: string | null) => void;
-  setProfile: (profile: ProfileDTO | null) => void;
+  setProfile: (profile: any) => void; // CHANGED: Accept any to handle API response format
   clearAuth: () => void;
   setIsLoading: (loading: boolean) => void;
 }
@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: true,
       profile: null,
-
+      
       // Actions
       setToken: (token) => {
         const newState = {
@@ -41,22 +41,50 @@ export const useAuthStore = create<AuthState>()(
           set({ profile: null });
         }
       },
-
+      
       setProfile: (profile) => {
-        console.log("AuthStore: Setting profile");
-        set({ profile });
+        console.log("AuthStore: Setting profile", profile);
+        
+        // ADDED: Handle null profile case
+        if (!profile) {
+          set({ profile: null });
+          return;
+        }
+        
+        // ADDED: Normalize the profile data to match ProfileDTO interface
+        const normalizedProfile: ProfileDTO = {
+          ...profile,
+          // ADDED: Ensure profileId exists - use either profileId or id from API response
+          profileId: profile.profileId || profile.id,
+        };
+        
+        console.log("AuthStore: Normalized profile:", normalizedProfile); // ADDED: Debug log
+        set({ profile: normalizedProfile }); // CHANGED: Store normalized profile
       },
-
+      
       clearAuth: () => {
         console.log("AuthStore: Clearing auth state.");
+        
+        // First clear the state
         set({
           token: null,
           profile: null,
           isAuthenticated: false,
           isLoading: false,
         });
+        
+        // Clear both ways - this is more aggressive
+        try {
+          // Remove directly using localStorage API
+          window.localStorage.removeItem('auth-storage');
+          // Also use the persist API 
+          useAuthStore.persist.clearStorage();
+          console.log("AuthStore: Storage cleared successfully");
+        } catch (error) {
+          console.error("AuthStore: Error clearing storage:", error);
+        }
       },
-
+      
       setIsLoading: (loading) => {
         console.log("AuthStore: Setting isLoading:", loading);
         set({ isLoading: loading });

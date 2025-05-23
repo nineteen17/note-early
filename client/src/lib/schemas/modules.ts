@@ -59,7 +59,9 @@ export const readingModuleSchema = createModuleSchema.extend({
     updatedAt: z.string().datetime(), // Or z.date()
     createdBy: z.string().optional().nullable(), // Assuming these might be present
     updatedBy: z.string().optional().nullable(), // Assuming these might be present
-    // Add any other fields returned by the API that are not in createModuleSchema
+    paragraphCount: z.number().int().positive('Paragraph count must be a positive integer'),
+    type: z.enum(['curated', 'custom']),
+    adminId: z.string().uuid().nullable().optional(),
 });
 
 export type ReadingModule = z.infer<typeof readingModuleSchema>; 

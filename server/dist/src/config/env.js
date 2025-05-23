@@ -30,7 +30,6 @@ const envSchema = z.object({
     STORAGE_BUCKET: z.string().min(1),
     // Client
     CLIENT_URL: z.string().url().default('http://localhost:3000'),
-    CLIENT_URL_IP: z.string().url().default('http://192.168.68.108:3000'),
     // Frontend URLs
     FRONTEND_URL: z.string().url().default('http://localhost:3000'),
     FRONTEND_REDIRECT_URL: z.string().url('Frontend Redirect URL is required for OAuth'),

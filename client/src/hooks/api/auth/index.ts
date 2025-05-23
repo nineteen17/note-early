@@ -25,10 +25,13 @@ interface LoginAdminResponse {
 
 // Admin Signup
 type SignupAdminInput = z.infer<typeof adminSignupSchema>;
-// Signup might not return specific data on success, just a success status/message
+// Update SignupAdminResponse to match backend's AuthResult without specific Supabase types
 interface SignupAdminResponse { 
+  user: any; // Use 'any' or 'object'
+  session: any | null; // Use 'any | null' or 'object | null'
+  profile: ProfileDTO | null; // Profile from your DB (can be null initially)
+  // Keep message optional if the wrapper still adds it
   message?: string; 
-  // Add other fields if backend returns them
 }
 
 // Student Login
@@ -70,22 +73,40 @@ const loginAdmin = async (credentials: LoginAdminInput): Promise<LoginAdminRespo
 };
 
 const signupAdmin = async (details: SignupAdminInput): Promise<SignupAdminResponse> => {
-  // Backend handles signup, might return simple success message or status
-  const response = await api.post<{ message?: string }>('/auth/signup', details);
+  // Backend handles signup, returns AuthResult structure now
+  // Assuming api.post correctly returns the nested 'data' object which is AuthResult
+  const response = await api.post<SignupAdminResponse>('/auth/signup', details);
   // Adjust based on actual response structure from your api.post wrapper
+  // If api.post returns the FULL { status, message, data }, you need to return response.data
+  // Assuming it returns the data directly here based on previous examples:
   return response; 
 };
 
 const loginStudent = async (credentials: LoginStudentInput): Promise<LoginStudentResponse> => {
   // Backend does NOT set cookie, returns accessToken and profile in body
-  const response = await api.post<{ data: LoginStudentResponse }>('/auth/student/login', credentials);
-   // Assuming api.post returns the nested 'data' object
-  return response.data;
+  // The api.post directly returns the LoginStudentResponse shape
+  console.log("[loginStudent Hook] Calling api.post...");
+  const response = await api.post<LoginStudentResponse>('/auth/student/login', credentials);
+  console.log("[loginStudent Hook] Received response:", response);
+  // Directly return the response, assuming it matches LoginStudentResponse
+  // Add a check just in case api.post returns something unexpected
+  if (response && response.accessToken && response.profile) {
+    return response;
+  } else {
+     console.error("[loginStudent Hook] Unexpected response format from api.post:", response);
+     throw new ApiError('Login failed: Invalid data format from server.', 500, response); 
+  }
 };
 
 const logoutUser = async (): Promise<void> => {
   // Backend invalidates session (Supabase) and clears httpOnly cookie (if any)
   await api.post('/auth/logout');  
+};
+
+// --- NEW FUNCTION for Student Logout ---
+const logoutStudent = async (): Promise<void> => {
+  // Backend clears student_refresh_token cookie
+  await api.post('/auth/student/logout'); 
 };
 
 
@@ -111,35 +132,114 @@ export const useSignupAdminMutation = (
   });
 };
 
-// Hook for Student Login
+// Hook for Student Login (Minimal - side effects handled in component)
 export const useLoginStudentMutation = (
   options?: Omit<UseMutationOptions<LoginStudentResponse, ApiError, LoginStudentInput>, 'mutationFn'>
 ) => {
+  // Removed router, toast, and specific onSuccess/onError handlers from here
   return useMutation<LoginStudentResponse, ApiError, LoginStudentInput>({
     mutationFn: loginStudent,
-    ...options,
+    // Spread options provided by the component, which may include onSuccess/onError
+    ...options, 
   });
 };
+// In the logout hooks, remove the direct localStorage manipulation:
 
-// Hook for Logout (Admin/Student)
 export const useLogoutMutation = (
-  options?: Omit<UseMutationOptions<void, ApiError, void>, 'mutationFn'> // Takes no variables
+  options?: Omit<UseMutationOptions<void, ApiError, void>, 'mutationFn'>
 ) => {
-  const queryClient = useQueryClient(); // Get query client instance
-  const router = useRouter(); // Move useRouter call here
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  
   
   return useMutation<void, ApiError, void>({
     mutationFn: logoutUser,
     onSuccess: (data, variables, context) => {
-      // Clear relevant queries on successful logout
-      // Example: Invalidate user profile query
-      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });       
+      // Let clearAuth handle localStorage removal
       useAuthStore.getState().clearAuth();
-      router.push('/login');
-      queryClient.clear(); // Clear the entire query cache on logout
-      // Call user-provided onSuccess if it exists
+      
+      // Clear the query cache
+      queryClient.clear();
+      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      
+
+      // Add a small delay to ensure storage clearing completes before navigation
+      setTimeout(() => {
+        router.push('/login');
+      }, 50);
+      
       options?.onSuccess?.(data, variables, context);
     },
-    ...options, // Spread other options like onError, onSettled
+    onError: (error, variables, context) => {
+      useAuthStore.getState().clearAuth();
+      queryClient.clear();
+      
+      setTimeout(() => {
+        router.push('/login');
+      }, 50);
+      
+      options?.onError?.(error, variables, context);
+    },
+    ...options,
   });
-}; 
+};
+
+// Similarly for useLogoutStudentMutation - remove direct localStorage manipulation:
+
+export const useLogoutStudentMutation = (
+  options?: Omit<UseMutationOptions<void, ApiError, void>, 'mutationFn'>
+) => {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  
+  // Helper to ensure localStorage is cleared
+  const forceStorageClear = () => {
+    try {
+      window.localStorage.removeItem('auth-storage');
+      
+      // Double-check if it was cleared
+      const remaining = window.localStorage.getItem('auth-storage');
+      if (remaining) {
+        window.localStorage.removeItem('auth-storage');
+        console.log("Forced second removal of auth-storage");
+      }
+    } catch (err) {
+      console.error("Error clearing localStorage:", err);
+    }
+  };
+
+  // Handle all cleanup and navigation
+  const cleanupAndNavigate = () => {
+    // Clear auth state
+    useAuthStore.getState().clearAuth();
+    
+    // Clear localStorage directly 
+    forceStorageClear();
+    
+    // Clear the query cache
+    queryClient.clear();
+    queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+    
+    // Delay navigation slightly to ensure storage is cleared
+    setTimeout(() => {
+      forceStorageClear(); // One final check before navigation
+      router.push('/student-login');
+    }, 100);
+  };
+
+  return useMutation<void, ApiError, void>({
+    mutationFn: logoutStudent,
+    
+    onSuccess: (data, variables, context) => {
+      cleanupAndNavigate();
+      options?.onSuccess?.(data, variables, context);
+    },
+    
+    onError: (error, variables, context) => {
+      cleanupAndNavigate();
+      options?.onError?.(error, variables, context);
+    },
+    
+    ...options,
+  });
+};

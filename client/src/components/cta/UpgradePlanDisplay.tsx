@@ -156,7 +156,7 @@ export const UpgradePlanDisplay: React.FC<UpgradePlanDisplayProps> = ({ currentP
 
   // --- Render Cards --- 
   return (
-    <div className={cn("grid gap-6 md:grid-cols-3", className)}>
+    <div className={cn("grid gap-6 md:grid-cols-3 w-full", className)}>
       {tiersToRender.map((tier) => {
         let planToDisplay: SubscriptionPlan | null = null;
         let yearlyPlan: SubscriptionPlan | null = null;
@@ -238,7 +238,7 @@ export const UpgradePlanDisplay: React.FC<UpgradePlanDisplayProps> = ({ currentP
 
         return (
           <Card key={tier} className={cn(
-              "flex flex-col",
+              "flex flex-col w-full",
               isCurrent && "border-primary ring-2 ring-primary"
           )}>
             <CardHeader>

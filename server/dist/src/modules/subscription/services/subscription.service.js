@@ -6,10 +6,19 @@ import { eq } from 'drizzle-orm';
 import { AppError } from '@/utils/errors';
 import { env } from '@/config/env';
 import { SubscriptionPlan } from '@/db/schema/profiles';
+import Stripe from 'stripe';
+import * as schema from '@/db/schema';
 /**
  * Service for managing subscriptions
  */
 export class SubscriptionService {
+    constructor() {
+        // Using type assertion to bypass strict type check for apiVersion
+        this.stripeInstance = new Stripe(env.STRIPE_SECRET_KEY, {
+            apiVersion: '2024-06-20', // Reverted to intended version with type assertion
+            typescript: true,
+        });
+    }
     /**
      * Get all available subscription plans
      */
@@ -377,5 +386,128 @@ export class SubscriptionService {
             logger.error(`Error creating portal session for user ${userId}:`, error);
             throw new AppError('Failed to create customer portal session', 500);
         }
+    }
+    /**
+     * Handles incoming Stripe webhook events.
+     * Verifies signature and processes relevant events.
+     * @param payload - The raw request body from Stripe.
+     * @param signature - The value of the 'stripe-signature' header.
+     * @returns {Promise<{ received: boolean; message?: string }>} - Confirmation of processing.
+     */
+    async processWebhookEvent(payload, signature) {
+        const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
+        let event;
+        try {
+            event = this.stripeInstance.webhooks.constructEvent(payload, signature, webhookSecret);
+            logger.info(`Stripe webhook received: ${event.type}`);
+        }
+        catch (err) {
+            logger.error(`❌ Webhook signature verification failed: ${err.message}`);
+            throw new AppError(`Webhook Error: ${err.message}`, 400);
+        }
+        // Handle the event
+        switch (event.type) {
+            case 'invoice.paid':
+                const invoice = event.data.object;
+                logger.info(`Processing invoice.paid: ${invoice.id}, Reason: ${invoice.billing_reason}`);
+                // Safely access subscription ID - check if the property exists and is a string
+                const subscriptionIdFromInvoice = invoice.subscription;
+                if (subscriptionIdFromInvoice && typeof subscriptionIdFromInvoice === 'string' &&
+                    invoice.billing_reason === 'subscription_cycle') {
+                    try {
+                        const result = await db.update(schema.customerSubscriptions)
+                            .set({ customModulesCreatedThisPeriod: 0 })
+                            .where(eq(schema.customerSubscriptions.id, subscriptionIdFromInvoice))
+                            .returning({ updatedId: schema.customerSubscriptions.id });
+                        if (result.length > 0) {
+                            logger.info(`Reset monthly module count for subscription ${subscriptionIdFromInvoice}`);
+                        }
+                        else {
+                            logger.warn(`Subscription ${subscriptionIdFromInvoice} not found in DB for resetting module count.`);
+                        }
+                    }
+                    catch (dbError) {
+                        logger.error(`Database error resetting module count for sub ${subscriptionIdFromInvoice}:`, dbError);
+                    }
+                }
+                break;
+            // --- Handle Subscription Creation/Update/Deletion to keep DB in sync --- 
+            case 'customer.subscription.created':
+            case 'customer.subscription.updated':
+                const subscription = event.data.object;
+                logger.info(`Processing ${event.type}: ${subscription.id}`);
+                try {
+                    const plan = await db.query.subscriptionPlans.findFirst({ where: eq(schema.subscriptionPlans.id, subscription.items.data[0]?.price.id) });
+                    if (!plan) {
+                        logger.error(`Plan ${subscription.items.data[0]?.price.id} not found in DB for subscription ${subscription.id}`);
+                        break;
+                    }
+                    // Safely access potentially missing properties
+                    const currentPeriodStart = subscription.current_period_start;
+                    const currentPeriodEnd = subscription.current_period_end;
+                    const userId = subscription.metadata?.userId;
+                    const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
+                    const status = subscription.status;
+                    const cancelAtEnd = subscription.cancel_at_period_end;
+                    if (!userId) {
+                        logger.error(`Missing userId in metadata for subscription ${subscription.id}`);
+                        break; // Cannot link subscription without userId
+                    }
+                    if (!customerId) {
+                        logger.error(`Could not determine customer ID for subscription ${subscription.id}`);
+                        break; // Cannot link subscription without customerId
+                    }
+                    if (!currentPeriodStart || !currentPeriodEnd) {
+                        logger.error(`Missing period dates for subscription ${subscription.id}`);
+                        break; // Need dates for storage
+                    }
+                    await db.insert(schema.customerSubscriptions)
+                        .values({
+                        id: subscription.id,
+                        userId: userId,
+                        planId: plan.id,
+                        stripeCustomerId: customerId,
+                        status: status,
+                        currentPeriodStart: new Date(currentPeriodStart * 1000),
+                        currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+                        cancelAtPeriodEnd: cancelAtEnd,
+                        customModulesCreatedThisPeriod: 0, // Initialize counter
+                    })
+                        .onConflictDoUpdate({
+                        target: schema.customerSubscriptions.id,
+                        set: {
+                            planId: plan.id,
+                            status: status,
+                            currentPeriodStart: new Date(currentPeriodStart * 1000),
+                            currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+                            cancelAtPeriodEnd: cancelAtEnd,
+                            updatedAt: new Date()
+                            // NOTE: Counter is NOT reset on general updates here, only on invoice.paid
+                        }
+                    });
+                    logger.info(`Subscription ${subscription.id} upserted in DB.`);
+                }
+                catch (dbError) {
+                    logger.error(`Database error upserting subscription ${subscription.id}:`, dbError);
+                }
+                break;
+            case 'customer.subscription.deleted':
+                const deletedSubscription = event.data.object;
+                logger.info(`Processing customer.subscription.deleted: ${deletedSubscription.id}`);
+                try {
+                    await db.update(schema.customerSubscriptions)
+                        .set({ status: 'canceled', updatedAt: new Date() })
+                        .where(eq(schema.customerSubscriptions.id, deletedSubscription.id));
+                    logger.info(`Subscription ${deletedSubscription.id} marked as canceled in DB.`);
+                }
+                catch (dbError) {
+                    logger.error(`Database error updating deleted subscription ${deletedSubscription.id}:`, dbError);
+                }
+                break;
+            // Add other event types as needed (e.g., checkout.session.completed)
+            default:
+                logger.warn(`Unhandled Stripe event type: ${event.type}`);
+        }
+        return { received: true };
     }
 }

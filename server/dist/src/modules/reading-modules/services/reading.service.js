@@ -1,6 +1,6 @@
 import * as schema from '@/db/schema';
 import { ModuleType, UserRole } from '@shared/types';
-import { eq, and, count, asc, or, desc } from 'drizzle-orm';
+import { eq, and, asc, or, desc, sql } from 'drizzle-orm';
 import { AppError } from '@/utils/errors';
 import { SubscriptionService } from '@/modules/subscription/services/subscription.service';
 import { logger } from '@/utils/logger';
@@ -21,70 +21,89 @@ export class ReadingModuleService {
         }
         // Calculate paragraphCount
         const paragraphCount = input.structuredContent.length;
+        // Declare module creation data object
+        const moduleData = {
+            title: input.title,
+            structuredContent: input.structuredContent,
+            paragraphCount: paragraphCount,
+            level: input.level,
+            type: input.type,
+            genre: input.genre,
+            language: input.language,
+            adminId: input.adminId,
+            description: input.description,
+            imageUrl: input.imageUrl,
+            estimatedReadingTime: input.estimatedReadingTime,
+            isActive: input.isActive !== undefined ? input.isActive : true, // Default to true if not provided
+            authorFirstName: input.authorFirstName,
+            authorLastName: input.authorLastName,
+        };
+        let subscriptionToCheck = null; // To hold subscription if needed
         if (input.type === ModuleType.CUSTOM) {
-            // --- BEGIN Subscription Limit Check for CUSTOM modules --- 
+            // --- BEGIN Updated Subscription Limit Check (Monthly Allowance) ---
             if (!input.adminId) {
                 throw new AppError('Admin ID is required for custom modules.', 400);
             }
-            // 1. Get admin's current subscription plan
-            const { plan } = await this.subscriptionService.getCurrentSubscription(input.adminId);
+            // 1. Get admin's current subscription AND plan details
+            const { plan, subscription } = await this.subscriptionService.getCurrentSubscription(input.adminId);
             if (!plan) {
                 throw new AppError('Could not determine subscription plan for admin.', 500);
             }
-            // 2. Check if the tier allows custom module creation
             if (plan.tier === 'free') {
-                throw new AppError('Custom module creation is not allowed on the Free plan. Please upgrade.', 403 // Forbidden
-                );
+                throw new AppError('Custom module creation is not allowed on the Free plan. Please upgrade.', 403);
             }
-            // 3. Count existing CUSTOM modules for this admin
-            const [customModuleCountResult] = await this.db
-                .select({ value: count() })
-                .from(schema.readingModules)
-                .where(and(eq(schema.readingModules.adminId, input.adminId), eq(schema.readingModules.type, ModuleType.CUSTOM)));
-            const currentCustomModuleCount = customModuleCountResult.value || 0;
-            // 4. Check against plan limit
-            if (currentCustomModuleCount >= plan.customModuleLimit) {
-                throw new AppError(`Custom module limit (${plan.customModuleLimit}) for your current plan ('${plan.tier}') has been reached. Please upgrade to create more custom modules.`, 403 // Forbidden
-                );
+            if (!subscription) {
+                logger.error('Paid plan tier found but no subscription record exists for admin', { adminId: input.adminId, planTier: plan.tier });
+                throw new AppError('Subscription data inconsistent. Cannot verify module limit.', 500);
             }
-            // --- END Subscription Limit Check --- 
+            // Store subscription for potential increment later
+            subscriptionToCheck = subscription;
+            // --- ADD LOGGING FOR DEBUGGING ---
+            logger.info(`[Limit Check] Admin ID: ${input.adminId}`);
+            logger.info(`[Limit Check] Plan Tier: ${plan.tier}`);
+            logger.info(`[Limit Check] Plan Limit (customModuleLimit): ${plan.customModuleLimit}`);
+            logger.info(`[Limit Check] Current Count (customModulesCreatedThisPeriod): ${subscription.customModulesCreatedThisPeriod}`);
+            // --- END LOGGING ---
+            // 2. Check against plan limit using the period counter
+            if (subscription.customModulesCreatedThisPeriod >= plan.customModuleLimit) {
+                throw new AppError(`Monthly custom module limit (${plan.customModuleLimit}) for your current plan ('${plan.tier}') has been reached. Limit resets on your next billing date.`, 403);
+            }
+            // --- END Updated Limit Check ---
+            moduleData.adminId = input.adminId; // Ensure adminId is set for custom modules
         }
-        if (input.type === ModuleType.CURATED) {
-            input.adminId = null; // Ensure adminId is null for curated modules
+        else if (input.type === ModuleType.CURATED) {
+            moduleData.adminId = null; // Ensure adminId is null for curated modules
         }
+        // --- Module Insertion --- 
         try {
-            const result = await this.db
+            const [newDbModule] = await this.db
                 .insert(schema.readingModules)
-                .values({
-                title: input.title,
-                structuredContent: input.structuredContent,
-                paragraphCount: paragraphCount,
-                level: input.level,
-                type: input.type,
-                genre: input.genre,
-                language: input.language,
-                adminId: input.adminId,
-                description: input.description,
-                imageUrl: input.imageUrl,
-                estimatedReadingTime: input.estimatedReadingTime,
-                isActive: input.isActive !== undefined ? input.isActive : true, // Default to true if not provided
-                authorFirstName: input.authorFirstName,
-                authorLastName: input.authorLastName,
-            })
-                .returning(); // Return the created module
-            if (result.length === 0) {
-                throw new AppError('Failed to create module.', 500); // Should not happen if insert succeeds
+                .values(moduleData)
+                .returning();
+            if (!newDbModule) {
+                throw new AppError('Failed to create module after insertion attempt.', 500);
             }
-            return result[0];
+            // --- Increment Subscription Counter (if applicable) --- 
+            if (subscriptionToCheck) { // Only run if it was a CUSTOM module check
+                await this.db.update(schema.customerSubscriptions)
+                    .set({
+                    customModulesCreatedThisPeriod: sql `${schema.customerSubscriptions.customModulesCreatedThisPeriod} + 1`
+                })
+                    .where(eq(schema.customerSubscriptions.id, subscriptionToCheck.id));
+                logger.info('Custom module created and monthly count incremented', {
+                    moduleId: newDbModule.id,
+                    adminId: input.adminId,
+                    newCount: (subscriptionToCheck.customModulesCreatedThisPeriod ?? 0) + 1 // Log potential new count
+                });
+            }
+            return newDbModule;
         }
         catch (error) {
-            // Re-throw AppErrors directly
             if (error instanceof AppError) {
                 throw error;
             }
-            console.error("Error creating reading module:", { input, error });
-            // TODO: Handle potential DB errors like constraint violations more specifically
-            throw new AppError('Database error during module creation.', 500);
+            console.error("Error during module creation or counter increment:", { input, error });
+            throw new AppError('Database error during module creation process.', 500);
         }
     }
     // --- RETRIEVE --- //

@@ -4,56 +4,112 @@ import { env } from '@/config/env';
 import { Profile } from '@/db/schema'; // Assuming Profile type is needed
 import { UserRole } from '@shared/types';
 import { logger } from '@/utils/logger';
+import { AppError } from '@/utils/errors'; // Import AppError
 
-interface StudentJwtPayload {
+// --- Payloads --- //
+
+interface StudentAccessTokenPayload {
     id: string;
-    role: UserRole.STUDENT; // Ensure role is strictly STUDENT
+    role: UserRole.STUDENT;
     adminId: string;
-    // Add any other relevant non-sensitive claims if needed
+    // Consider adding session-specific identifier if needed for logout complexity
 }
 
+interface StudentRefreshTokenPayload {
+    id: string; // Student ID
+    type: 'student_refresh'; // Identifier for this token type
+    // Optional: Add a version number for token rotation/invalidation
+    // version?: number;
+}
+
+// --- Token Generation --- //
+
 /**
- * Generates a custom JWT for a student user.
+ * Generates both Access and Refresh JWTs for a student user.
  * @param studentProfile - The student's profile object from the database.
- * @returns The generated JWT string.
- * @throws Error if JWT generation fails.
+ * @returns An object containing the accessToken and refreshToken.
+ * @throws AppError if validation or JWT generation fails.
  */
-export const generateStudentToken = (studentProfile: Profile): string => {
+export const generateStudentAuthTokens = (studentProfile: Profile): { accessToken: string, refreshToken: string } => {
     if (studentProfile.role !== UserRole.STUDENT || !studentProfile.id || !studentProfile.adminId) {
-        logger.error('Attempted to generate student token for invalid profile:', studentProfile);
-        throw new Error('Invalid profile data for student token generation.');
+        logger.error('Attempted to generate student tokens for invalid profile:', studentProfile);
+        throw new AppError('Invalid profile data for student token generation.', 400);
     }
 
-    const payload: StudentJwtPayload = {
-        id: studentProfile.id,
-        role: UserRole.STUDENT,
-        adminId: studentProfile.adminId,
-    };
-
     try {
-        const secret: jwt.Secret = env.JWT_SECRET;
+        // 1. Generate Access Token (using existing logic)
+        const accessPayload: StudentAccessTokenPayload = {
+            id: studentProfile.id,
+            role: UserRole.STUDENT,
+            adminId: studentProfile.adminId,
+        };
+        const accessSecret: jwt.Secret = env.JWT_SECRET;
         
-        // Convert env string to seconds using ms, handle potential invalid format
-        // Use 'any' assertion for ms call due to persistent type issues
-        let expiresInSeconds = (ms as any)(env.JWT_EXPIRES_IN) / 1000; 
-
-        if (isNaN(expiresInSeconds)) {
-            logger.error(`Invalid JWT_EXPIRES_IN format: ${env.JWT_EXPIRES_IN}. Using default 1h.`);
-            expiresInSeconds = 3600; // Default to 1 hour (3600 seconds)
+        // Calculate expiry in seconds, casting ms to any due to type issues
+        let accessExpiresInSeconds: number;
+        const expiresInMs = (ms as any)(env.JWT_EXPIRES_IN);
+        
+        if (typeof expiresInMs !== 'number') {
+             logger.warn(`Invalid JWT_EXPIRES_IN format or ms() failed for ${env.JWT_EXPIRES_IN}. Using default 15m.`);
+             accessExpiresInSeconds = 900; // Default to 15 mins (900 seconds)
+        } else {
+            accessExpiresInSeconds = expiresInMs / 1000;
         }
+        
+        const accessOptions: jwt.SignOptions = { expiresIn: accessExpiresInSeconds };
+        const accessToken = jwt.sign(accessPayload, accessSecret, accessOptions);
 
-        const options: jwt.SignOptions = { 
-            expiresIn: expiresInSeconds, // Use number of seconds
-            // You could add an issuer or audience claim for better security
-            // issuer: 'NoteEarlyBackend',
-            // audience: 'NoteEarlyStudents'
+        // 2. Generate Refresh Token
+        const refreshPayload: StudentRefreshTokenPayload = {
+            id: studentProfile.id,
+            type: 'student_refresh',
+        };
+        const refreshSecret: jwt.Secret = env.JWT_REFRESH_SECRET;
+        const refreshOptions: jwt.SignOptions = { expiresIn: env.JWT_REFRESH_TOKEN_EXPIRY_SECONDS };
+        const refreshToken = jwt.sign(refreshPayload, refreshSecret, refreshOptions);
+        
+        logger.info(`Generated tokens for student ID: ${studentProfile.id}`);
+        return { accessToken, refreshToken };
+
+    } catch (error) {
+        logger.error('Failed to sign student JWTs:', error);
+        throw new AppError('Could not generate student authentication tokens.', 500);
+    }
+};
+
+// --- Token Verification --- //
+
+/**
+ * Verifies a student refresh token.
+ * @param token - The refresh token string.
+ * @returns The verified payload.
+ * @throws AppError if token is invalid or expired (401).
+ */
+export const verifyStudentRefreshToken = (token: string): StudentRefreshTokenPayload => {
+    try {
+        const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET) as jwt.JwtPayload & StudentRefreshTokenPayload;
+        
+        // Optional: Add more specific checks on the decoded payload if needed
+        if (decoded.type !== 'student_refresh' || !decoded.id) {
+            throw new Error('Invalid token payload structure');
+        }
+        
+        // Return the verified payload, potentially trimming extra JWT fields if desired
+        return {
+            id: decoded.id,
+            type: decoded.type,
         };
 
-        const token = jwt.sign(payload, secret, options);
-        return token;
     } catch (error) {
-        logger.error('Failed to sign student JWT:', error);
-        throw new Error('Could not generate student token.');
+        logger.warn('Student refresh token verification failed:', error instanceof Error ? error.message : error);
+        if (error instanceof jwt.TokenExpiredError) {
+            throw new AppError('Refresh token expired', 401);
+        } else if (error instanceof jwt.JsonWebTokenError) {
+            throw new AppError('Invalid refresh token', 401);
+        } else {
+            // Rethrow unexpected errors or wrap them
+             throw new AppError('Could not verify refresh token', 401); // Default to 401 for verification issues
+        }
     }
 };
 

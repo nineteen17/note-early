@@ -28,17 +28,18 @@ interface AdminUpdateProgressModalProps {
     isOpen: boolean;
     onClose: () => void;
     progressRecord: StudentProgressSchema;
-    moduleId: string; // Needed for mutation hook invalidation
+    // moduleId: string; // Module ID might not be directly needed here, but could be useful for invalidation
 }
 
 export function AdminUpdateProgressModal({
     isOpen,
     onClose,
     progressRecord,
-    moduleId,
+    // moduleId, // Remove if not used directly
 }: AdminUpdateProgressModalProps) {
 
-    const { mutate: updateProgressMutate, isPending: isUpdating } = useAdminUpdateProgressMutation(moduleId);
+    // Remove moduleId argument from hook call
+    const { mutate: updateProgressMutate, isPending: isUpdating } = useAdminUpdateProgressMutation();
 
     const { control, handleSubmit, register, reset, formState: { errors, isSubmitting, dirtyFields } } = useForm<AdminUpdateProgressFormInput>({
         resolver: zodResolver(adminUpdateProgressSchema),
@@ -83,7 +84,7 @@ export function AdminUpdateProgressModal({
         }
 
         updateProgressMutate(
-            { progressId: progressRecord.id, data: changedData },
+            { progressId: progressRecord.id, data: changedData as AdminUpdateProgressFormInput },
             {
                 onSuccess: () => onClose(), // Close modal on success
             }

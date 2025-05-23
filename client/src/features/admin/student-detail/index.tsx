@@ -84,7 +84,6 @@ function StudentProgressTable({ progressRecords, moduleTitles }: {
                     isOpen={isUpdateModalOpen} 
                     onClose={() => setIsUpdateModalOpen(false)} 
                     progressRecord={selectedProgress} 
-                    moduleId={selectedProgress.moduleId}
                 />
             )}
         </>
@@ -118,7 +117,7 @@ export function AdminStudentDetail({ profileId }: AdminStudentDetailProps) {
             .filter(query => query.isSuccess && query.data)
             .flatMap(query => query.data as StudentProgressSchema[]);
         
-        return allProgress.filter(progress => progress.studentId === student.id);
+        return allProgress.filter(progress => progress.studentId === student.profileId);
 
     }, [moduleProgressQueries, student, isLoadingStudent, isLoadingModules, isLoadingProgress]);
 
@@ -175,7 +174,7 @@ export function AdminStudentDetail({ profileId }: AdminStudentDetailProps) {
                             </Avatar>
                             <div>
                                 <CardTitle className="text-2xl">{student.fullName || 'Unnamed Student'}</CardTitle>
-                                <CardDescription>ID: {student.id}</CardDescription>
+                                <CardDescription>ID: {student.profileId}</CardDescription>
                                 {student.age && <CardDescription>Age: {student.age}</CardDescription>}
                                 {student.readingLevel && <CardDescription>Reading Level: {student.readingLevel}</CardDescription>}
                             </div>

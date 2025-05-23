@@ -192,7 +192,10 @@ export class ReadingModuleController {
           return next(new AppError('Module not found.', 404));
         }
         const moduleDTO = mapToReadingModuleDTO(dbModule);
-        res.status(200).json(moduleDTO);
+        res.status(200).json({
+          status: 'success',
+          data: moduleDTO
+        });
       } catch (error) {
          if (error instanceof z.ZodError) {
             // Log the detailed Zod errors for debugging if needed
@@ -215,6 +218,7 @@ export class ReadingModuleController {
           : await readingModuleService.getActiveModules();
           
         const moduleDTOs = dbModules.map(mapToReadingModuleDTO);
+
         res.status(200).json({
           status: 'success', 
           data: moduleDTOs 

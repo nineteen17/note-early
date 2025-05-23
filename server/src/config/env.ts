@@ -14,17 +14,23 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url('Supabase URL is required and must be a valid URL'),
   SUPABASE_ANON_KEY: z.string().min(1, 'Supabase Anon Key is required'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'Supabase Service Role Key is required'),
-  SUPABASE_JWT_SECRET: z.string().min(1, 'Supabase JWT Secret is required'),
+  SUPABASE_JWT_SECRET: z.string().min(1, 'Supabase JWT Secret is required'), // Supabase's own JWT secret
 
   // Database
   DATABASE_URL: z.string().min(1, 'Database URL is required'),
 
-  // JWT
-  JWT_SECRET: z.string().min(1, 'JWT Secret is required'),
-  JWT_EXPIRES_IN: z
+  // JWT Configuration
+  JWT_SECRET: z.string().min(1, 'JWT Secret is required (for signing student access tokens)'), 
+  JWT_EXPIRES_IN: z // Used for student access token expiry
     .string()
-    .regex(/^\d+[smhd]$/, 'JWT_EXPIRES_IN must be in format like 1h, 30m, 7d')
-    .default('1h'),
+    .regex(/^\d+[smhd]$/, 'JWT_EXPIRES_IN must be in format like 15m, 1h, 7d')
+    .default('15m'), // Defaulting to 15 minutes for access tokens
+  JWT_REFRESH_SECRET: z.string().min(1, 'JWT Refresh Secret is required (for signing student refresh tokens)'), // New
+  JWT_REFRESH_TOKEN_EXPIRY_SECONDS: z // New - Expiry for student refresh tokens
+    .coerce.number()
+    .int()
+    .positive('Refresh token expiry must be positive')
+    .default(604800), // 7 days in seconds
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
@@ -39,7 +45,6 @@ const envSchema = z.object({
 
   // Client
   CLIENT_URL: z.string().url().default('http://localhost:3000'),
-  CLIENT_URL_IP: z.string().url().default('http://192.168.68.108:3000'),
 
   // Frontend URLs
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),

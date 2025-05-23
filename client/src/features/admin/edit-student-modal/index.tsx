@@ -56,7 +56,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
   }, [student, reset]);
 
   const onSubmit = (data: UpdateStudentInput) => {
-    if (!student?.id) {
+    if (!student?.profileId) {
         console.error("Student ID is missing, cannot update.");
         // Show error toast?
         return; 
@@ -69,7 +69,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
     }
 
     mutation.mutate(
-      { profileId: student.id, data }, 
+      { profileId: student.profileId, data }, 
       {
         onSuccess: () => {
           // reset(); // Keep form data in case of quick reopen?

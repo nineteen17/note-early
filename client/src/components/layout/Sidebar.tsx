@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils'; // For conditional class names
 import { Button } from '@/components/ui/button';
-import { Home, Users, BookOpen, Settings, BarChart3, GraduationCap } from 'lucide-react'; // Icons
+import { Home, Users, BookOpen, Settings, BarChart3, GraduationCap, LayoutGrid } from 'lucide-react'; // Icons
 import { ProfileRole } from '@/types/api'; // Import role type
 
 interface SidebarProps {
@@ -27,10 +27,12 @@ const baseAdminNavItems: NavItem[] = [
   // Add more admin links here
 ];
 
+// Updated student nav items
 const baseStudentNavItems: NavItem[] = [
   { href: '/student/home', label: 'Home', icon: Home },
+  { href: '/student/modules', label: 'Browse Modules', icon: LayoutGrid },
   { href: '/student/progress', label: 'My Progress', icon: GraduationCap },
-  // Add more student links here
+  { href: '/student/settings', label: 'Settings', icon: Settings },
 ];
 
 export function Sidebar({ userRole }: SidebarProps) {
@@ -42,22 +44,18 @@ export function Sidebar({ userRole }: SidebarProps) {
     case 'ADMIN':
       navItems = [
         ...baseAdminNavItems,
-        // Single Settings link is correct
         { href: '/admin/settings/profile', label: 'Settings', icon: Settings }, 
       ];
       break;
     case 'STUDENT':
-      navItems = [
-        ...baseStudentNavItems,
-        // No settings link for students for now
-      ];
+      // Use the updated base list for students
+      navItems = baseStudentNavItems; 
       break;
     case 'SUPER_ADMIN':
       navItems = [
-        ...baseAdminNavItems, // Start with admin links
+        ...baseAdminNavItems, 
         { href: '/superadmin/analytics', label: 'Analytics', icon: BarChart3 },
         { href: '/superadmin/curated-modules', label: 'Curated Modules', icon: BookOpen },
-        // Single Settings link is correct
         { href: '/admin/settings/profile', label: 'Settings', icon: Settings }, 
       ];
       break;
@@ -69,9 +67,11 @@ export function Sidebar({ userRole }: SidebarProps) {
     <aside className="hidden md:flex md:w-64 md:flex-col border-r bg-muted/40">
       <nav className="flex flex-col flex-1 space-y-1 overflow-auto p-4">
         {navItems.map((item) => {
-          // Updated isActive check to handle the base /admin/settings path and sub-paths
-          const isActive = pathname.startsWith('/admin/settings') && item.href.startsWith('/admin/settings') 
-              || pathname === item.href;
+          // Adjusted isActive check for settings routes more robustly
+          const isActive = 
+            (item.href.startsWith('/admin/settings') && pathname.startsWith('/admin/settings')) ||
+            (item.href.startsWith('/student/settings') && pathname.startsWith('/student/settings')) ||
+            pathname === item.href;
           return (
             <Button
               key={item.href}

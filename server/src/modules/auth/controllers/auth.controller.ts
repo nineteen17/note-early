@@ -66,14 +66,23 @@ function mapToStudentProfileDTO(profile: Profile): Omit<StudentProfile, 'pin'> {
   };
 }
 
-// Define reusable cookie options
-const refreshTokenCookieOptions: CookieOptions = {
+// Define reusable cookie options for ADMIN refresh token
+const adminRefreshTokenCookieOptions: CookieOptions = {
   httpOnly: true,
-  // Explicitly set secure based on NODE_ENV. Ensure NODE_ENV is NOT 'production' for local HTTP development.
   secure: env.NODE_ENV === 'production', 
   path: '/',
-  sameSite: 'lax', // Changed back to 'lax' from 'strict'
+  sameSite: 'lax', 
   maxAge: ms('30d') 
+};
+
+// Define reusable cookie options for STUDENT refresh token
+const studentRefreshTokenCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production', 
+  path: '/', // Specify a path if needed, e.g., '/api/v1/auth' or '/'
+  sameSite: 'lax', 
+  // Use the specific expiry for student refresh tokens
+  maxAge: env.JWT_REFRESH_TOKEN_EXPIRY_SECONDS * 1000, // Convert seconds to milliseconds
 };
 
 export class AuthController {
@@ -156,7 +165,7 @@ export class AuthController {
       
       // Set refresh token cookie before potential redirect
       if (result.session.refresh_token) {
-         res.cookie('refresh-token', result.session.refresh_token, refreshTokenCookieOptions);
+         res.cookie('refresh-token', result.session.refresh_token, adminRefreshTokenCookieOptions); // Use admin options
       } else {
          logger.warn('Refresh token missing from Supabase session on OAuth callback');
       }
@@ -195,11 +204,9 @@ export class AuthController {
         return next(new AppError('Login failed, no session returned.', 500)); 
       }
 
-      // Set refresh-token cookie
-      // logger.info('Session object received:', session); // Log the whole session
+      // Set ADMIN refresh-token cookie
       if (session.refresh_token) {
-        //  logger.info(`Attempting to set refresh-token cookie with value: ${session.refresh_token.substring(0, 10)}...`); // Log first 10 chars
-         res.cookie('refresh-token', session.refresh_token, refreshTokenCookieOptions);
+         res.cookie('refresh-token', session.refresh_token, adminRefreshTokenCookieOptions); // Use admin options
       } else {
          logger.warn('Refresh token missing from Supabase session on admin login');
       }
@@ -212,12 +219,13 @@ export class AuthController {
           userId: user.id,
           accessToken: session.access_token, // Keep access token in body
           email: user.email,
+          // Optionally return limited profile info if needed
+          // profile: { role: profile.role, fullName: profile.fullName } 
         }
       } as ApiResponse);
     } catch (error) {
        // Consistent error handling
        if (error instanceof z.ZodError) {
-         // Log the Zod error details for better debugging
          console.error('Zod validation error during admin login:', error.errors);
          next(new AppError('Invalid input', 400)); 
        } else if (error instanceof AppError) {
@@ -248,155 +256,193 @@ export class AuthController {
       res.status(201).json({
         status: 'success',
         message: 'Student created successfully',
-        data: studentDTO,
-      } as ApiResponse<Omit<StudentProfile, 'pin'>>);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        logger.error("Zod Validation Error (createStudent):", error.errors);
-        next(new AppError('Invalid input: ' + error.errors.map(e => e.message).join(', '), 400));
-      } else if (error instanceof AppError) { 
-        next(error);
-      } else {
-        logger.error('Failed to create student profile:', error);
-        next(new AppError('Failed to create student profile', 500));
-      }
-    }
-  }
-
-  // Student login with PIN - MODIFIED
-  loginStudent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { studentId, pin } = studentLoginSchema.parse(req.body);
-      // Get profile and token from the service
-      const { profile: studentProfile, token } = await this.authService.loginStudent(studentId, pin);
-      const studentDTO = mapToStudentProfileDTO(studentProfile);
-
-      // Respond with token and profile in JSON body
-      res.json({
-        status: 'success',
-        message: 'Student login successful', // Added success message
-        data: {
-          accessToken: token, // Include the token here
-          profile: studentDTO
-        }
+        data: studentDTO, // Return the mapped DTO
       } as ApiResponse);
-
     } catch (error) {
-      // Consistent error handling
        if (error instanceof z.ZodError) {
          next(new AppError('Invalid input', 400));
        } else if (error instanceof AppError) {
          next(error);
        } else {
-         logger.error('Student login failed:', error);
-         // Return 401 for invalid credentials instead of 500
-         next(new AppError('Invalid Student ID or PIN', 401)); 
+         logger.error('Failed to create student profile:', error);
+         next(new AppError('Failed to create student profile', 500));
        }
     }
   }
 
-  // Refresh token handler
-  refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  // Student login
+  loginStudent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const refreshToken = req.cookies['refresh-token'];
-      console.log("refreshToken", refreshToken);
-      console.log("req.cookies", req.cookies);
+      const { studentId, pin } = studentLoginSchema.parse(req.body);
+      
+      // Service now returns profile, accessToken, refreshToken
+      const { profile, accessToken, refreshToken } = await this.authService.loginStudent(studentId, pin);
+      
+      // --- Set HttpOnly Cookie for Refresh Token ---
+      res.cookie('student_refresh_token', refreshToken, studentRefreshTokenCookieOptions); // Use student options
+
+      // Map profile to DTO (excluding sensitive info like pin)
+      const studentDTO = mapToStudentProfileDTO(profile);
+
+      // Return access token and DTO in the response body
+      res.status(200).json({
+          // Non-standard wrapper for student login
+          accessToken,
+          profile: studentDTO, 
+      });
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+          next(new AppError('Invalid input', 400));
+        } else if (error instanceof AppError) {
+            // Pass specific status code (e.g., 401 for invalid pin/id)
+            next(error);
+        } else {
+            logger.error('Student login failed:', error);
+            next(new AppError('Student login failed', 500));
+        }
+    }
+  }
+
+  // --- Refresh Student Token (New Method) --- //
+  refreshStudentToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const refreshToken = req.cookies?.student_refresh_token;
+      
       if (!refreshToken) {
-        return next(new AppError('Refresh token missing', 401));
+          return next(new AppError('Refresh token not found', 401));
       }
 
-      // Call the service to refresh the session
-      const newSessionData = await this.authService.refreshSession(refreshToken);
-
-      // Set the new refresh token cookie IF it was rotated/returned
-      if (newSessionData.newRefreshToken) {
-        res.cookie('refresh-token', newSessionData.newRefreshToken, refreshTokenCookieOptions); 
-      }
-
-      // Send the new access token
+      const { newAccessToken } = await this.authService.refreshStudentToken(refreshToken);
+      
+      // Send the new access token in the standard response format
       res.status(200).json({
         status: 'success',
-        message: 'Token refreshed',
         data: {
-          accessToken: newSessionData.accessToken, // Correct key: accessToken
-        },
-      } as ApiResponse);
-      logger.info('New access token:', newSessionData.accessToken);
+          accessToken: newAccessToken
+        }
+      } as ApiResponse<{ accessToken: string }>);
 
     } catch (error) {
-      // Pass errors (like invalid refresh token from service) to the error handler
-      next(error); 
+        // Errors from service (like expired/invalid token) will be AppErrors
+        next(error); 
+    }
+  }
+  
+  // Refresh ADMIN token (Existing, ensure it uses admin cookie options if different)
+  refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const refreshToken = req.cookies?.['refresh-token']; // Use the admin cookie name
+      if (!refreshToken) {
+        return next(new AppError('Refresh token not found', 401));
+      }
+
+      const { accessToken, newRefreshToken } = await this.authService.refreshSession(refreshToken);
+
+      // If Supabase rotated the refresh token, set the new one
+      if (newRefreshToken) {
+        logger.info('Setting new rotated refresh token cookie (admin).');
+        res.cookie('refresh-token', newRefreshToken, adminRefreshTokenCookieOptions); // Use admin options
+      }
+
+      // Send only the new access token in the standard response format
+      res.status(200).json({
+        status: 'success',
+        data: {
+          accessToken: accessToken
+        }
+      } as ApiResponse<{ accessToken: string }>);
+    } catch (error) {
+      // Clear potentially invalid cookie on failure
+      res.clearCookie('refresh-token', adminRefreshTokenCookieOptions); // Use admin options
+      next(error); // Pass error to global handler
     }
   }
 
-  // Logout
+  // --- Logout Student (New Method) --- //
+  logoutStudent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Clear the student refresh token cookie
+      res.clearCookie('student_refresh_token', studentRefreshTokenCookieOptions); // Use student options
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Student logged out successfully'
+      } as ApiResponse);
+    } catch (error) {
+        // Should generally not fail, but handle just in case
+        logger.error('Error during student logout:', error);
+        next(new AppError('Logout failed', 500));
+    }
+  }
+
+  // Logout Admin (Existing, ensure it uses admin cookie)
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Sign out from Supabase (handles admin/oauth sessions)
-      await this.authService.logout(); 
+      await this.authService.logout();
+      // Clear ADMIN refresh token cookie
+      res.clearCookie('refresh-token', adminRefreshTokenCookieOptions); // Use admin options
       
-      // Clear BOTH potential cookies
-      res.clearCookie('refresh-token', { path: '/', sameSite: 'lax' }); // Use same path/samesite as when set
-      res.clearCookie('student_token', { path: '/', sameSite: 'strict' }); // Use same path/samesite as when set
-      
-      res.json({
+      res.status(200).json({
         status: 'success',
-        message: 'Logged out successfully',
+        message: 'Logout successful'
       } as ApiResponse);
     } catch (error) {
-      // Consistent error handling
-      logger.error('Logout failed:', error);
-      next(new AppError('Failed to logout', 500));
+        next(error); // Pass error to global handler
     }
   }
 
-  // Reset admin password
+  // Reset admin password (Existing)
   resetAdminPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { currentPassword, newPassword } = resetPasswordSchema.parse(req.body);
       const userId = req.user?.id;
       if (!userId) {
-        res.status(401).json({
-          status: 'error',
-          message: 'Unauthorized',
-        } as ApiResponse);
-        return;
+        return next(new AppError('User ID not found in request', 401));
       }
-      await this.authService.resetAdminPassword(userId, currentPassword, newPassword);
       
-      res.json({
+      const updatedProfile = await this.authService.resetAdminPassword(userId, currentPassword, newPassword);
+      
+      res.status(200).json({
         status: 'success',
         message: 'Password reset successfully',
+        // Optionally return limited profile data
+        // data: { userId: updatedProfile.id }
       } as ApiResponse);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        next(new AppError('Invalid input', 400));
-      } else if (error instanceof AppError) {
-        next(error); 
-      } else {
-        logger.error('Reset admin password failed:', error);
-        next(new AppError('Invalid password or failed to reset', 401)); 
-      }
+        if (error instanceof z.ZodError) {
+          next(new AppError('Invalid input', 400));
+        } else {
+          next(error); // Handles AppErrors from service (like 403 for wrong password)
+        }
     }
   }
 
-  // Reset student PIN
+  // Reset student PIN (Existing)
   resetStudentPin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { studentId, newPin } = resetPinSchema.parse(req.body);
+      const adminId = req.user?.id; // Get admin ID from authentication middleware
+      if (!adminId) {
+        return next(new AppError('Admin authentication required', 401));
+      }
+      
+      // Optional: Add service layer check if admin owns this student
+      
       await this.authService.resetStudentPin(studentId, newPin);
       
-      res.json({
+      res.status(200).json({
         status: 'success',
         message: 'Student PIN reset successfully',
       } as ApiResponse);
     } catch (error) {
       if (error instanceof z.ZodError) {
         next(new AppError('Invalid input', 400));
-      } else if (error instanceof AppError) { 
-        next(error);
+      } else if (error instanceof AppError) {
+        // Pass specific errors like 404 Not Found from service
+        next(error); 
       } else {
-        logger.error('Reset student PIN failed:', error);
+        logger.error('Failed to reset student PIN:', error);
         next(new AppError('Failed to reset student PIN', 500));
       }
     }

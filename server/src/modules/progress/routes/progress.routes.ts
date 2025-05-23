@@ -4,9 +4,11 @@ import {
     startProgress,
     submitParagraphSummary,
     getStudentProgressDetails,
-    updateProgressByTeacher,
+    updateProgressByAdmin,
     getAllStudentProgress,
-    getAllModuleProgress
+    getAllModuleProgress,
+    getStudentProgressForAdmin,
+    getDetailedStudentModuleProgressForAdmin
 } from '../controllers/progress.controller';
 import { AppError } from '@/utils/errors';
 
@@ -221,7 +223,7 @@ router.get('/my-progress', authenticateUser, asyncHandler(getAllStudentProgress)
  *       500:
  *         description: Internal server error.
  */
-router.patch('/admin/update/:progressId', authenticateAdmin, asyncHandler(updateProgressByTeacher));
+router.patch('/admin/update/:progressId', authenticateAdmin, asyncHandler(updateProgressByAdmin));
 
 /**
  * @swagger
@@ -256,6 +258,71 @@ router.patch('/admin/update/:progressId', authenticateAdmin, asyncHandler(update
  */
 router.get('/admin/module/:moduleId', authenticateAdmin, asyncHandler(getAllModuleProgress));
 
+/**
+ * @swagger
+ * /api/v1/progress/admin/student/{studentId}:
+ *   get:
+ *     tags: [Progress - Admin]
+ *     summary: Get all progress records for a specific student (Admin)
+ *     description: Retrieves a list of all `StudentProgressSchema` records for a specific student, accessible only by an authorized Admin/SuperAdmin who manages that student.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/StudentIdParam' # Reference parameter schema
+ *     responses:
+ *       200:
+ *         description: A list of the student's progress records.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/StudentProgressSchema' # Reference response item schema
+ *       400:
+ *         description: Invalid Student ID format.
+ *       401:
+ *         description: Authentication required.
+ *       403:
+ *         description: Forbidden (Admin does not manage this student).
+ *       404:
+ *         description: Student not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/admin/student/:studentId', authenticateAdmin, asyncHandler(getStudentProgressForAdmin));
+
+/**
+ * @swagger
+ * /api/v1/progress/admin/student/{studentId}/module/{moduleId}:
+ *   get:
+ *     tags: [Progress - Admin]
+ *     summary: Get detailed progress for a specific student/module (Admin)
+ *     description: Retrieves the detailed progress, including all paragraph submissions, for a specific student on a specific module. Accessible only by an authorized Admin/SuperAdmin who manages that student.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/StudentIdParam' # Reference parameter schema
+ *       - $ref: '#/components/parameters/ModuleIdParam' # Reference parameter schema
+ *     responses:
+ *       200:
+ *         description: Detailed progress information for the student on the module.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/StudentProgressDetailsDTOSchema' # Reference response schema
+ *       400:
+ *         description: Invalid Student or Module ID format.
+ *       401:
+ *         description: Authentication required.
+ *       403:
+ *         description: Forbidden (Admin does not manage this student).
+ *       404:
+ *         description: Student, Module, or Progress record not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/admin/student/:studentId/module/:moduleId', authenticateAdmin, asyncHandler(getDetailedStudentModuleProgressForAdmin));
+
 
 // --- Parameter Definitions for Swagger --- //
 
@@ -288,6 +355,14 @@ router.get('/admin/module/:moduleId', authenticateAdmin, asyncHandler(getAllModu
  *          format: int32
  *          minimum: 1
  *        description: The 1-based index of the paragraph.
+ *     StudentIdParam:   # Add StudentIdParam definition if not present
+ *       in: path
+ *       name: studentId
+ *       required: true
+ *       schema:
+ *         type: string
+ *         format: uuid
+ *       description: The UUID of the student.
  */
 
 export default router; 

@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { eq, and, count, sql, desc, gt, lt, gte, lte, sum } from 'drizzle-orm';
+import { eq, and, count, sql, desc, gt, lt, gte, lte, sum, avg, max } from 'drizzle-orm';
 import { AppError } from '@/utils/errors';
 import { logger } from '@/utils/logger';
 
@@ -100,8 +100,13 @@ export class AnalyticsService {
       const progressResults = await this.db
         .select({
           date: sql`DATE(${schema.studentProgress.updatedAt})`,
-          modulesCompleted: count(schema.studentProgress.completed),
+          modulesActive: count(), // Total modules worked on
+          modulesCompleted: count(
+            sql`CASE WHEN ${schema.studentProgress.completed} = true THEN 1 END`
+          ), // Only count completed ones
           timeSpent: sum(schema.studentProgress.timeSpentMinutes),
+          averageScore: avg(schema.studentProgress.score),
+          lastActivity: max(schema.studentProgress.updatedAt),
         })
         .from(schema.studentProgress)
         .where(
@@ -114,29 +119,14 @@ export class AnalyticsService {
         .orderBy(sql`DATE(${schema.studentProgress.updatedAt})`)
         .execute();
 
-      // Get student info
-      const studentResult = await this.db
-        .select()
-        .from(schema.profiles)
-        .where(eq(schema.profiles.id, studentId))
-        .execute();
-
-      const student = studentResult[0];
-      
-      if (!student) {
-        throw new AppError('Student not found', 404);
-      }
-
       return {
-        student: {
-          id: student.id,
-          name: student.fullName,
-          email: student.email,
-        },
         progressByDay: progressResults.map(day => ({
           date: day.date,
+          modulesActive: day.modulesActive,
           modulesCompleted: day.modulesCompleted,
           timeSpent: day.timeSpent || 0,
+          averageScore: day.averageScore || 0,
+          lastActivity: day.lastActivity,
         })),
       };
     } catch (error) {

@@ -1,41 +1,41 @@
-import { useQuery } from '@tanstack/react-query';
+'use client';
+
+import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { api, ApiError } from '@/lib/apiClient';
 import type { ProfileDTO } from '@/types/api'; // API returns an array of ProfileDTO
 import { useAuthStore } from '@/store/authStore';
 
 // Define the query function
 const fetchAdminStudents = async (): Promise<ProfileDTO[]> => {
-  try {
-    // Endpoint requires Admin/SuperAdmin auth, handled by API route & apiClient token
-    const data = await api.get<ProfileDTO[]>('/profiles/admin/students');
-    console.log("api.get /profiles/admin/students = ", data);
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError) {
-        console.error(`API Error fetching students (${error.status}): ${error.message}`, error.data);
-        throw new Error(error.message || 'Failed to fetch students.');
-    } else {
-        console.error("Unexpected error fetching students:", error);
-        throw new Error('An unexpected error occurred while fetching students.');
-    }
+  // API endpoint might return { status: 'success', data: ProfileDTO[] }
+  const response = await api.get<{ data: ProfileDTO[] }>('/profiles/admin/students'); // Assuming endpoint requires auth implicitly
+  
+  // Assuming api.get returns the nested data array directly or wrapped in { data: ... }
+  if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+    return response.data;
+  } else if (Array.isArray(response)) {
+      // Fallback if the response is the array directly
+      return response;
+  } else {
+    console.error("Unexpected response structure from fetchAdminStudents:", response);
+    throw new ApiError('Invalid response structure from server', 500);
   }
 };
 
 // Define the custom hook
-export const useAdminStudentsQuery = (options?: {
-    enabled?: boolean;
-    staleTime?: number;
-    // Add other relevant useQuery options like gcTime, refetchInterval, etc.
-}) => {
+export const useAdminStudentsQuery = (
+  options?: Omit<UseQueryOptions<ProfileDTO[], ApiError>, 'queryKey' | 'queryFn'>
+) => {
     // Removed userRole and isAuthorized constants as they are redundant
     // console.log('useAdminStudentsQuery - Role:', userRole, 'Is Authorized:', isAuthorized);
 
-    return useQuery<ProfileDTO[], Error>({
+    return useQuery<ProfileDTO[], ApiError>({
         // Query key includes 'admin' scope for better cache isolation
         queryKey: ['admin', 'students'],
         queryFn: fetchAdminStudents,
         // Default staleTime can be adjusted based on how often the list needs to be fresh
-        staleTime: 1000 * 60 * 5, // Example: 5 minutes stale time
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000,  // 10 minutes
         retry: 1,
         // Enable query unless explicitly disabled via options
         // Backend middleware handles authorization

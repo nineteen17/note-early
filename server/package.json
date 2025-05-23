@@ -20,7 +20,8 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "docs": "node ./scripts/generate-swagger-file.js"
+    "docs": "tsx ./scripts/generate-swagger-file.ts",
+    "sync:stripe": "tsx ./scripts/sync-stripe-plans.ts"
   },
   "keywords": [
     "education",

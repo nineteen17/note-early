@@ -2223,6 +2223,16 @@
             "format": "uuid"
           },
           "description": "The UUID of the reading module."
+        },
+        "StudentIdParam": {
+          "in": "path",
+          "name": "studentId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "The UUID of the student."
         }
       }
     },
@@ -3386,7 +3396,7 @@
                   "schema": {
                     "type": "array",
                     "items": {
-                      "$ref": "#/components/schemas/StudentProgress"
+                      "$ref": "#/components/schemas/StudentProgressSchema"
                     }
                   }
                 }
@@ -3407,6 +3417,84 @@
             "500": {
               "description": "Internal server error."
             }
+          }
+        }
+      },
+      "/api/v1/progress/admin/student/{studentId}": {
+        "get": {
+          "tags": [
+            "Progress - Admin"
+          ],
+          "summary": "Get all progress records for a specific student (Admin)",
+          "description": "Retrieves a list of all `StudentProgressSchema` records for a specific student, accessible only by an authorized Admin/SuperAdmin who manages that student.",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/StudentIdParam"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "A list of the student's progress records.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/StudentProgressSchema"
+                    }
+                  }
+                }
+              }
+            },
+            "400": { "$ref": "#/components/responses/BadRequest" },
+            "401": { "$ref": "#/components/responses/Unauthorized" },
+            "403": { "$ref": "#/components/responses/Forbidden" },
+            "404": { "$ref": "#/components/responses/NotFound" },
+            "500": { "$ref": "#/components/responses/InternalServerError" }
+          }
+        }
+      },
+      "/api/v1/progress/admin/student/{studentId}/module/{moduleId}": {
+        "get": {
+          "tags": [
+            "Progress - Admin"
+          ],
+          "summary": "Get detailed progress for a specific student/module (Admin)",
+          "description": "Retrieves the detailed progress (`StudentProgressDetailsDTOSchema`), including all paragraph submissions, for a specific student on a specific module. Accessible only by an authorized Admin/SuperAdmin who manages that student.",
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/StudentIdParam"
+            },
+            {
+              "$ref": "#/components/parameters/ModuleIdParam"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Detailed progress information for the student on the module.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/StudentProgressDetailsDTOSchema"
+                  }
+                }
+              }
+            },
+            "400": { "$ref": "#/components/responses/BadRequest" },
+            "401": { "$ref": "#/components/responses/Unauthorized" },
+            "403": { "$ref": "#/components/responses/Forbidden" },
+            "404": { "$ref": "#/components/responses/NotFound" },
+            "500": { "$ref": "#/components/responses/InternalServerError" }
           }
         }
       },

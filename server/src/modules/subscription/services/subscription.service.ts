@@ -7,15 +7,27 @@ import {
 } from '@/db/schema';
 import { stripeService } from './stripe.service';
 import { logger } from '@/utils/logger';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { AppError } from '@/utils/errors';
 import { env } from '@/config/env';
 import { SubscriptionPlan } from '@/db/schema/profiles';
+import Stripe from 'stripe';
+import * as schema from '@/db/schema';
 
 /**
  * Service for managing subscriptions
  */
 export class SubscriptionService {
+  private stripeInstance: Stripe;
+
+  constructor() {
+    // Using type assertion to bypass strict type check for apiVersion
+    this.stripeInstance = new Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20' as any, // Reverted to intended version with type assertion
+      typescript: true,
+    });
+  }
+
   /**
    * Get all available subscription plans
    */
@@ -62,11 +74,18 @@ export class SubscriptionService {
         
         // Now TypeScript knows plan.product is a Stripe.Product
         const product = plan.product; 
-        const metadata = product.metadata || {};
+        const priceMetadata = plan.metadata || {}; // Metadata from the Price object
+        const productMetadata = product.metadata || {}; // Metadata from the Product object
 
-        // Validate and determine the tier
+        // --- Logic to get limit: Prioritize Price metadata ---
+        // Use Price metadata if available, otherwise fallback to Product metadata, then default
+        const studentLimitString = priceMetadata.studentLimit || productMetadata.studentLimit || '3';
+        const moduleLimitString = priceMetadata.moduleLimit || productMetadata.moduleLimit || '3';
+        const customModuleLimitString = priceMetadata.customModuleLimit || productMetadata.customModuleLimit || '1'; 
+
+        // Validate and determine the tier (Prioritize Price metadata)
         let validatedTier: typeof SubscriptionPlan.enumValues[number] = 'free'; // Default to 'free'
-        const metadataTier = metadata.tier;
+        const metadataTier = priceMetadata.tier || productMetadata.tier; // Read tier prioritizing PRICE metadata
 
         if (metadataTier) {
           if ((allowedTiers as ReadonlyArray<string>).includes(metadataTier)) {
@@ -84,10 +103,10 @@ export class SubscriptionService {
             description: product.description || null,
             price: plan.unit_amount ? (plan.unit_amount / 100).toString() : '0', // Convert cents to dollars string
             interval: plan.recurring?.interval || 'month',
-            tier: validatedTier, // Use validated tier
-            studentLimit: parseInt(metadata.studentLimit || '3'),
-            moduleLimit: parseInt(metadata.moduleLimit || '3'),
-            customModuleLimit: parseInt(metadata.customModuleLimit || '1'),
+            tier: validatedTier, // Use validated tier (now prioritized from Price)
+            studentLimit: parseInt(studentLimitString), // Use prioritized limit
+            moduleLimit: parseInt(moduleLimitString), // Use prioritized limit
+            customModuleLimit: parseInt(customModuleLimitString), // Use prioritized limit
             isActive: plan.active,
           })
           .onConflictDoUpdate({
@@ -97,10 +116,10 @@ export class SubscriptionService {
               description: product.description || null,
               price: plan.unit_amount ? (plan.unit_amount / 100).toString() : '0', // Convert cents to dollars string
               interval: plan.recurring?.interval || 'month',
-              tier: validatedTier, // Use validated tier
-              studentLimit: parseInt(metadata.studentLimit || '3'),
-              moduleLimit: parseInt(metadata.moduleLimit || '3'),
-              customModuleLimit: parseInt(metadata.customModuleLimit || '1'),
+              tier: validatedTier, // Use validated tier (now prioritized from Price)
+              studentLimit: parseInt(studentLimitString), // Use prioritized limit
+              moduleLimit: parseInt(moduleLimitString), // Use prioritized limit
+              customModuleLimit: parseInt(customModuleLimitString), // Use prioritized limit
               isActive: plan.active,
               updatedAt: new Date(),
             },
@@ -265,7 +284,8 @@ export class SubscriptionService {
         stripeCustomerId,
         planId,
         `${env.CLIENT_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`, // Ensure CLIENT_URL is in env.ts
-        `${env.CLIENT_URL}/subscription/cancel` // Ensure CLIENT_URL is in env.ts
+        `${env.CLIENT_URL}/subscription/cancel`, // Ensure CLIENT_URL is in env.ts
+        userId // <-- PASS USER ID HERE
       );
 
       return session;
@@ -433,5 +453,193 @@ export class SubscriptionService {
       logger.error(`Error creating portal session for user ${userId}:`, error);
       throw new AppError('Failed to create customer portal session', 500);
     }
+  }
+
+  /**
+   * Handles incoming Stripe webhook events.
+   * Verifies signature and processes relevant events.
+   * @param payload - The raw request body from Stripe.
+   * @param signature - The value of the 'stripe-signature' header.
+   * @returns {Promise<{ received: boolean; message?: string }>} - Confirmation of processing.
+   */
+  async processWebhookEvent(payload: Buffer | string, signature: string): Promise<{ received: boolean; message?: string }> {
+    const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
+    let event: Stripe.Event;
+
+    try {
+      event = this.stripeInstance.webhooks.constructEvent(payload, signature, webhookSecret);
+      logger.info(`Stripe webhook received: ${event.type}`);
+    } catch (err: any) {
+      logger.error(`❌ Webhook signature verification failed: ${err.message}`);
+      throw new AppError(`Webhook Error: ${err.message}`, 400);
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'invoice.paid':
+        const invoice = event.data.object as Stripe.Invoice;
+        logger.info(`Processing invoice.paid: ${invoice.id}, Reason: ${invoice.billing_reason}`);
+        
+        // Use type assertion for subscription ID extraction
+        let subscriptionIdFromInvoice: string | null = null;
+        const invSub = (invoice as any).subscription; // Use assertion
+        if (typeof invSub === 'string') {
+          subscriptionIdFromInvoice = invSub;
+        } else if (invSub?.id) {
+          subscriptionIdFromInvoice = invSub.id;
+        }
+        
+        if (subscriptionIdFromInvoice) { 
+          // --- Reset Module Counter (if applicable) --- 
+          if (invoice.billing_reason === 'subscription_cycle') {
+            try {
+              const result = await db.update(schema.customerSubscriptions)
+                .set({ customModulesCreatedThisPeriod: 0 })
+                .where(eq(schema.customerSubscriptions.id, subscriptionIdFromInvoice))
+                .returning({ updatedId: schema.customerSubscriptions.id });
+
+              if (result.length > 0) {
+                logger.info(`Reset monthly module count for subscription ${subscriptionIdFromInvoice}`);
+              } else {
+                // Log warning, but don't stop the update process below
+                logger.warn(`Subscription ${subscriptionIdFromInvoice} not found in DB for resetting module count.`);
+              }
+            } catch (dbError) {
+              logger.error(`Database error resetting module count for sub ${subscriptionIdFromInvoice}:`, dbError);
+            }
+          }
+          
+          // --- Update Subscription Record with Confirmed Dates/Status --- 
+          try {
+            // Fetch the latest subscription details from Stripe
+            const latestSubscription: Stripe.Subscription = await this.stripeInstance.subscriptions.retrieve(subscriptionIdFromInvoice);
+            
+            // Use type assertions for period dates
+            const periodStart = (latestSubscription as any).current_period_start;
+            const periodEnd = (latestSubscription as any).current_period_end;
+
+            // Prepare update data
+            const updateData: Partial<typeof schema.customerSubscriptions.$inferInsert> = {
+                status: latestSubscription.status,
+                // Use the potentially asserted number timestamps
+                ...(typeof periodStart === 'number' && { currentPeriodStart: new Date(periodStart * 1000) }),
+                ...(typeof periodEnd === 'number' && { currentPeriodEnd: new Date(periodEnd * 1000) }),
+                cancelAtPeriodEnd: latestSubscription.cancel_at_period_end,
+                updatedAt: new Date()
+            };
+            
+            // Update the record in our database
+            const updateResult = await db.update(schema.customerSubscriptions)
+              .set(updateData)
+              .where(eq(schema.customerSubscriptions.id, subscriptionIdFromInvoice))
+              .returning({ updatedId: schema.customerSubscriptions.id });
+
+            if (updateResult.length > 0) {
+              logger.info(`Updated subscription ${subscriptionIdFromInvoice} dates/status from invoice.paid event.`);
+            } else {
+              logger.warn(`Subscription ${subscriptionIdFromInvoice} not found in DB for updating dates/status.`);
+            }
+
+          } catch (stripeError) {
+             logger.error(`Stripe/DB error updating subscription ${subscriptionIdFromInvoice} from invoice.paid:`, stripeError);
+          }
+        } else {
+             logger.warn(`Received invoice.paid event (${invoice.id}) without a valid subscription ID.`);
+        }
+        break;
+
+      // --- Handle Subscription Creation/Update/Deletion to keep DB in sync --- 
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+          const subscription = event.data.object as Stripe.Subscription;
+          logger.info(`Processing ${event.type}: ${subscription.id}`);
+          try {
+            // Check for Plan ID early
+            const priceId = subscription.items.data[0]?.price.id;
+            if (!priceId) {
+                logger.error(`Missing priceId for subscription ${subscription.id} in ${event.type} event.`);
+                break;
+            }
+            const plan = await db.query.subscriptionPlans.findFirst({ where: eq(schema.subscriptionPlans.id, priceId) });
+            if (!plan) {
+              logger.error(`Plan ${priceId} not found in DB for subscription ${subscription.id}`);
+              break;
+            }
+
+            // Extract IDs
+            const userId = subscription.metadata?.userId;
+            const customerId = typeof subscription.customer === 'string' ? subscription.customer : (subscription.customer as Stripe.Customer)?.id;
+            
+            if (!userId) {
+                 logger.error(`Missing userId in metadata for subscription ${subscription.id}`);
+                 break; 
+            }
+            if (!customerId) {
+                 logger.error(`Could not determine customer ID for subscription ${subscription.id}`);
+                 break; 
+            }
+
+            // Use type assertions for period dates
+            const currentPeriodStart = (subscription as any).current_period_start;
+            const currentPeriodEnd = (subscription as any).current_period_end;
+            const status = subscription.status;
+            const cancelAtEnd = (subscription as any).cancel_at_period_end;
+
+            // Prepare base values for insert/update
+            const baseValues: Partial<typeof schema.customerSubscriptions.$inferInsert> = {
+                  id: subscription.id,
+                  userId: userId,
+                  planId: plan.id,
+                  stripeCustomerId: customerId,
+                  status: status,
+                  cancelAtPeriodEnd: cancelAtEnd,
+                  // Only include dates if they exist, convert number timestamp to Date
+                  ...(typeof currentPeriodStart === 'number' && { currentPeriodStart: new Date(currentPeriodStart * 1000) }),
+                  ...(typeof currentPeriodEnd === 'number' && { currentPeriodEnd: new Date(currentPeriodEnd * 1000) }),
+            };
+
+            // Prepare update set (don't overwrite existing dates with null)
+            const updateSet: Partial<typeof schema.customerSubscriptions.$inferInsert> = {
+                planId: plan.id, 
+                status: status, 
+                cancelAtPeriodEnd: cancelAtEnd, 
+                updatedAt: new Date(),
+                // Only update dates if they are newly provided, convert number timestamp to Date
+                ...(typeof currentPeriodStart === 'number' && { currentPeriodStart: new Date(currentPeriodStart * 1000) }),
+                ...(typeof currentPeriodEnd === 'number' && { currentPeriodEnd: new Date(currentPeriodEnd * 1000) }),
+            };
+
+            await db.insert(schema.customerSubscriptions)
+              .values(baseValues as typeof schema.customerSubscriptions.$inferInsert) // Assert type after conditionally adding dates
+              .onConflictDoUpdate({
+                  target: schema.customerSubscriptions.id,
+                  set: updateSet
+              });
+             logger.info(`Subscription ${subscription.id} upserted in DB via ${event.type}.`);
+          } catch (dbError) {
+             logger.error(`Database error upserting subscription ${subscription.id} via ${event.type}:`, dbError);
+          }
+          break;
+
+      case 'customer.subscription.deleted':
+          const deletedSubscription = event.data.object as Stripe.Subscription;
+          logger.info(`Processing customer.subscription.deleted: ${deletedSubscription.id}`);
+          try {
+            await db.update(schema.customerSubscriptions)
+              .set({ status: 'canceled', updatedAt: new Date() })
+              .where(eq(schema.customerSubscriptions.id, deletedSubscription.id));
+            logger.info(`Subscription ${deletedSubscription.id} marked as canceled in DB.`);
+          } catch (dbError) {
+            logger.error(`Database error updating deleted subscription ${deletedSubscription.id}:`, dbError);
+          }
+          break;
+
+      // Add other event types as needed (e.g., checkout.session.completed)
+      
+      default:
+        logger.warn(`Unhandled Stripe event type: ${event.type}`);
+    }
+
+    return { received: true };
   }
 } 

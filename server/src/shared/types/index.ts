@@ -28,7 +28,7 @@ export enum ReadingLevel {
 
 // Module Type Enum
 export enum ModuleType {
-  CURATED = 'Adventure',
+  CURATED = 'curated',
   CUSTOM = 'custom',
 }
 

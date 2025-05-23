@@ -1,0 +1,1 @@
+ALTER TABLE "customer_subscriptions" ADD COLUMN "custom_modules_created_this_period" integer DEFAULT 0 NOT NULL;

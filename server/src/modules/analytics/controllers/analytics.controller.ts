@@ -132,4 +132,63 @@ export class AnalyticsController {
       res.status(statusCode).json({ status: 'error', message });
     }
   }
+
+  /**
+   * Get student activity
+   */
+  async getStudentActivity(req: Request, res: Response, next: NextFunction) {
+    try {
+      const studentId = req.user?.id;
+      const { days } = StudentProgressQuerySchema.parse(req.query);
+      
+      if (!studentId) {
+        return res.status(401).json({
+          status: 'error',  
+          message: 'Authentication required'
+        });
+      }
+      
+      const activityData = await this.analyticsService.getStudentProgressOverTime(studentId, days);
+      
+      return res.status(200).json({
+        status: 'success',
+        data: activityData
+      });
+    } catch (error) {
+      logger.error('Error in getStudentActivity:', { error, studentId: req.user?.id }); 
+      const message = (error instanceof AppError) ? error.message : 'Internal server error fetching student activity.';
+      const statusCode = (error instanceof AppError) ? error.statusCode : 500;
+      res.status(statusCode).json({ status: 'error', message });
+    }
+  }
+
+  /**
+   * Get student progress over time
+   */
+  async getStudentProgressOverTime(req: Request, res: Response, next: NextFunction) {
+    try {
+      const studentId = req.user?.id;
+      const { days } = StudentProgressQuerySchema.parse(req.query);
+      
+      if (!studentId) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Authentication required'
+        });
+      }
+      
+      const progressData = await this.analyticsService.getStudentProgressOverTime(studentId, days);
+      
+      return res.status(200).json({
+        status: 'success',
+        data: progressData
+      });
+    } catch (error) {
+      logger.error('Error in getStudentProgressOverTime:', { error, studentId: req.user?.id });
+      const message = (error instanceof AppError) ? error.message : 'Internal server error fetching student progress over time.';
+      const statusCode = (error instanceof AppError) ? error.statusCode : 500;
+      res.status(statusCode).json({ status: 'error', message });
+    }
+  }
 } 
+

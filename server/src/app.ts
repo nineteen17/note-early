@@ -15,17 +15,39 @@ import profileRoutes from './modules/profiles/routes/profile.routes';
 import progressRoutes from './modules/progress/routes/progress.routes';
 import subscriptionRoutes from './modules/subscription/routes/subscription.routes';
 import analyticsRoutes from './modules/analytics/routes/analytics.routes';
-import bodyParser from 'body-parser';
+
+// Import controller needed for direct route definition
+import { SubscriptionController } from './modules/subscription/controllers/subscription.controller';
+import { RequestHandler } from 'express'; // Import RequestHandler type
+
 // Initialize express app
 const app = express();
 
-// Basic middleware
-app.use(express.json());
+// --- Utility to handle async route handlers (needed for direct controller use) ---
+const asyncHandler = (fn: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<any>): RequestHandler => {
+    return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        Promise.resolve(fn(req, res, next)).catch(next);
+    };
+};
+
+// Instantiate controller needed for direct route definition
+const subscriptionController = new SubscriptionController();
+
+// --- IMPORTANT: Define RAW body routes BEFORE global JSON parsing ---
+// Stripe webhook - requires raw body
+app.post(
+    '/api/v1/subscriptions/stripe-webhook',
+    express.raw({ type: 'application/json' }), // Apply raw body parser ONLY to this route
+    asyncHandler(subscriptionController.handleWebhook.bind(subscriptionController))
+);
+
+// Basic middleware (applied AFTER raw routes, BEFORE other API routes)
+app.use(express.json()); // Parses JSON for routes defined AFTER this middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(helmet());
 app.use(morgan('dev'));
-app.use(bodyParser.json());
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
@@ -34,8 +56,12 @@ const limiter = rateLimit({
 app.use(limiter);
 
 const corsOptions = {
-  origin: env.CLIENT_URL_IP,
+  origin: env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Set-Cookie'],
+  maxAge: 86400 // 24 hours
 };
 app.use(cors(corsOptions));
 
@@ -52,11 +78,12 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// API routes
+// API routes (These will use the express.json() middleware defined above)
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/reading-modules', readingRoutes);
 app.use('/api/v1/profiles', profileRoutes);
 app.use('/api/v1/progress', progressRoutes);
+// Apply the rest of the subscription routes (which should no longer contain the webhook)
 app.use('/api/v1/subscriptions', subscriptionRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 

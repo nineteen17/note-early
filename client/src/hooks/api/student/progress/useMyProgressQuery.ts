@@ -26,3 +26,4 @@ export const useMyProgressQuery = (): UseQueryResult<StudentProgressSchema[], Ap
         // Consider refetchOnWindowFocus: false if data doesn't change frequently
     });
 }; 
+

@@ -1,0 +1,34 @@
+{
+  "_meta": {
+    "template_version": 0
+  },
+  "fixtures": [
+    {
+      "name": "invoiceitem",
+      "path": "/v1/invoiceitems",
+      "method": "post",
+      "params": {
+        "customer": "cus_SBG5aRBUAMo6ge",
+        "amount": 1000,
+        "currency": "usd",
+        "description": "(Item for fixture test)"
+      }
+    },
+    {
+      "name": "invoice",
+      "path": "/v1/invoices",
+      "method": "post",
+      "params": {
+        "customer": "cus_SBG5aRBUAMo6ge",
+        "collection_method": "charge_automatically",
+        "auto_advance": true
+      }
+    },
+    {
+      "name": "invoice_pay_attempt",
+      "path": "/v1/invoices/${invoice:id}/pay",
+      "method": "post",
+      "params": {}
+    }
+  ]
+} 

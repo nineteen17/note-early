@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAdminStudentsQuery } from "@/hooks/api/admin/students/useAdminStudentsQuery";
+import { useCurrentSubscriptionQuery } from '@/hooks/api/admin/subscriptions/useCurrentSubscriptionQuery';
 import { useDeleteStudentMutation } from "@/hooks/api/admin/students/useDeleteStudentMutation";
 import { useResetStudentPinMutation } from '@/hooks/api/admin/students/useResetStudentPinMutation';
 import { resetStudentPinSchema, ResetStudentPinInput } from '@/lib/schemas/student';
@@ -28,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreHorizontal, Trash2, KeyRound, Users } from "lucide-react"; // Or another icon for actions
+import { MoreHorizontal, Trash2, KeyRound, Users, AlertCircle } from "lucide-react"; // Or another icon for actions
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,10 +60,12 @@ import { EditStudentModal } from '@/features/admin/edit-student-modal';
 // import { useResetStudentPinMutation } from '@/hooks/api/admin/students/useResetStudentPinMutation';
 
 export function AdminStudentList() {
-  const { data: students, isLoading, error, isError } = useAdminStudentsQuery();
+  const { data: students, isLoading: isLoadingStudents, error: errorStudents, isError: isErrorStudents } = useAdminStudentsQuery();
+  const { data: currentSubscriptionData, isLoading: isLoadingSubscription, error: errorSubscription, isError: isErrorSubscription } = useCurrentSubscriptionQuery();
   const deleteMutation = useDeleteStudentMutation();
   const resetPinMutation = useResetStudentPinMutation();
   console.log("get students = ", students);
+  console.log("get subscription = ", currentSubscriptionData);
   
   // State for controlling the create modal
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
@@ -172,6 +175,18 @@ export function AdminStudentList() {
   const studentToDeleteName = students?.find(s => s.profileId === studentToDeleteId)?.fullName;
   const studentToResetPinName = students?.find(s => s.profileId === studentToResetPinId)?.fullName;
 
+  // Combine loading and error states
+  const isLoading = isLoadingStudents || isLoadingSubscription;
+  const isError = isErrorStudents || isErrorSubscription;
+  const error = errorStudents || errorSubscription;
+
+  // --- Extract Usage Data --- 
+  const currentStudentCount = students?.length ?? 0;
+  const studentLimit = currentSubscriptionData?.plan?.studentLimit; // Nullable number
+  const currentPlanTier = currentSubscriptionData?.plan?.tier;
+  // Calculate if limit is reached
+  const isStudentLimitReached = typeof studentLimit === 'number' && currentStudentCount >= studentLimit;
+
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
@@ -180,23 +195,37 @@ export function AdminStudentList() {
            <p className="text-muted-foreground">
              Manage student profiles and track their progress.
            </p>
+           {/* Display Student Limit */}
+           {!isLoading && currentPlanTier !== 'free' && typeof studentLimit === 'number' && (
+             <p className="text-sm font-medium mt-1">
+               Usage: {currentStudentCount} / {studentLimit} students {isStudentLimitReached ? '(Limit Reached)' : ''}
+             </p>
+           )}
+           {/* Show message for free plan if limit is relevant */}
+           {!isLoading && currentPlanTier === 'free' && typeof studentLimit === 'number' && studentLimit > 0 && (
+             <p className="text-sm font-medium mt-1">
+               Usage (Free Plan): {currentStudentCount} / {studentLimit} students {isStudentLimitReached ? '(Limit Reached)' : ''}
+             </p>
+           )}
         </div>
-        <Button onClick={handleAddStudent}>Add Student</Button>
+        {/* Disable button if loading or limit is reached */}
+        <Button onClick={handleAddStudent} disabled={isLoading || isStudentLimitReached}>Add Student</Button>
       </div>
 
-      {/* Error Alert (Keep outside Card) */}
+      {/* Combined Error Alert */}
       {isError && (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Error</AlertTitle>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Loading Data</AlertTitle>
           <AlertDescription>
-            {error?.message || "Failed to load students."}
+            {error?.message || "Failed to load student or subscription details."}
           </AlertDescription>
         </Alert>
       )}
 
       <Card>
          <CardContent className="pt-6">
-          {/* Conditional Rendering based on state */}
+          {/* Conditional Rendering based on combined isLoading state */}
           {isLoading ? (
             // Loading State: Render Skeletons within Table structure
             <Table>

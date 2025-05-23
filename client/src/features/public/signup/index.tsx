@@ -80,91 +80,93 @@ export function SignupForm() {
     const serverError = formErrors.root?.serverError?.message;
 
     return (
-        <Card className="w-full max-w-sm">
-            <CardHeader className="space-y-1 text-center">
-                <CardTitle className="text-2xl font-bold">Create Admin Account</CardTitle>
-                <CardDescription>
-                    Enter your details below to register.
-                </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <CardContent className="grid gap-4">
-                    {/* Display general server/mutation errors */}
-                    {serverError && (
-                        <Alert variant="destructive">
-                            <AlertTitle>Signup Failed</AlertTitle>
-                            <AlertDescription>{serverError}</AlertDescription>
-                        </Alert>
-                    )}
-                    {/* Full Name Input */}
-                    <div className="grid gap-2">
-                        <Label htmlFor="fullName">Full Name</Label>
-                        <Input 
-                            id="fullName" 
-                            required 
-                            aria-invalid={formErrors.fullName ? "true" : "false"}
-                            aria-describedby="fullName-rhf-error"
-                            disabled={isPending}
-                            {...register("fullName")} 
-                        />
-                        {formErrors.fullName && (
-                            <p id="fullName-rhf-error" role="alert" className="text-sm font-medium text-destructive">
-                                {formErrors.fullName.message}
-                            </p>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+            <Card className="w-full max-w-sm">
+                <CardHeader className="space-y-1 text-center">
+                    <CardTitle className="text-2xl font-bold">Create Admin Account</CardTitle>
+                    <CardDescription>
+                        Enter your details below to register.
+                    </CardDescription>
+                </CardHeader>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <CardContent className="grid gap-4">
+                        {/* Display general server/mutation errors */}
+                        {serverError && (
+                            <Alert variant="destructive">
+                                <AlertTitle>Signup Failed</AlertTitle>
+                                <AlertDescription>{serverError}</AlertDescription>
+                            </Alert>
                         )}
-                    </div>
-                    {/* Email Input */}
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input 
-                            id="email" 
-                            type="email" 
-                            placeholder="admin@example.com" 
-                            required 
-                            aria-invalid={formErrors.email ? "true" : "false"}
-                            aria-describedby="email-rhf-error"
-                            disabled={isPending}
-                            {...register("email")} 
-                        />
-                         {formErrors.email && (
-                            <p id="email-rhf-error" role="alert" className="text-sm font-medium text-destructive">
-                                {formErrors.email.message}
-                            </p>
-                        )}
-                    </div>
-                    {/* Password Input */}
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input 
-                            id="password" 
-                            type="password" 
-                            required 
-                            minLength={8} 
-                            aria-invalid={formErrors.password ? "true" : "false"}
-                            aria-describedby="password-rhf-error"
-                            disabled={isPending}
-                            {...register("password")} 
-                        />
-                         {formErrors.password && (
-                            <p id="password-rhf-error" role="alert" className="text-sm font-medium text-destructive">
-                                {formErrors.password.message}
-                            </p>
-                         )}
-                    </div>
-                    {/* Submit Button */}
-                    <Button type="submit" className="w-full" disabled={isPending}>
-                        {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...</> : 'Create Account'}
-                    </Button>
-                </CardContent>
-            </form>
-            <CardFooter className="text-center text-sm">
-                <p>
-                    Already have an account?{" "}
-                    <Link href="/login" className="underline">
-                        Login
-                    </Link>
-                </p>
-            </CardFooter>
-        </Card>
+                        {/* Full Name Input */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="fullName">Full Name</Label>
+                            <Input 
+                                id="fullName" 
+                                required 
+                                aria-invalid={formErrors.fullName ? "true" : "false"}
+                                aria-describedby="fullName-rhf-error"
+                                disabled={isPending}
+                                {...register("fullName")} 
+                            />
+                            {formErrors.fullName && (
+                                <p id="fullName-rhf-error" role="alert" className="text-sm font-medium text-destructive">
+                                    {formErrors.fullName.message}
+                                </p>
+                            )}
+                        </div>
+                        {/* Email Input */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input 
+                                id="email" 
+                                type="email" 
+                                placeholder="admin@example.com" 
+                                required 
+                                aria-invalid={formErrors.email ? "true" : "false"}
+                                aria-describedby="email-rhf-error"
+                                disabled={isPending}
+                                {...register("email")} 
+                            />
+                             {formErrors.email && (
+                                <p id="email-rhf-error" role="alert" className="text-sm font-medium text-destructive">
+                                    {formErrors.email.message}
+                                </p>
+                            )}
+                        </div>
+                        {/* Password Input */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input 
+                                id="password" 
+                                type="password" 
+                                required 
+                                minLength={8} 
+                                aria-invalid={formErrors.password ? "true" : "false"}
+                                aria-describedby="password-rhf-error"
+                                disabled={isPending}
+                                {...register("password")} 
+                            />
+                             {formErrors.password && (
+                                <p id="password-rhf-error" role="alert" className="text-sm font-medium text-destructive">
+                                    {formErrors.password.message}
+                                </p>
+                             )}
+                        </div>
+                        {/* Submit Button */}
+                        <Button type="submit" className="w-full" disabled={isPending}>
+                            {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...</> : 'Create Account'}
+                        </Button>
+                    </CardContent>
+                </form>
+                <CardFooter className="text-center text-sm">
+                    <p>
+                        Already have an account?{" "}
+                        <Link href="/login" className="underline">
+                            Login
+                        </Link>
+                    </p>
+                </CardFooter>
+            </Card>
+        </div>
     );
 } 

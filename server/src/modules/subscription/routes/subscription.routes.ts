@@ -269,9 +269,9 @@ router.post('/reactivate', authenticateUser, asyncHandler(subscriptionController
  */
 router.get('/payments', authenticateUser, asyncHandler(subscriptionController.getPaymentHistory.bind(subscriptionController)));
 
-// --- Webhook Route (Public, Validated by Stripe) --- //
+// --- Webhook Route (REMOVED - Now handled directly in app.ts) --- //
 
-/**
+/*
  * @swagger
  * /api/v1/subscriptions/stripe-webhook:
  *   post:
@@ -302,11 +302,11 @@ router.get('/payments', authenticateUser, asyncHandler(subscriptionController.ge
  *       500:
  *         description: Internal server error during webhook processing.
  */
-// Special route for Stripe webhooks - needs raw body
-router.post(
-    '/stripe-webhook',
-    express.raw({ type: 'application/json' }), // Use raw body parser
-    subscriptionController.handleWebhook
-);
+// REMOVED: Webhook route definition is now in app.ts
+// router.post(
+//     '/stripe-webhook',
+//     express.raw({ type: 'application/json' }), // Use raw body parser
+//     asyncHandler(subscriptionController.handleWebhook.bind(subscriptionController))
+// );
 
 export default router;

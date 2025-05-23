@@ -11,7 +11,7 @@ export default function SubscriptionCancelPage() {
 
   const handleGoToDashboard = () => {
     // Navigate back to the main dashboard or settings page
-    router.push('/admin/home'); // Or potentially back to the upgrade plan page
+    router.push('/admin/settings/subscription'); // Or potentially back to the upgrade plan page
   };
 
   return (

@@ -10,7 +10,7 @@ export interface ApiResponse<T = any> { // Use generic T, default to any
 // Based on components.schemas.ProfileDTO in NoteEarly-swagger-2.json
 
 export type UserRole = "ADMIN" | "STUDENT" | "SUPER_ADMIN";
-export type SubscriptionStatus = "free" | "active" | "canceled" | "past_due" | "incomplete" | "incomplete_expired";
+export type SubscriptionStatus = "free" | "active" | "canceled" | "past_due" | "incomplete" | "incomplete_expired" | "trialing";
 export type SubscriptionPlanTier = "free" | "home" | "pro";
 export type ModuleLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 export type ModuleGenre = "History" | "Adventure" | "Science" | "Non-Fiction" | "Fantasy" | "Biography" | "Mystery" | "Science-Fiction" | "Folktale" | "Custom";
@@ -322,4 +322,29 @@ export interface AnalyticsSubscriptionStats {
     homeTier: number;
     proTier: number;
     monthlyRevenue: number;
-} 
+}
+
+// --- ADD NEW TYPE DEFINITION HERE ---
+export interface CustomerSubscriptionDTO {
+    id: string;                     // Stripe Subscription ID (sub_...)
+    userId: string;                 // Link to user profile
+    planId: string;                 // Link to the specific Stripe Price ID (matches SubscriptionPlan.id)
+    stripeCustomerId: string;       // Stripe Customer ID (cus_...)
+    status: SubscriptionStatus;     // Use the existing SubscriptionStatus type alias
+    currentPeriodStart: string;     // ISO Date string
+    currentPeriodEnd: string;       // ISO Date string (important for reset display)
+    cancelAtPeriodEnd: boolean;
+    customModulesCreatedThisPeriod: number; // The counter we need!
+    // Add other relevant fields if returned by the backend and needed by frontend
+    // createdAt?: string;
+    // updatedAt?: string;
+}
+// --- END NEW TYPE DEFINITION --- 
+
+
+  export interface AdminUpdateStudentRequest {
+    fullName: string;
+    avatarUrl: string | null;
+    age: number | null;
+    readingLevel: number | null;
+  }

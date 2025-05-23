@@ -61,7 +61,7 @@ class StripeService {
   /**
    * Create a checkout session for subscription
    */
-  async createCheckoutSession(customerId: string, priceId: string, successUrl: string, cancelUrl: string) {
+  async createCheckoutSession(customerId: string, priceId: string, successUrl: string, cancelUrl: string, userId: string) {
     try {
       const session = await this.stripe.checkout.sessions.create({
         customer: customerId,
@@ -74,6 +74,11 @@ class StripeService {
         mode: 'subscription',
         success_url: successUrl,
         cancel_url: cancelUrl,
+        subscription_data: {
+          metadata: {
+            userId: userId
+          }
+        }
       });
       
       return session;
