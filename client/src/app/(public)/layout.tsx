@@ -1,37 +1,35 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { useProfileQuery } from '@/hooks/api/profile/useProfileQuery'; // Import profile query hook
+import { useProfileQuery } from '@/hooks/api/profile/useProfileQuery';
 
 /**
  * Layout for public-facing pages (login, signup, etc.)
  * Redirects authenticated users to their appropriate dashboard based on role.
- * Provides a simple centered structure for public content.
+ * Provides appropriate layout structure for different public content types.
  */
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isLoadingAuth = useAuthStore((state) => state.isLoading); 
+  const isLoadingAuth = useAuthStore((state) => state.isLoading);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Fetch profile to determine role for redirection
   const { 
     data: profile, 
     isLoading: isProfileLoading, 
-    // We don't need to handle error here as the authenticated layout will handle it
   } = useProfileQuery(); 
 
   useEffect(() => {
-    const isAuthCheckComplete = !isLoadingAuth;
-    const isProfileCheckComplete = !isProfileLoading;
-
-    // Only redirect if authentication and profile checks are done and user is authenticated
-    if (isAuthCheckComplete && isProfileCheckComplete && isAuthenticated && profile) {
-      console.log(`PublicLayout: User authenticated with role ${profile.role}, redirecting from public route...`);
+    // Early redirect check - as soon as we know user is authenticated
+    if (isAuthenticated && !isLoadingAuth && !isProfileLoading && profile && !isRedirecting) {
+      setIsRedirecting(true);
       
       // Determine the correct default route based on user role
-      let targetRoute = '/login'; // Default fallback
+      let targetRoute = '/student/home'; // Default to student for faster redirect
       switch (profile.role) {
         case 'ADMIN':
         case 'SUPER_ADMIN':
@@ -41,35 +39,53 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           targetRoute = '/student/home';
           break;
         default:
-          console.warn(`PublicLayout: Unknown role ${profile.role}, redirecting to login.`);
-          break; // Keep targetRoute as /login
+          targetRoute = '/login';
+          break;
       }
-      router.push(targetRoute); 
+      
+      // Use replace for immediate redirect without history
+      router.replace(targetRoute);
     }
-  }, [isAuthenticated, isLoadingAuth, isProfileLoading, profile, router]);
+  }, [isAuthenticated, isLoadingAuth, isProfileLoading, profile, router, isRedirecting]);
 
-  // Show loader if either auth check or profile check is in progress, OR if user is authenticated (implying redirect is happening)
-  const showLoader = isLoadingAuth || (isAuthenticated && isProfileLoading) || (isAuthenticated && profile);
-
-  // if (showLoader) {
-  //   return (
-  //     <div className="flex min-h-screen items-center justify-center">
-  //       <div>Loading session...</div> 
-  //     </div>
-  //   );
-  // }
-
-  // Only render children (login form) if auth state is loaded AND user is not authenticated
-  if (!isLoadingAuth && !isAuthenticated) {
+  // Show minimal loading state while checking authentication or redirecting
+  if (isLoadingAuth || (isAuthenticated && isProfileLoading) || isRedirecting) {
     return (
-      <div className="">
-        <div className="">
-          {children}
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  // Fallback if authenticated but profile somehow isn't loaded (should be covered by loader)
-  return null;
+  // Only render children if user is not authenticated
+  if (!isAuthenticated) {
+    // Check if this is the home page or other full-width pages
+    const isHomePage = pathname === '/';
+    const isAuthPage = pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/student-login');
+    
+    if (isHomePage || !isAuthPage) {
+      // Full-width layout for home page and other non-auth pages
+      return (
+        <div className="min-h-screen bg-background">
+          {children}
+        </div>
+      );
+    } else {
+      // Centered narrow layout for auth forms
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            {children}
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Fallback loading state
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+    </div>
+  );
 } 

@@ -2,13 +2,17 @@
 
 import React from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { HomeHero } from './HomeHero';
+import { HomeTitle } from './HomeTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Clock, Trophy } from 'lucide-react';
+import { BookOpen, Clock, Trophy, CheckCircle2 } from 'lucide-react';
 import ActivityCalendar from 'react-activity-calendar';
 import Link from 'next/link';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Hooks
 import { useMyProgressQuery } from '@/hooks/api/student/progress/useMyProgressQuery';
@@ -142,7 +146,8 @@ const useCalendarData = (activityData: any) => {
 const useProgressMetrics = (progress: any[]) => {
   return React.useMemo(() => {
     const completedProgress = progress.filter(p => p.completed);
-    const inProgressCount = progress.filter(p => !p.completed && p.highestParagraphIndexReached > 0).length;
+    // Count ALL non-completed modules as in progress (started modules)
+    const inProgressCount = progress.filter(p => !p.completed).length;
     
     return {
       averageScore: progress.length 
@@ -169,6 +174,11 @@ const useProgressMetrics = (progress: any[]) => {
   }, [progress]);
 };
 
+const calculateProgressPercentage = (current: number, total: number) => {
+  if (!current || !total) return 0;
+  return Math.round((current / total) * 100);
+};
+
 const useCalendarStats = (calendarData: CalendarDay[]) => {
   return React.useMemo(() => {
     const activeDays = calendarData.filter(day => day.count > 0).length;
@@ -193,65 +203,120 @@ const useCalendarStats = (calendarData: CalendarDay[]) => {
 };
 
 // Components
-const ModuleCard: React.FC<{ latestModule: any }> = ({ latestModule }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <BookOpen className="h-5 w-5" />
-        Continue Reading
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      {latestModule ? (
-        <div className="space-y-4">
-          <h3 className="font-medium">
-            {latestModule.moduleTitle || `Module ${latestModule.moduleId}`}
-          </h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {latestModule.moduleDescription || 'No description available'}
-          </p>
-          
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>{latestModule.timeSpentMinutes || 0} minutes spent</span>
+const ModuleCard: React.FC<{ latestModule: any; isLoading: boolean }> = ({ latestModule, isLoading }) => {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            Continue Reading
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-2 w-full" />
+            </div>
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BookOpen className="h-5 w-5" />
+          Continue Reading
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {latestModule ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">
+                {latestModule.moduleTitle || `Module ${latestModule.moduleId}`}
+              </h3>
+              <Badge 
+                className={`flex items-center gap-1 ${
+                  latestModule.completed 
+                    ? "bg-success text-white" 
+                    : "bg-secondary text-secondary-foreground"
+                }`}
+              >
+                {latestModule.completed ? (
+                  <>
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span className="hidden sm:inline">Completed</span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-3 h-3" />
+                    <span className="hidden sm:inline">In Progress</span>
+                  </>
+                )}
+              </Badge>
             </div>
             
-            {/* Progress Bar */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Progress</span>
-                <span className="font-medium">
-                  {(latestModule.highestParagraphIndexReached || 0) + (latestModule.completed ? 1 : 0)} / {latestModule.moduleDetails?.paragraphCount || 'N/A'}
-                </span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                <span className="hidden sm:inline">{latestModule.timeSpentMinutes || 0} minutes spent</span>
+                <span className="sm:hidden">{latestModule.timeSpentMinutes || 0}m</span>
               </div>
-              {latestModule.moduleDetails?.paragraphCount && (
-                <Progress 
-                  value={((latestModule.highestParagraphIndexReached || 0) + (latestModule.completed ? 1 : 0)) / latestModule.moduleDetails.paragraphCount * 100} 
-                  className="h-2" 
-                />
-              )}
+              
+              {/* Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-medium flex items-center gap-1">
+                    <BookOpen className="w-3 h-3" />
+                    <span className="hidden sm:inline">
+                      {Math.min(latestModule.highestParagraphIndexReached || 0, latestModule.moduleDetails?.paragraphCount || 0)} of {latestModule.moduleDetails?.paragraphCount || 'N/A'} paragraphs
+                    </span>
+                    <span className="sm:hidden">
+                      {Math.min(latestModule.highestParagraphIndexReached || 0, latestModule.moduleDetails?.paragraphCount || 0)}/{latestModule.moduleDetails?.paragraphCount || 'N/A'}
+                    </span>
+                  </span>
+                </div>
+                {latestModule.moduleDetails?.paragraphCount && (
+                  <Progress 
+                    value={Math.min(
+                      (latestModule.highestParagraphIndexReached || 0) / latestModule.moduleDetails.paragraphCount * 100,
+                      100
+                    )} 
+                    variant={latestModule.completed ? "completed" : "in-progress"}
+                    className="h-2" 
+                  />
+                )}
+              </div>
             </div>
+            
+            <Button asChild className="w-full" size="sm">
+              <Link href={`/student/progress/${latestModule.moduleId}/reading`}>
+                {latestModule.completed ? 'Review Module' : 'Continue Module'}
+              </Link>
+            </Button>
           </div>
-          
-          <Button asChild className="w-full">
-            <Link href={`/student/progress/${latestModule.moduleId}/details`}>
-              {latestModule.completed ? 'Review Module' : 'Continue Module'}
-            </Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground mb-4">No modules started yet</p>
-          <Button asChild>
-            <Link href="/modules">Browse Modules</Link>
-          </Button>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-);
+        ) : (
+          <div className="text-center py-8">
+            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">No modules started yet</p>
+            <Button asChild size="sm">
+              <Link href="/student/modules">Browse Modules</Link>
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const ProgressCard: React.FC<{ metrics: ReturnType<typeof useProgressMetrics> }> = ({ metrics }) => (
   <Card>
@@ -275,38 +340,28 @@ const ProgressCard: React.FC<{ metrics: ReturnType<typeof useProgressMetrics> }>
             <span>Average Score</span>
             <span className="font-medium">{Math.round(metrics.averageScore)}%</span>
           </div>
-          <Progress value={metrics.averageScore} className="h-2" />
+          <Progress value={metrics.averageScore} variant="default" className="h-2" />
         </div>
         
         {/* Statistics Grid */}
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-muted-foreground">Completed</p>
-            <p className="text-2xl font-bold">{metrics.completedCount}</p>
+            <p className="text-2xl font-bold text-green-600">{metrics.completedCount}</p>
           </div>
           <div>
             <p className="text-muted-foreground">In Progress</p>
-            <p className="text-2xl font-bold">{metrics.inProgressCount}</p>
+            <p className="text-2xl font-bold text-blue-600">{metrics.inProgressCount}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Total Time</p>
-            <p className="text-2xl font-bold">{Math.round(metrics.totalTimeSpent / 60)}h</p>
+            <p className="text-2xl font-bold text-purple-600">{Math.round(metrics.totalTimeSpent / 60)}h</p>
           </div>
           <div>
             <p className="text-muted-foreground">This Week</p>
-            <p className="text-2xl font-bold">{metrics.recentActivity}</p>
+            <p className="text-2xl font-bold text-orange-600">{metrics.recentActivity}</p>
           </div>
         </div>
-        
-        {/* Progress Summary */}
-        {metrics.totalStarted > 0 && (
-          <div className="pt-2 border-t text-center">
-            <p className="text-xs text-muted-foreground">
-              {metrics.completedCount} of {metrics.totalStarted} modules completed 
-              ({Math.round((metrics.completedCount / metrics.totalStarted) * 100)}% completion rate)
-            </p>
-          </div>
-        )}
       </div>
     </CardContent>
   </Card>
@@ -341,7 +396,7 @@ const ActivityCalendarCard: React.FC<{
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <div className="text-sm text-muted-foreground">Loading activity data...</div>
+        <Skeleton className="h-32 w-full" />
       </div>
     );
   }
@@ -370,13 +425,15 @@ const ActivityCalendarCard: React.FC<{
   
   return (
     <div className="space-y-4">
-      {/* Calendar container with centered content */}
+      {/* Calendar container with horizontal scroll */}
       <div className="flex flex-col items-center">
-        <div className="overflow-x-auto">
-          <ActivityCalendar
-            data={hasData ? calendarData : generateEmptyCalendarYear(currentYear)}
-            {...calendarProps}
-          />
+        <div className="w-full overflow-x-auto">
+          <div className="min-w-[800px] max-w-[1000px] mx-auto">
+            <ActivityCalendar
+              data={hasData ? calendarData : generateEmptyCalendarYear(currentYear)}
+              {...calendarProps}
+            />
+          </div>
         </div>
         {!hasData && (
           <div className="text-center mt-4 p-4 bg-muted/50 rounded-lg max-w-md">
@@ -391,7 +448,7 @@ const ActivityCalendarCard: React.FC<{
       </div>
       {/* Stats container - matches calendar width */}
       <div className="flex justify-center">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-[1000px]">
           <CalendarStats stats={stats} />
         </div>
       </div>
@@ -404,8 +461,8 @@ export function StudentHome() {
   const profile = useAuthStore(state => state.profile);
   
   // Data fetching
-  const { data: progress = [] } = useMyProgressQuery();
-  const { data: latestModule } = useLatestModuleWithDetailsQuery();
+  const { data: progress = [], isLoading: isLoadingProgress } = useMyProgressQuery();
+  const { data: latestModule, isLoading: isLoadingLatestModule } = useLatestModuleWithDetailsQuery();
   const { data: activityData, isLoading: activityLoading, error: activityError } = useStudentActivityQuery();
   
   // Computed data
@@ -415,30 +472,35 @@ export function StudentHome() {
   if (!profile) {
     return null;
   }
-  
+
   return (
-    <div className="space-y-6">
-      <HomeHero profile={profile} />
-      
-      {/* Top Cards */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <ModuleCard latestModule={latestModule} />
-        <ProgressCard metrics={progressMetrics} />
+    <PageContainer>
+      <div className="space-y-8">
+        <PageHeader 
+          title={`Welcome back, ${profile.fullName}`}
+          description="Track your reading progress and continue your learning journey"
+        />
+        
+        {/* Top Cards */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ModuleCard latestModule={latestModule} isLoading={isLoadingLatestModule} />
+          <ProgressCard metrics={progressMetrics} />
+        </div>
+        
+        {/* Activity Calendar */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Activity Calendar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ActivityCalendarCard
+              isLoading={activityLoading}
+              hasError={!!activityError}
+              calendarData={calendarData}
+            />
+          </CardContent>
+        </Card>
       </div>
-      
-      {/* Activity Calendar */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Activity Calendar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ActivityCalendarCard
-            isLoading={activityLoading}
-            hasError={!!activityError}
-            calendarData={calendarData}
-          />
-        </CardContent>
-      </Card>
-    </div>
+    </PageContainer>
   );
-}
+} 

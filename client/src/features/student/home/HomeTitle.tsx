@@ -3,15 +3,15 @@
 import React from 'react';
 import type { ProfileDTO } from '@/types/api';
 
-interface HomeHeroProps {
+interface HomeTitleProps {
   profile: ProfileDTO | null;
 }
 
-export function HomeHero({ profile }: HomeHeroProps) {
+export function HomeTitle({ profile }: HomeTitleProps) {
   const studentName = profile?.fullName ?? 'Student';
 
   return (
-    <div className="p-4 md:p-6 bg-card border rounded-lg shadow-sm">
+    <div className="p-4 md:p-6 bg-card border shadow-sm">
       <h1 className="text-2xl font-semibold tracking-tight">
         Welcome back, {studentName}!
       </h1>

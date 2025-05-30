@@ -61,7 +61,7 @@ export function AdminUpdateModule({ moduleId }: AdminUpdateModuleProps) {
       title: '',
       description: '', 
       level: 1,
-      genre: 'Custom',
+      genre: 'Adventure',
       language: 'UK',
       imageUrl: '',
       estimatedReadingTime: null,

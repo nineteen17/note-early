@@ -39,7 +39,7 @@ export enum Language {
 }
 
 // Define allowed genres for the NEW genre column
-export const allowedGenres = ['History', 'Adventure', 'Science', 'Non-Fiction', 'Fantasy', 'Biography', 'Mystery', 'Science-Fiction', 'Folktale', 'Custom'] as const;
+export const allowedGenres = ['History', 'Adventure', 'Science', 'Non-Fiction', 'Fantasy', 'Biography', 'Mystery', 'Science-Fiction', 'Folktale'] as const;
 export type Genre = typeof allowedGenres[number];
 
 // Base response type for all API responses

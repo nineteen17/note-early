@@ -12,10 +12,17 @@ const fetchStudentProgressDetails = async (moduleId: string): Promise<StudentPro
     try {
         // Endpoint: GET /progress/details/{moduleId}
         const response = await api.get<StudentProgressDetailsDTO>(`/progress/details/${moduleId}`);
+        
+        // Ensure time tracking data is properly initialized
+        if (response.progress) {
+            response.progress.timeSpentMinutes = response.progress.timeSpentMinutes ?? 0;
+            response.progress.startedAt = response.progress.startedAt ?? new Date().toISOString();
+            response.progress.updatedAt = response.progress.updatedAt ?? new Date().toISOString();
+        }
+        
         return response;
     } catch (error) {
         console.error(`Error fetching progress details for module ${moduleId}:`, error);
-        // Assuming the interceptor handles ApiError creation and re-throwing
         throw error; 
     }
 };
@@ -25,11 +32,20 @@ export const useStudentProgressDetailsQuery = (
     moduleId: string | undefined
 ): UseQueryResult<StudentProgressDetailsDTO, ApiError> => {
     return useQuery<StudentProgressDetailsDTO, ApiError, StudentProgressDetailsDTO, readonly [string, string | undefined]>({
-        // Query key pattern: [scope, entity, id/filter]
         queryKey: ['studentProgressDetails', moduleId] as const, 
-        queryFn: () => fetchStudentProgressDetails(moduleId!), // Fetch function
-        enabled: !!moduleId, // Only run the query if moduleId is provided
-        staleTime: 1 * 60 * 1000, // Cache data for 1 minute, might need adjustment
-        // gcTime, refetchOnWindowFocus etc. can be configured as needed
+        queryFn: () => fetchStudentProgressDetails(moduleId!), 
+        enabled: !!moduleId,
+        staleTime: 1 * 60 * 1000, // Cache data for 1 minute
+        refetchOnWindowFocus: true, // Refetch when window regains focus
+        retry: (failureCount, error) => {
+            // Don't retry on 401/403 errors (auth issues)
+            if (error && typeof error === 'object' && 'status' in error) {
+                const status = (error as any).status;
+                if (status === 401 || status === 403) {
+                    return false;
+                }
+            }
+            return failureCount < 2;
+        },
     });
 }; 

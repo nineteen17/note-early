@@ -16,7 +16,7 @@ interface SidebarProps {
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ElementType; // Lucide icons are components
+  icon: React.ElementType;
 }
 
 // Define role-specific base items
@@ -38,7 +38,7 @@ const baseStudentNavItems: NavItem[] = [
 export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
 
-  let navItems: NavItem[] = []; // Initialize empty
+  let navItems: NavItem[] = [];
 
   switch (userRole) {
     case 'ADMIN':
@@ -48,8 +48,7 @@ export function Sidebar({ userRole }: SidebarProps) {
       ];
       break;
     case 'STUDENT':
-      // Use the updated base list for students
-      navItems = baseStudentNavItems; 
+      navItems = baseStudentNavItems;
       break;
     case 'SUPER_ADMIN':
       navItems = [
@@ -60,24 +59,47 @@ export function Sidebar({ userRole }: SidebarProps) {
       ];
       break;
     default:
-      navItems = []; // No items if role is unknown
+      navItems = [];
   }
 
+  const isRouteActive = (href: string) => {
+    // Handle nested routes
+    if (href === '/student/modules' && pathname.startsWith('/student/modules')) {
+      return true;
+    }
+    if (href === '/student/progress' && pathname.startsWith('/student/progress')) {
+      return true;
+    }
+    if (href === '/student/settings' && pathname.startsWith('/student/settings')) {
+      return true;
+    }
+    if (href === '/admin/modules' && pathname.startsWith('/admin/modules')) {
+      return true;
+    }
+    if (href === '/admin/settings' && pathname.startsWith('/admin/settings')) {
+      return true;
+    }
+    // Exact match for other routes
+    return pathname === href;
+  };
+
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col border-r bg-muted/40">
+    <aside className="fixed top-[60px] bottom-0 hidden w-64 flex-col border-r bg-muted/40 md:flex">
       <nav className="flex flex-col flex-1 space-y-1 overflow-auto p-4">
         {navItems.map((item) => {
-          // Adjusted isActive check for settings routes more robustly
-          const isActive = 
-            (item.href.startsWith('/admin/settings') && pathname.startsWith('/admin/settings')) ||
-            (item.href.startsWith('/student/settings') && pathname.startsWith('/student/settings')) ||
-            pathname === item.href;
+          const isActive = isRouteActive(item.href);
+
           return (
             <Button
               key={item.href}
               asChild
-              variant={isActive ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
+              variant={isActive ? 'default' : 'ghost'}
+              className={cn(
+                "w-full justify-start",
+                isActive 
+                  ? "bg-accent text-accent-foreground hover:bg-accent/90" 
+                  : "hover:bg-accent/10 hover:text-accent"
+              )}
             >
               <Link href={item.href}>
                 <item.icon className="mr-2 h-4 w-4" />
@@ -86,7 +108,6 @@ export function Sidebar({ userRole }: SidebarProps) {
             </Button>
           );
         })}
-        {/* Removed Sign Out button - should be handled in UserNav */}
       </nav>
     </aside>
   );

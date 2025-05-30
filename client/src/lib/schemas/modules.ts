@@ -62,6 +62,8 @@ export const readingModuleSchema = createModuleSchema.extend({
     paragraphCount: z.number().int().positive('Paragraph count must be a positive integer'),
     type: z.enum(['curated', 'custom']),
     adminId: z.string().uuid().nullable().optional(),
+    authorFirstName: z.string().nullable().optional(), // Author fields
+    authorLastName: z.string().nullable().optional(), // Author fields
 });
 
 export type ReadingModule = z.infer<typeof readingModuleSchema>; 

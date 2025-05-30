@@ -25,6 +25,10 @@
   --radius-sm: calc(var(--radius) - 4px);
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-blue-accent: var(--blue-accent);
+  
   @keyframes accordion-down {
     from {
       height: 0;
@@ -132,6 +136,18 @@
 
   /* Override default Skeleton background color */
   .animate-pulse.rounded-md.bg-muted {
-    @apply bg-border; /* Use the border color variable */
+    @apply bg-muted/30; /* Use muted color with 30% opacity for subtle animation */
   }
+}
+
+.tab-enhanced {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.tab-enhanced[data-state="active"] {
+  @apply scale-[1.02] shadow-sm;
+}
+
+.tab-enhanced:hover:not([data-state="active"]) {
+  @apply scale-[1.01];
 }

@@ -6,6 +6,7 @@ import QueryProvider from "@/providers/QueryProvider"; // Path relative to src/
 import { Toaster } from "@/components/ui/sonner"; // Path relative to src/
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { AuthProvider } from "@/providers/AuthProvider";
+import { TopLoader } from "@/components/skeletons/TopLoader";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <QueryProvider>
             <AuthProvider>
+              <TopLoader />
               {children}
               <Toaster />
             </AuthProvider>

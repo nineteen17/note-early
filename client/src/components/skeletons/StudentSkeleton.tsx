@@ -1,8 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageContainer } from "../layout/PageContainer";
 
 export function StudentSkeleton() {
   return (
-    <div className="container mx-auto max-w-4xl p-4 md:p-6 lg:p-8">
+    <PageContainer>
       {/* Header Skeleton */}
       <header className="mb-8 flex items-center justify-between">
         <Skeleton className="h-8 w-32" /> {/* Logo or Title */}
@@ -36,6 +37,6 @@ export function StudentSkeleton() {
           <Skeleton className="h-10 w-24" />
         </div>
       </main>
-    </div>
+    </PageContainer>
   );
 } 

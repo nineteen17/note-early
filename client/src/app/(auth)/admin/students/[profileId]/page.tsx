@@ -2,22 +2,21 @@
 
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminStudentProfileQuery } from '@/hooks/api/admin/students/useAdminStudentProfileQuery';
-import { useResetStudentPinMutation } from '@/hooks/api/admin/students/useResetStudentPinMutation'; // Import PIN reset hook
-import { useDeleteStudentMutation } from '@/hooks/api/admin/students/useDeleteStudentMutation'; // Import Delete hook
-import { useForm, Controller } from 'react-hook-form'; // Import react-hook-form
-import { zodResolver } from '@hookform/resolvers/zod'; // Import zodResolver
-import { resetStudentPinSchema, ResetStudentPinInput } from '@/lib/schemas/student'; // Import PIN schema
+import { useResetStudentPinMutation } from '@/hooks/api/admin/students/useResetStudentPinMutation';
+import { useDeleteStudentMutation } from '@/hooks/api/admin/students/useDeleteStudentMutation';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { resetStudentPinSchema, ResetStudentPinInput } from '@/lib/schemas/student';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
-  AlertDialogAction, // Import Action for Delete
+  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -25,22 +24,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"; 
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"; // Import InputOTP
-import { Label } from "@/components/ui/label"; // Import Label
-import { ArrowLeft, Edit, UserCircle, BookOpen, Activity, Calendar, CheckCircle, BarChart2, KeyRound, Trash2 } from 'lucide-react'; // Add KeyRound and Trash2 icons
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Edit, UserCircle, BookOpen, Activity, Calendar, CheckCircle, KeyRound, Trash2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { format } from 'date-fns'; // For date formatting
-import { getInitials } from '@/lib/utils'; // Helper for Avatar fallback
-import { EditStudentModal } from '@/features/admin/edit-student-modal'; // Import Edit Modal
-import { ProfileDTO } from '@/types/api'; // Import ProfileDTO
-import { StudentProgressOverview } from '@/features/admin/student-detail/StudentProgressOverview'; // Import the new component
+import { format } from 'date-fns';
+import { getInitials } from '@/lib/utils';
+import { EditStudentModal } from '@/features/admin/edit-student-modal';
+import { ProfileDTO } from '@/types/api';
+import { StudentProgressOverview } from '@/features/admin/student-detail/StudentProgressOverview';
 
 // Add onEdit, onResetPin, and onDelete props to trigger modal open
 interface StudentDetailDisplayProps {
   profile: ProfileDTO;
   onEdit: () => void;
-  onResetPin: () => void; // Add prop for reset pin
-  onDelete: () => void; // Add prop for delete
+  onResetPin: () => void;
+  onDelete: () => void;
 }
 
 function StudentDetailDisplay({ profile, onEdit, onResetPin, onDelete }: StudentDetailDisplayProps) {
@@ -98,16 +97,16 @@ export default function AdminStudentDetailPage() {
   const profileId = params.profileId as string | undefined;
 
   const { data: profile, isLoading, isError, error } = useAdminStudentProfileQuery(profileId);
-  const resetPinMutation = useResetStudentPinMutation(); // Hook for PIN reset
-  const deleteMutation = useDeleteStudentMutation(); // Instantiate delete hook
+  const resetPinMutation = useResetStudentPinMutation();
+  const deleteMutation = useDeleteStudentMutation();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isResetPinDialogOpen, setResetPinDialogOpen] = useState(false); // State for PIN dialog
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // State for delete dialog
+  const [isResetPinDialogOpen, setResetPinDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Form for reset PIN dialog
   const { 
-    handleSubmit: handlePinSubmit, // Rename to avoid conflict
+    handleSubmit: handlePinSubmit,
     control,
     formState: { errors: resetPinErrors },
     reset: resetPinForm,
@@ -130,29 +129,27 @@ export default function AdminStudentDetailPage() {
 
   // Open reset PIN dialog
   const handleOpenResetPinDialog = () => {
-    resetPinForm({ newPin: '' }); // Reset form on open
+    resetPinForm({ newPin: '' });
     setResetPinDialogOpen(true);
   };
 
   // Close reset PIN dialog
   const handleCloseResetPinDialog = () => {
     setResetPinDialogOpen(false);
-    resetPinForm({ newPin: '' }); // Also reset on cancel/close
+    resetPinForm({ newPin: '' });
   };
 
   // Handle Reset PIN form submission
   const onResetPinSubmit = (data: ResetStudentPinInput) => {
     if (profile?.profileId) {
       resetPinMutation.mutate(
-        { studentId: profile.profileId, newPin: data.newPin }, // Use profileId from page data
+        { studentId: profile.profileId, newPin: data.newPin },
         {
           onSuccess: () => {
-            handleCloseResetPinDialog(); // Close dialog on success
-            // Success toast is handled by the mutation hook
+            handleCloseResetPinDialog();
           },
           onError: () => {
              // Error toast is handled by the mutation hook 
-             // Keep dialog open on error?
           }
         }
       );
@@ -170,18 +167,15 @@ export default function AdminStudentDetailPage() {
     if (profile?.profileId) {
       deleteMutation.mutate(profile.profileId, {
         onSuccess: () => {
-          handleCloseDeleteDialog(); // Close the dialog
-          // Toast handled by hook
-          router.push('/admin/students'); // Navigate back to list on success
+          handleCloseDeleteDialog();
+          router.push('/admin/students');
         },
         onError: () => {
           // Toast handled by hook
-          // Keep dialog open on error to show message?
         }
       });
     }
   };
-  // --- End Delete Handlers ---
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
@@ -307,7 +301,7 @@ export default function AdminStudentDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {profile?.fullName || 'Student'}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the student's profile
+              This action cannot be undone. This will permanently delete the student&apos;s profile
               and all associated data (progress, summaries, etc.).
             </AlertDialogDescription>
           </AlertDialogHeader>

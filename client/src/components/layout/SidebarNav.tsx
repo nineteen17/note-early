@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Home, Users, BookOpen, Settings, BarChart3, GraduationCap, BookText } from 'lucide-react';
 import { ProfileRole } from '@/types/api';
+import { NoteEarlyLogo } from '@/components/NoteEarlyLogo';
+import { cn } from '@/lib/utils';
 
 interface SidebarNavProps {
   userRole?: ProfileRole;
@@ -15,7 +17,7 @@ interface SidebarNavProps {
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 // Define role-specific base items
@@ -26,7 +28,9 @@ const baseAdminNavItems: NavItem[] = [
 ];
 const baseStudentNavItems: NavItem[] = [
   { href: '/student/home', label: 'Home', icon: Home },
+  { href: '/student/modules', label: 'Browse Modules', icon: BookOpen },
   { href: '/student/progress', label: 'My Progress', icon: GraduationCap },
+  { href: '/student/settings', label: 'Settings', icon: Settings },
 ];
 
 export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
@@ -61,9 +65,8 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
     <div className={`flex flex-col flex-1 overflow-auto ${isMobile ? '' : ''}`}>
       {isMobile && (
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/admin/home" className="flex items-center gap-2 font-semibold text-foreground">
-            <BookText className="h-6 w-6" />
-            <span>NoteEarly</span>
+          <Link href="/student/home" className="flex items-center gap-2 font-semibold text-foreground">
+            <NoteEarlyLogo />
           </Link>
         </div>
       )}
@@ -77,8 +80,13 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
             <Button
               key={item.href}
               asChild
-              variant={isActive ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
+              variant={isActive ? 'default' : 'ghost'}
+              className={cn(
+                "w-full justify-start",
+                isActive 
+                  ? "bg-accent text-accent-foreground hover:bg-accent/90" 
+                  : "hover:bg-accent/10 hover:text-accent"
+              )}
             >
               <Link href={item.href}>
                 <item.icon className="mr-2 h-4 w-4" />

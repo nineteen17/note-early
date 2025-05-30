@@ -61,7 +61,7 @@ export function AdminCreateModule() {
       title: '',
       description: null, // Match schema (nullable)
       level: 1, 
-      genre: 'Custom',
+      genre: 'Adventure',
       language: 'UK',
       imageUrl: null, // Match schema (nullable)
       estimatedReadingTime: null, // Default to null for optional number

@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
-
+import { NoteEarlyLogo } from '@/components/NoteEarlyLogo';
 // Placeholder components for icons/images - replace with actual implementations
 const PlaceholderIcon = ({ className }: { className?: string }) => (
   <div className={`w-12 h-12 rounded-full bg-muted flex items-center justify-center ${className}`}>
@@ -22,18 +22,7 @@ const Illustration = ({ className }: { className?: string }) => (
   </div>
 );
 
-const ActualLogo = ({ className }: { className?: string }) => (
-  <Link href="/" className={`flex items-center gap-2 font-bold text-lg ${className}`}>
-    <Image 
-      src="/note-early-icon-logo.png" 
-      alt="NoteEarly Logo"
-      width={32}
-      height={32}
-      className="h-8 w-auto rounded-full"
-    />
-    NoteEarly
-  </Link>
-);
+
 
 export default function Home() {
   return (
@@ -41,7 +30,9 @@ export default function Home() {
       {/* Header - Apply primary background */} 
       <header className="sticky top-0 z-50 border-b border-primary/20 bg-primary text-primary-foreground">
         <div className="container flex h-14 items-center px-4 sm:px-6 lg:px-8"> 
-          <ActualLogo className="text-primary-foreground"/>
+          <Link href="/">
+            <NoteEarlyLogo className="text-primary-foreground"/>
+          </Link>
           <nav className="ml-6 hidden md:flex items-center space-x-6 text-sm font-medium">
             {/* Adjust link colors for primary background */}
             <Link href="/" className="transition-colors hover:text-primary-foreground/80 text-primary-foreground">Home</Link> 
@@ -55,7 +46,7 @@ export default function Home() {
               <Link href="/login">Login</Link>
             </Button>
             <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
-              <Link href="/register">Register</Link>
+              <Link href="/signup">Register</Link>
             </Button>
             {/* Use the restored ThemeToggle */}
             <ThemeToggle /> 
@@ -201,7 +192,9 @@ export default function Home() {
       <footer className="bg-muted border-t border-border/40 py-12 lg:py-16">
           <div className="container px-4 md:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm"> 
               <div className="sm:col-span-2 md:col-span-1"> 
-                  <ActualLogo className="mb-4 text-foreground"/>
+                  <Link href="/">
+                    <NoteEarlyLogo className="mb-4 text-foreground"/>
+                  </Link>
                   <p className="text-muted-foreground">
                     An educational platform for children ages 5-12 to improve reading comprehension.
                   </p>

@@ -31,7 +31,7 @@ export default function StudentLayout({
     return (
       <div className="flex flex-col min-h-screen bg-background">
         {/* Header Skeleton */}
-        <header className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <header className="sticky top-0 z-50 flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 bg-primary">
            <Skeleton className="h-6 w-32" /> {/* Logo */}
            <div className="ml-auto flex items-center gap-2">
               <Skeleton className="h-8 w-20" />
@@ -41,7 +41,7 @@ export default function StudentLayout({
         {/* Container for Sidebar + Main Skeleton */}
         <div className="flex flex-1">
           {/* Sidebar Skeleton */}
-          <aside className="hidden w-64 flex-col border-r bg-muted/40 sm:flex">
+          <aside className="fixed top-[60px] bottom-0 hidden w-64 flex-col border-r bg-muted/40 sm:flex">
              {/* Simplified sidebar skeleton */}
              <nav className="flex-1 overflow-auto py-4 space-y-1">
                <Skeleton className="h-10 mx-4 rounded-lg" />
@@ -50,7 +50,7 @@ export default function StudentLayout({
              </nav>
           </aside>
           {/* Page Content Skeleton */}
-          <main className="flex-1 p-4 sm:px-6 sm:py-6">
+          <main className="flex-1 p-4 sm:px-6 sm:py-6 sm:ml-64">
              <Skeleton className="h-96 w-full" />
           </main>
         </div>
@@ -90,7 +90,7 @@ export default function StudentLayout({
        <Header profile={profile} />
        <div className="flex flex-1">
           <Sidebar userRole={profile.role} />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto sm:ml-64">
              {children}
           </main>
        </div>

@@ -94,15 +94,6 @@ export function ModuleList() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
-              {module.imageUrl && (
-                <img
-                  src={module.imageUrl}
-                  alt={`Cover for ${module.title}`}
-                  className="aspect-video w-full rounded-md object-cover mb-4"
-                  width={300}
-                  height={169}
-                />
-              )}
               <p className="text-sm text-muted-foreground line-clamp-3">
                 {module.description || 'No description available.'}
               </p>

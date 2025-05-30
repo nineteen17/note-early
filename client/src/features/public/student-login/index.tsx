@@ -32,6 +32,8 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { NoteEarlyLogoLarge } from '@/components/NoteEarlyLogo';
+import { getMobileAuthMargins, getAuthCardClasses } from '@/lib/utils';
 
 export function StudentLoginFeature() {
     const router = useRouter(); // Keep for footer links
@@ -99,104 +101,108 @@ export function StudentLoginFeature() {
     const serverError = formErrors.root?.serverError?.message;
 
     return (
-        <Card className="w-full max-w-sm">
-            <CardHeader className="space-y-1 text-center">
-                <CardTitle className="text-2xl font-bold">Student Login</CardTitle>
-                <CardDescription>
-                    Enter your Student ID and 4-digit PIN.
-                </CardDescription>
-            </CardHeader>
-            {/* Use react-hook-form's handleSubmit */}
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <CardContent className="grid gap-4">
-                     {/* Display general server/mutation errors */} 
-                    {serverError && serverError !== '' && (
-                        <Alert variant="destructive">
-                            <AlertTitle>Login Failed</AlertTitle>
-                            <AlertDescription>{serverError}</AlertDescription>
-                        </Alert>
-                    )}
+        <div className="min-h-screen flex flex-col">
+            {/* Fixed logo position from top */}
+            <div className="pt-12 pb-6 flex justify-center">
+                <Link href="/">
+                    <NoteEarlyLogoLarge />
+                </Link>
+            </div>
+            
+            {/* Flexible content area with mobile margins */}
+            <div className={`flex-1 flex items-start justify-center pb-8 ${getMobileAuthMargins()}`}>
+                <Card className={getAuthCardClasses()}>
+                    <CardHeader className="text-center space-y-1 pb-4">
+                        <CardTitle className="text-2xl font-bold">Student Login</CardTitle>
+                    </CardHeader>
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <CardContent className="space-y-5 px-6 sm:px-8">
+                            {serverError && (
+                                <Alert variant="destructive">
+                                    <AlertTitle>Access Denied</AlertTitle>
+                                    <AlertDescription>{serverError}</AlertDescription>
+                                </Alert>
+                            )}
 
-                    {/* Student ID Input */}
-                    <div className="grid gap-2">
-                        <Label htmlFor="studentId">Student ID</Label>
-                        <Input 
-                            id="studentId" 
-                            placeholder="Enter your assigned ID" 
-                            disabled={isPending}
-                            aria-invalid={formErrors.studentId ? "true" : "false"}
-                            aria-describedby="studentId-error"
-                            {...register("studentId")} // Register with RHF
-                        />
-                        {formErrors.studentId && (
-                            <p id="studentId-error" role="alert" className="text-sm text-red-600">
-                                {formErrors.studentId.message}
-                            </p>
-                        )}
-                    </div>
-                    
-                    {/* PIN Input - Using InputOTP with Controller */}
-                    <div className="grid gap-2 items-center">
-                        <Label htmlFor="pin">PIN</Label>
-                        <div className="flex justify-center"> 
-                             <Controller
-                                name="pin"
-                                control={control}
-                                render={({ field }) => (
-                                    <InputOTP 
-                                        maxLength={4} 
-                                        {...field} // Spread field props (onChange, onBlur, value, ref)
-                                        id="pin"
-                                        containerClassName="group flex items-center"
-                                        aria-invalid={formErrors.pin ? "true" : "false"}
-                                        aria-describedby="pin-error"
-                                        disabled={isPending}
-                                    >
-                                        <InputOTPGroup className="gap-2">
-                                            <InputOTPSlot index={0} className="rounded-md border" />
-                                            <InputOTPSlot index={1} className="rounded-md border" />
-                                            <InputOTPSlot index={2} className="rounded-md border" />
-                                            <InputOTPSlot index={3} className="rounded-md border" />
-                                        </InputOTPGroup>
-                                    </InputOTP>
+                            <div className="space-y-2">
+                                <Label htmlFor="studentId">Student ID</Label>
+                                <Input
+                                    id="studentId"
+                                    type="text"
+                                    placeholder="Enter your student ID"
+                                    required
+                                    aria-invalid={formErrors.studentId ? "true" : "false"}
+                                    aria-describedby="studentId-rhf-error"
+                                    disabled={isPending}
+                                    className={`bg-input border-border h-11 ${formErrors.studentId ? 'border-destructive focus:border-destructive' : ''}`}
+                                    {...register("studentId")}
+                                />
+                                {formErrors.studentId && (
+                                    <p id="studentId-rhf-error" role="alert" className="text-sm font-medium text-destructive">
+                                        {formErrors.studentId.message}
+                                    </p>
                                 )}
-                             />
-                        </div>
-                        {formErrors.pin && (
-                            <p id="pin-error" role="alert" className="text-sm text-red-600 mt-1 text-center">
-                                {formErrors.pin.message}
-                            </p>
-                        )}
-                    </div>
-                    
-                    {/* Submit Button with loading state */} 
-                    <Button 
-                        type="submit" 
-                        className="w-full"
-                        disabled={isPending}
-                    >
-                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 
-                        Enter
-                    </Button>
+                            </div>
 
-                </CardContent>
-            </form>
-            <CardFooter className="flex flex-col gap-2 pt-4 text-center text-sm">
-                 {/* "Not a student?" link */}
-                 <p>
-                    <span className="text-muted-foreground">Not a student?{" "}</span>
-                    <Link href="/login" className={`underline ${isPending ? 'pointer-events-none opacity-50' : ''}`}> {/* Disable link when pending */} 
-                        Admin/Teacher Login
-                    </Link>
-                </p>
-                 {/* "Need help?" link */}
-                 <p className="pt-2">
-                    <span className="text-muted-foreground">Need help?{" "}</span>
-                    <Link href="/support" className={`underline ${isPending ? 'pointer-events-none opacity-50' : ''}`}> {/* Disable link when pending */}
-                        Contact Support
-                    </Link>
-                 </p>
-            </CardFooter>
-        </Card>
+                            <div className="space-y-2">
+                                <Label htmlFor="pin">PIN</Label>
+                                <div className="flex justify-center">
+                                    <Controller
+                                        name="pin"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <InputOTP 
+                                                maxLength={4} 
+                                                {...field} // Spread field props (onChange, onBlur, value, ref)
+                                                id="pin"
+                                                containerClassName="group flex items-center"
+                                                aria-invalid={formErrors.pin ? "true" : "false"}
+                                                aria-describedby="pin-error"
+                                                disabled={isPending}
+                                            >
+                                                <InputOTPGroup className="gap-2">
+                                                    <InputOTPSlot index={0} className="rounded-md border" />
+                                                    <InputOTPSlot index={1} className="rounded-md border" />
+                                                    <InputOTPSlot index={2} className="rounded-md border" />
+                                                    <InputOTPSlot index={3} className="rounded-md border" />
+                                                </InputOTPGroup>
+                                            </InputOTP>
+                                        )}
+                                    />
+                                </div>
+                                {formErrors.pin && (
+                                    <p id="pin-error" role="alert" className="text-sm font-medium text-destructive text-center">
+                                        {formErrors.pin.message}
+                                    </p>
+                                )}
+                            </div>
+
+                            <Button
+                                type="submit"
+                                className="w-full h-12 bg-accent hover:bg-accent/90 text-accent-foreground font-medium"
+                                disabled={isPending}
+                            >
+                                {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing In...</> : 'Sign In'}
+                            </Button>
+                        </CardContent>
+                    </form>
+
+                    <CardFooter className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-4 text-center text-sm px-6 sm:px-8">
+                        <p>
+                            <span className="text-muted-foreground">Need help accessing your account?{" "}</span>
+                            <Link href="/support" className={`underline ${isPending ? 'pointer-events-none opacity-50' : ''}`}>
+                                Contact Support
+                            </Link>
+                        </p>
+                        <p>
+                            <span className="text-muted-foreground">Are you an admin?{" "}</span>
+                            <Link href="/login" className={`underline ${isPending ? 'pointer-events-none opacity-50' : ''}`}>
+                                Login here
+                            </Link>
+                        </p>
+                    </CardFooter>
+                </Card>
+            </div>
+        </div>
     );
 } 

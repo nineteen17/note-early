@@ -113,6 +113,7 @@ export class ProgressService {
           startedAt: now,
           highestParagraphIndexReached: 0, 
           completed: false,
+          timeSpentMinutes: 0, // Initialize time spent to 0
           createdAt: now,
           updatedAt: now,
         })
@@ -179,6 +180,12 @@ export class ProgressService {
       }
       const totalParagraphs = moduleData.paragraphCount;
 
+      // Calculate time spent since last update or start
+      const now = new Date();
+      const lastUpdate = progressRecord.updatedAt || progressRecord.startedAt || now;
+      const minutesSpent = Math.round((now.getTime() - lastUpdate.getTime()) / (1000 * 60));
+      const totalTimeSpent = (progressRecord.timeSpentMinutes || 0) + minutesSpent;
+
       const [newSubmission] = await this.db
         .insert(schema.paragraphSubmissions)
         .values({
@@ -186,7 +193,7 @@ export class ProgressService {
           paragraphIndex,
           paragraphSummary,
           cumulativeSummary,
-          submittedAt: new Date(), 
+          submittedAt: now, 
         })
         .returning();
 
@@ -195,7 +202,8 @@ export class ProgressService {
       }
 
       const updatesToProgress: Partial<StudentProgress> = {
-        updatedAt: new Date(),
+        updatedAt: now,
+        timeSpentMinutes: totalTimeSpent,
       };
 
       if (paragraphIndex > (progressRecord.highestParagraphIndexReached || 0)) {
@@ -205,7 +213,7 @@ export class ProgressService {
       let isComplete = false;
       if (paragraphIndex >= totalParagraphs) {
         updatesToProgress.completed = true;
-        updatesToProgress.completedAt = new Date();
+        updatesToProgress.completedAt = now;
         updatesToProgress.finalSummary = cumulativeSummary; 
         isComplete = true;
       }

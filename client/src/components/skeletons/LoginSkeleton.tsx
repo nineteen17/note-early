@@ -3,55 +3,71 @@ import {
   Card,
   CardContent,
   CardHeader,
+  CardFooter,
 } from "@/components/ui/card";
+import { getMobileAuthMargins, getAuthCardClasses } from '@/lib/utils';
 
 export function LoginSkeleton() {
   return (
-    <Card className="w-full max-w-md mx-auto animate-pulse">
-      <CardHeader className="text-center space-y-2 pt-6">
-        <Skeleton className="h-7 w-3/5 mx-auto" />
-        <Skeleton className="h-4 w-4/5 mx-auto" />
-      </CardHeader>
-      <CardContent className="space-y-6 pb-6">
-        <div className="space-y-6">
-          <div className="grid w-full grid-cols-2 gap-2 bg-muted p-1 rounded-md">
-            <Skeleton className="h-9 rounded-sm" />
-            <Skeleton className="h-9 rounded-sm" />
-          </div>
-
-          <div className="mt-6 space-y-4">
+    <div className="min-h-screen flex flex-col">
+      {/* Fixed logo position from top */}
+      <div className="pt-12 pb-6 flex justify-center">
+        <Skeleton className="h-12 w-32" /> {/* Logo skeleton */}
+      </div>
+      
+      {/* Flexible content area with mobile margins */}
+      <div className={`flex-1 flex items-start justify-center pb-8 ${getMobileAuthMargins()}`}>
+        <Card className={getAuthCardClasses()}>
+          <CardHeader className="text-center space-y-1 pb-4">
+            <Skeleton className="h-8 w-48 mx-auto" /> {/* Title */}
+          </CardHeader>
+          
+          <CardContent className="space-y-4 px-6 sm:px-8">
+            {/* Email field */}
             <div className="space-y-2">
-              <Skeleton className="h-4 w-1/4" />
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-4 w-24" /> {/* Label */}
+              <Skeleton className="h-11 w-full" /> {/* Input */}
             </div>
+
+            {/* Password field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-1/4" />
-                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-4 w-20" /> {/* Label */}
+                <Skeleton className="h-4 w-28" /> {/* Forgot password link */}
               </div>
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-11 w-full" /> {/* Input */}
             </div>
+
+            {/* Remember me checkbox */}
             <div className="flex items-center space-x-2">
-              <Skeleton className="h-4 w-4 rounded" />
-              <Skeleton className="h-4 w-2/5" />
+              <Skeleton className="h-4 w-4 rounded" /> {/* Checkbox */}
+              <Skeleton className="h-4 w-24" /> {/* Label */}
             </div>
-            <Skeleton className="h-10 w-full" />
-            <div className="relative my-4">
+
+            {/* Sign in button */}
+            <Skeleton className="h-11 w-full" />
+
+            {/* Divider */}
+            <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <Skeleton className="h-px w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <Skeleton className="h-4 w-1/4 bg-background px-2" />
+                <Skeleton className="h-4 w-32 bg-background px-2" />
               </div>
             </div>
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </div>
 
-        <div className="mt-4 text-center">
-          <Skeleton className="h-4 w-3/5 mx-auto" />
-        </div>
-      </CardContent>
-    </Card>
+            {/* Google sign in button */}
+            <Skeleton className="h-11 w-full" />
+          </CardContent>
+
+          <CardFooter className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-4 text-center text-sm px-6 sm:px-8">
+            <Skeleton className="h-4 w-40" /> {/* Footer link 1 */}
+            <Skeleton className="h-4 w-32" /> {/* Footer link 2 */}
+            <Skeleton className="h-4 w-28" /> {/* Footer link 3 */}
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
   );
 } 

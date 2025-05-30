@@ -229,20 +229,20 @@ export interface StudentProgressDetailsDTO {
 }
 
 export interface ReadingModuleDTO {
-    id: string; // uuid
-    adminId?: string | null; // uuid
+    id: string;
     title: string;
-    structuredContent: Paragraph[];
-    paragraphCount: number;
-    level: ModuleLevel;
+    description: string;
     type: ModuleType;
     genre: ModuleGenre;
+    level: ModuleLevel;
     language: ModuleLanguage;
-    createdAt: string; // date-time format
-    description?: string | null;
-    imageUrl?: string | null; // url format
-    estimatedReadingTime?: number | null;
-    isActive: boolean; // Added based on Update/Create Schemas
+    createdAt: string;
+    updatedAt: string;
+    paragraphCount: number;
+    progress?: {
+        percentage: number;
+        isCompleted: boolean;
+    };
 }
 
 export interface SubscriptionPlan {

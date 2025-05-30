@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import ModulesFeature from '@/features/student/modules';
+import { StudentSkeleton } from '@/components/skeletons/StudentSkeleton';
+
+function ModulesPageContent() {
+  return <ModulesFeature />;
+}
 
 export default function BrowseModulesPage() {
   return (
-     <div className="container mx-auto p-4 md:p-6"> {/* Add padding */}
-       <ModulesFeature />
-     </div>
+    <Suspense fallback={<StudentSkeleton />}>
+      <ModulesPageContent />
+    </Suspense>
   );
 } 

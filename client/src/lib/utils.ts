@@ -21,3 +21,19 @@ export function getInitials(name: string): string {
     return (words[0][0] + (words[1][0] || '')).toUpperCase();
   }
 }
+
+/**
+ * Utility function to get consistent mobile margin classes for auth pages
+ * Provides proper spacing on mobile devices while maintaining desktop layout
+ */
+export function getMobileAuthMargins() {
+  return "px-4 sm:px-6 md:px-8";
+}
+
+/**
+ * Utility function to get responsive card classes for auth forms
+ * Makes cards wider on desktop and blend with background on mobile
+ */
+export function getAuthCardClasses() {
+  return "sm:min-w-[600px] w-full max-w-md sm:max-w-4xl mx-auto sm:border sm:shadow-md border-0 shadow-none sm:bg-card bg-transparent";
+}

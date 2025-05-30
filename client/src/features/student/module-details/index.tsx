@@ -87,7 +87,7 @@ const StudentModuleDetails = ({ moduleId }: StudentModuleDetailsProps) => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Overall Progress</span>
-              <Badge variant={progress.completed ? "default" : "secondary"}>
+              <Badge className={progress.completed ? "bg-[#4BAE4F] text-white" : "bg-secondary text-secondary-foreground"}>
                 {progress.completed ? 'Completed' : 'In Progress'}
               </Badge>
             </CardTitle>

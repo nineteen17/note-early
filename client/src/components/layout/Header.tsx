@@ -1,29 +1,35 @@
 import React from 'react';
-import Link from 'next/link'; // Added Link import
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
+import { UserNav } from './UserNav';
 import { ThemeToggle } from './ThemeToggle';
-import { UserNav } from './UserNav'; // Import UserNav
-import type { ProfileDTO } from "@/types/api"; // <<< Import ProfileDTO type
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetTrigger, 
-  SheetHeader,    // <-- Add import
-  SheetTitle,     // <-- Add import
-  SheetDescription // <-- Add import
-} from "@/components/ui/sheet"; // Import Sheet components
-import { Button } from "@/components/ui/button"; // Import Button
-import { Menu, BookText } from "lucide-react"; // Import Menu icon and maybe logo icon
-import { SidebarNav } from './SidebarNav'; 
+import { SidebarNav } from './SidebarNav';
+import { NoteEarlyLogo } from '@/components/NoteEarlyLogo';
+import type { ProfileDTO } from '@/types/api';
 
-// <<< Define props interface >>>
 interface HeaderProps {
-  profile: ProfileDTO | null;
-  isProfileLoading?: boolean;
+  profile?: ProfileDTO | null;
 }
 
-export function Header({ profile }: HeaderProps) { // <<< Use props
+export function Header({ profile }: HeaderProps) {
+  // Determine the correct home route based on user role
+  const getHomeRoute = () => {
+    if (!profile) return '/';
+    switch (profile.role) {
+      case 'ADMIN':
+      case 'SUPER_ADMIN':
+        return '/admin/home';
+      case 'STUDENT':
+        return '/student/home';
+      default:
+        return '/';
+    }
+  };
+
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-primary px-4 text-primary-foreground lg:h-[60px] lg:px-6">
+    <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-primary/95 dark:bg-primary/95 backdrop-blur supports-[backdrop-filter]:bg-primary/98 supports-[backdrop-filter]:dark:bg-primary/80 px-4 text-primary-foreground lg:h-[60px] lg:px-6">
       
       {/* Mobile Nav Toggle - Only on small screens */}
       <Sheet>
@@ -53,17 +59,15 @@ export function Header({ profile }: HeaderProps) { // <<< Use props
 
       {/* Desktop Logo Wrapper - Hidden on mobile */}
       <div className="hidden items-center md:flex md:mr-auto"> {/* Hide below md */} 
-          <Link href="/admin/home" className="flex items-center gap-2 font-semibold">
-             <BookText className="h-6 w-6" /> 
-             {/* Text always visible when container is */}
-             <span>NoteEarly</span> 
+          <Link href={getHomeRoute()} className="flex items-center gap-2 font-semibold">
+             <NoteEarlyLogo />
           </Link>
       </div>
        
        {/* Right side items */}
        <div className="ml-auto flex items-center gap-4"> 
           <ThemeToggle />
-          <UserNav profile={profile} />
+          <UserNav profile={profile || null} />
        </div>
     </header>
   );
