@@ -28,6 +28,7 @@ interface FilteredModuleListProps {
   };
   viewMode?: 'single' | 'grid';
   searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 // Helper function to calculate progress percentage
@@ -40,7 +41,8 @@ export const FilteredModuleList: React.FC<FilteredModuleListProps> = ({
   sortBy, 
   filters, 
   viewMode = 'single',
-  searchQuery 
+  searchQuery = '',
+  onSearchChange
 }) => {
   const router = useRouter();
   const { data: modules, isLoading: isLoadingModules } = useAllActiveModulesQuery();

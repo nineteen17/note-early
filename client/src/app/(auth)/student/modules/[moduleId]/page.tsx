@@ -87,12 +87,27 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
         {/* Main Module Card */}
         <Card className="w-full">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div className="flex-1">
-                <CardTitle className="text-2xl font-bold mb-3">{module.title}</CardTitle>
+                <div className="flex items-start justify-between gap-4">
+                  <CardTitle className="text-2xl font-bold">{module.title}</CardTitle>
+                  
+                  {/* Progress Badge - Moved inside the title container */}
+                  <div className="flex-shrink-0">
+                    {progress && (
+                      <Badge className={progress.completed ? "bg-success text-white" : "bg-secondary text-secondary-foreground"}>
+                        {progress.completed ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                        {progress.completed ? 'Completed' : 'In Progress'}
+                      </Badge>
+                    )}
+                    {!progress && (
+                      <Badge variant="outline">Not Started</Badge>
+                    )}
+                  </div>
+                </div>
                 
                 {/* Module Metadata Badges */}
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="flex flex-wrap gap-2 mt-3">
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                     <BookOpen className="h-3 w-3 mr-1" />
                     Level {module.level}
@@ -128,28 +143,15 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
 
                 {/* Author Information with proper empty state handling */}
                 {authorName ? (
-                  <CardDescription className="flex items-center gap-2 text-sm">
+                  <CardDescription className="flex items-center gap-2 text-sm mt-3">
                     <User className="h-4 w-4" />
                     by {authorName}
                   </CardDescription>
                 ) : (
-                  <CardDescription className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CardDescription className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
                     <User className="h-4 w-4" />
                     Author information not available
                   </CardDescription>
-                )}
-              </div>
-              
-              {/* Progress Badge */}
-              <div className="flex flex-col items-end gap-2">
-                {progress && (
-                  <Badge className={progress.completed ? "bg-success text-white" : "bg-secondary text-secondary-foreground"}>
-                    {progress.completed ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                    {progress.completed ? 'Completed' : 'In Progress'}
-                  </Badge>
-                )}
-                {!progress && (
-                  <Badge variant="outline">Not Started</Badge>
                 )}
               </div>
             </div>
@@ -178,7 +180,7 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <blockquote className="text-sm leading-relaxed italic text-foreground/90 border-l-4 border-accent bg-accent/5 pl-4 py-3 rounded-r-lg mb-4">
+                    <blockquote className="text-sm leading-relaxed italic text-foreground/90 border-l-4 border-accent bg-[rgba(254,172,62,0.1)] pl-4 py-3 rounded-r-lg mb-4">
                       &ldquo;{module.structuredContent[0].text.substring(0, 200)}
                       {module.structuredContent[0].text.length > 200 ? '...' : ''}&rdquo;
                     </blockquote>

@@ -95,14 +95,14 @@ export function SignupForm() {
             <div className={`flex-1 flex items-start justify-center pb-8 ${getMobileAuthMargins()}`}>
                 <Card className={getAuthCardClasses()}>
                     <CardHeader className="text-center space-y-1 pb-4">
-                        <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+                        <CardTitle className="text-xl sm:text-2xl font-bold">Create Account</CardTitle>
                     </CardHeader>
                     <form onSubmit={handleSubmit(onSubmit)}>
-                        <CardContent className="space-y-4 px-6 sm:px-8">
+                        <CardContent className="space-y-4 px-4 sm:px-6 sm:px-8">
                             {serverError && (
                                 <Alert variant="destructive">
-                                    <AlertTitle>Registration Failed</AlertTitle>
-                                    <AlertDescription>{serverError}</AlertDescription>
+                                    <AlertTitle className="text-sm sm:text-base">Registration Failed</AlertTitle>
+                                    <AlertDescription className="text-xs sm:text-sm">{serverError}</AlertDescription>
                                 </Alert>
                             )}
 

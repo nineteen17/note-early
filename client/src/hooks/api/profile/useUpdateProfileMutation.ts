@@ -27,7 +27,7 @@ const updateProfile = async (profileData: ProfileUpdateInput): Promise<ProfileDT
 // Define the custom hook
 export const useUpdateProfileMutation = () => {
     const queryClient = useQueryClient();
-    const setUser = useAuthStore((state) => state.setUser);
+    const setProfile = useAuthStore((state) => state.setProfile);
 
     return useMutation<ProfileDTO, Error, ProfileUpdateInput>({ // Specify Data, Error, and Variables types
         mutationFn: updateProfile,
@@ -38,7 +38,7 @@ export const useUpdateProfileMutation = () => {
 
             // Optionally, update the user state in Zustand immediately for a smoother UI update
             // This avoids waiting for the query invalidation to complete
-            setUser(data);
+            setProfile(data);
 
             // Show success notification
             toast.success("Profile updated successfully!");

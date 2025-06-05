@@ -30,6 +30,7 @@ const baseStudentNavItems: NavItem[] = [
   { href: '/student/home', label: 'Home', icon: Home },
   { href: '/student/modules', label: 'Browse Modules', icon: BookOpen },
   { href: '/student/progress', label: 'My Progress', icon: GraduationCap },
+  { href: '/student/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/student/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -61,6 +62,27 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
       navItems = [];
   }
 
+  const isRouteActive = (href: string) => {
+    // Handle nested routes
+    if (href === '/student/modules' && pathname.startsWith('/student/modules')) {
+      return true;
+    }
+    if (href === '/student/progress' && pathname.startsWith('/student/progress')) {
+      return true;
+    }
+    if (href === '/student/settings' && pathname.startsWith('/student/settings')) {
+      return true;
+    }
+    if (href === '/admin/modules' && pathname.startsWith('/admin/modules')) {
+      return true;
+    }
+    if (href === '/admin/settings' && pathname.startsWith('/admin/settings')) {
+      return true;
+    }
+    // Exact match for other routes
+    return pathname === href;
+  };
+
   return (
     <div className={`flex flex-col flex-1 overflow-auto ${isMobile ? '' : ''}`}>
       {isMobile && (
@@ -73,9 +95,7 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
 
       <nav className={`flex-1 space-y-1 ${isMobile ? 'p-4' : 'p-4'}`}>
         {navItems.map((item) => {
-          const isActive = item.href === '/admin/settings'
-              ? pathname.startsWith('/admin/settings')
-              : pathname === item.href;
+          const isActive = isRouteActive(item.href);
           return (
             <Button
               key={item.href}
@@ -95,12 +115,6 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
             </Button>
           );
         })}
-
-        <div className={`mt-auto ${isMobile ? '' : ''}`}>
-          <Button variant="outline" className="w-full justify-start">
-            Sign Out
-          </Button>
-        </div>
       </nav>
     </div>
   );

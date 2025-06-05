@@ -35,8 +35,8 @@ export function UserNav({ profile }: UserNavProps) {
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const userRole = profile?.role;
-
   const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+  const isStudent = userRole === 'STUDENT';
   
   const adminLogoutMutation = useLogoutMutation({
       onError: (error: ApiError) => {
@@ -100,25 +100,44 @@ export function UserNav({ profile }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-             <Link href="/profile">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/settings">
-                 <Settings className="mr-2 h-4 w-4" />
-                 <span>Settings</span>
-            </Link>
-          </DropdownMenuItem>
-          {/* Add other links like Billing/Subscription if needed */}
+          {isAdmin && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Admin Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Admin Settings</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
+          {isStudent && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href="/student/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Student Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/student/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Student Settings</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} disabled={isLogoutPending}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
-           {isLogoutPending && <span className="ml-auto text-xs">...</span>}
+          {isLogoutPending && <span className="ml-auto text-xs">...</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

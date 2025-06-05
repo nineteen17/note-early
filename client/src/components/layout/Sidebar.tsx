@@ -32,6 +32,7 @@ const baseStudentNavItems: NavItem[] = [
   { href: '/student/home', label: 'Home', icon: Home },
   { href: '/student/modules', label: 'Browse Modules', icon: LayoutGrid },
   { href: '/student/progress', label: 'My Progress', icon: GraduationCap },
+  { href: '/student/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/student/settings', label: 'Settings', icon: Settings },
 ];
 

@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner"; // Path relative to src/
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { AuthProvider } from "@/providers/AuthProvider";
 import { TopLoader } from "@/components/skeletons/TopLoader";
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,7 @@ export default function RootLayout({
               <TopLoader />
               {children}
               <Toaster />
+              <ScrollToTop />
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

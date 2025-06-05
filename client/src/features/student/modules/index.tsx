@@ -1,13 +1,12 @@
-'use client';
+ 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { FilteredModuleList } from './FilteredModuleList';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { ModulesTitle } from './ModulesTitle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, X, Filter, Grid, List, LayoutGrid } from 'lucide-react';
+import { Filter, Search, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import type { ModuleGenre, ModuleLanguage, ModuleType, ModuleLevel } from '@/types/api';
 import {
@@ -19,6 +18,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 // Sort options type
 type SortOption = 'newest' | 'oldest' | 'level-low' | 'level-high' | 'alphabetical' | 'title';
@@ -40,10 +41,8 @@ const STORAGE_KEY = 'student-modules-filters';
 
 const ModulesFeature = () => {
   const searchParams = useSearchParams();
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'single' | 'grid'>('single');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'single' | 'grid'>('single');
 
   // Initialize state from URL params or localStorage
   const [filterState, setFilterState] = useState<FilterState>(() => {
@@ -132,18 +131,6 @@ const ModulesFeature = () => {
     setFilterState(prev => ({ ...prev, sort: newSort }));
   };
 
-  const updateFilter = (key: keyof ModuleFilters, value: string | undefined) => {
-    const actualValue = value === 'all' ? undefined : value;
-    setFilterState(prev => ({ 
-      ...prev, 
-      [key]: key === 'level' && actualValue ? parseInt(actualValue) : actualValue 
-    }));
-  };
-
-  const clearFilter = (key: keyof ModuleFilters) => {
-    setFilterState(prev => ({ ...prev, [key]: undefined }));
-  };
-
   const clearAllFilters = () => {
     setFilterState({
       sort: 'newest',
@@ -156,41 +143,21 @@ const ModulesFeature = () => {
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
-  const handleSearch = (query: string) => {
-    setFilterState(prev => ({ ...prev, search: query || undefined }));
-  };
-
   return (
     <PageContainer>
       <div className="space-y-8">
-        <ModulesTitle />
+        <PageHeader 
+          title="Reading Modules"
+          description="Browse and start new reading modules. Filter by genre to find stories that interest you."
+        />
         
-        {/* Search Bar */}
-        <div className="relative mb-4">
-          <input
-            type="text"
-            placeholder="Search modules..."
-            value={filterState.search || ''}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full px-4 py-2 rounded-md border border-input bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          {filterState.search && (
-            <button
-              onClick={() => handleSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Filter Button */}
-        <div className="mb-6">
+        {/* Filter and Search Bar */}
+        <div className="flex items-center justify-between gap-4 mb-6">
           <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
             <DialogTrigger asChild>
               <Button 
                 variant="outline" 
-                className="w-full bg-card border-input hover:text-foreground/80"
+                className="w-[180px] bg-card border-input hover:text-foreground/80"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters & Sort
@@ -218,7 +185,7 @@ const ModulesFeature = () => {
                     value={filters.type || 'all'}
                     onValueChange={(value) => setFilterState(prev => ({ ...prev, type: value === 'all' ? undefined : value as ModuleType }))}
                   >
-                    <SelectTrigger className="w-full bg-background border-input">
+                    <SelectTrigger className="w-full bg-popover border-input text-foreground ">
                       <SelectValue placeholder="Filter by type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -234,7 +201,7 @@ const ModulesFeature = () => {
                     value={filters.genre || 'all'}
                     onValueChange={(value) => setFilterState(prev => ({ ...prev, genre: value === 'all' ? undefined : value as ModuleGenre }))}
                   >
-                    <SelectTrigger className="w-full bg-background border-input">
+                    <SelectTrigger className="w-full bg-popover border-input text-foreground">
                       <SelectValue placeholder="Filter by genre" />
                     </SelectTrigger>
                     <SelectContent>
@@ -253,7 +220,7 @@ const ModulesFeature = () => {
                     value={filters.level?.toString() || 'all'}
                     onValueChange={(value) => setFilterState(prev => ({ ...prev, level: value === 'all' ? undefined : parseInt(value) as ModuleLevel }))}
                   >
-                    <SelectTrigger className="w-full bg-background border-input">
+                    <SelectTrigger className="w-full bg-popover border-input text-foreground">
                       <SelectValue placeholder="Filter by level" />
                     </SelectTrigger>
                     <SelectContent>
@@ -272,7 +239,7 @@ const ModulesFeature = () => {
                     value={sortBy}
                     onValueChange={(value) => updateSort(value as SortOption)}
                   >
-                    <SelectTrigger className="w-full bg-background border-input">
+                    <SelectTrigger className="w-full bg-popover border-input text-foreground">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
@@ -306,6 +273,24 @@ const ModulesFeature = () => {
               </div>
             </DialogContent>
           </Dialog>
+
+          <div className="relative w-[300px]">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search modules..."
+              value={filterState.search || ''}
+              onChange={(e) => setFilterState(prev => ({ ...prev, search: e.target.value || undefined }))}
+              className="pl-8"
+            />
+            {filterState.search && (
+              <button
+                onClick={() => setFilterState(prev => ({ ...prev, search: undefined }))}
+                className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Module List */}
@@ -314,6 +299,7 @@ const ModulesFeature = () => {
           filters={filters} 
           viewMode={viewMode}
           searchQuery={filterState.search}
+          onSearchChange={(query) => setFilterState(prev => ({ ...prev, search: query || undefined }))}
         />
       </div>
     </PageContainer>

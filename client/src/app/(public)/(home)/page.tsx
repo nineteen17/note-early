@@ -63,7 +63,7 @@ export default function Home() {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter leading-tight text-foreground"> 
                 Not just reading—<br/>understanding begins here.
               </h1>
-              <p className="text-lg text-muted-foreground max-w-[600px]">
+              <p className="text-base text-muted-foreground max-w-[600px]">
                 An educational platform for children ages 5-12 to improve reading comprehension.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"> 
@@ -133,11 +133,11 @@ export default function Home() {
               {/* Free Plan */}
               <Card className="flex flex-col bg-card text-card-foreground border border-border/50 rounded-lg overflow-hidden"> 
                 <CardHeader className="pb-4 pt-6"> 
-                  <CardTitle className="text-center text-lg font-semibold">Free</CardTitle>
-                  <div className="text-center text-4xl font-bold mt-2">$0</div>
+                  <CardTitle className="text-center text-base sm:text-lg font-semibold">Free</CardTitle>
+                  <div className="text-center text-3xl sm:text-4xl font-bold mt-2">$0</div>
                 </CardHeader>
-                <CardContent className="flex-1 px-6"> 
-                  <ul className="space-y-2 text-sm text-card-foreground/80 list-disc list-inside mb-6">
+                <CardContent className="flex-1 px-4 sm:px-6"> 
+                  <ul className="space-y-2 text-xs sm:text-sm text-card-foreground/80 list-disc list-inside mb-6">
                     <li>1 student</li>
                     <li>Basic modules</li>
                     <li>Limited features</li>
@@ -189,8 +189,8 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-muted border-t border-border/40 py-12 lg:py-16">
-          <div className="container px-4 md:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm"> 
+      <footer className="bg-muted border-t border-border/40 py-8 sm:py-12 lg:py-16">
+          <div className="container px-4 md:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-xs sm:text-sm"> 
               <div className="sm:col-span-2 md:col-span-1"> 
                   <Link href="/">
                     <NoteEarlyLogo className="mb-4 text-foreground"/>
@@ -200,8 +200,8 @@ export default function Home() {
                   </p>
               </div>
               <div>
-                  <h4 className="font-semibold mb-3 text-foreground">Quick Links</h4> 
-                  <ul className="space-y-2">
+                  <h4 className="font-semibold mb-2 sm:mb-3 text-foreground">Quick Links</h4> 
+                  <ul className="space-y-1 sm:space-y-2">
                       <li><Link href="#features" className="text-muted-foreground hover:text-primary">Features</Link></li>
                       <li><Link href="#pricing" className="text-muted-foreground hover:text-primary">Pricing</Link></li>
                       <li><Link href="/blog" className="text-muted-foreground hover:text-primary">Blog</Link></li>

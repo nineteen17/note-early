@@ -12,7 +12,7 @@ function Tabs({
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn("flex flex-col", className)}
       {...props}
     />
   )
@@ -26,7 +26,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "bg-muted text-muted-foreground inline-flex h-10 w-fit items-center justify-center rounded-lg p-1",
+        "bg-card text-muted-foreground inline-flex w-full items-center justify-center rounded-lg",
         className
       )}
       {...props}
@@ -43,13 +43,11 @@ function TabsTrigger({
       data-slot="tabs-trigger"
       className={cn(
         // Base styles
-        "inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200",
+        "inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg text-base font-medium whitespace-nowrap transition-all duration-200",
         // Inactive state
-        "text-muted-foreground hover:text-foreground hover:bg-background/50",
-        // Active state - accent color text with subtle ring
-        "data-[state=active]:bg-background data-[state=active]:text-accent data-[state=active]:shadow-sm data-[state=active]:ring-2 data-[state=active]:ring-accent/20 data-[state=active]:font-semibold",
-        // Dark mode active state
-        "dark:data-[state=active]:bg-background dark:data-[state=active]:text-accent dark:data-[state=active]:ring-accent/20",
+        "text-muted-foreground hover:bg-accent/10 hover:text-accent",
+        // Active state - match sidebar styling
+        "data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:hover:bg-accent/90",
         // Focus states
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         // Disabled state
@@ -72,6 +70,7 @@ function TabsContent({
       data-slot="tabs-content"
       className={cn(
         "flex-1 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "flex items-center justify-center pt-0",
         className
       )}
       {...props}

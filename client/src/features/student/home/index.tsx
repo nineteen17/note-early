@@ -6,13 +6,14 @@ import { HomeTitle } from './HomeTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Clock, Trophy, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Clock, Trophy, CheckCircle2, ArrowRight, BookCheck, BookMarked, BookOpenCheck } from 'lucide-react';
 import ActivityCalendar from 'react-activity-calendar';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatDistanceToNow } from 'date-fns';
 
 // Hooks
 import { useMyProgressQuery } from '@/hooks/api/student/progress/useMyProgressQuery';
@@ -395,17 +396,31 @@ const ActivityCalendarCard: React.FC<{
   
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <Skeleton className="h-32 w-full" />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Activity Calendar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-32">
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
   
   if (hasError) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <div className="text-sm text-red-500">Error loading activity data</div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Activity Calendar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-32">
+            <div className="text-sm text-red-500">Error loading activity data</div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
   
@@ -424,35 +439,160 @@ const ActivityCalendarCard: React.FC<{
   };
   
   return (
-    <div className="space-y-4">
-      {/* Calendar container with horizontal scroll */}
-      <div className="flex flex-col items-center">
-        <div className="w-full overflow-x-auto">
-          <div className="min-w-[800px] max-w-[1000px] mx-auto">
-            <ActivityCalendar
-              data={hasData ? calendarData : generateEmptyCalendarYear(currentYear)}
-              {...calendarProps}
-            />
+    <Card>
+      <CardHeader>
+        <CardTitle>Activity Calendar</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Calendar container with horizontal scroll */}
+          <div className="flex flex-col items-center">
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[800px] max-w-[1000px] mx-auto">
+                <ActivityCalendar
+                  data={hasData ? calendarData : generateEmptyCalendarYear(currentYear)}
+                  {...calendarProps}
+                />
+              </div>
+            </div>
+            {!hasData && (
+              <div className="text-center mt-4 p-4 bg-muted/50 rounded-lg max-w-md">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Your reading activity will appear here
+                </p>
+                <Button asChild size="sm">
+                  <Link href="/modules">Start Reading</Link>
+                </Button>
+              </div>
+            )}
+          </div>
+          {/* Stats container - matches calendar width */}
+          <div className="flex justify-center">
+            <div className="w-full max-w-[1000px]">
+              <CalendarStats stats={stats} />
+            </div>
           </div>
         </div>
-        {!hasData && (
-          <div className="text-center mt-4 p-4 bg-muted/50 rounded-lg max-w-md">
-            <p className="text-sm text-muted-foreground mb-2">
-              Your reading activity will appear here
-            </p>
+      </CardContent>
+    </Card>
+  );
+};
+
+const RecentActivityCard: React.FC<{ progress: any[] }> = ({ progress }) => {
+  // Get the 5 most recent activities with activity type
+  const recentActivities = React.useMemo(() => {
+    return [...progress]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .map(activity => {
+        // Determine activity type and description
+        let activityType = '';
+        let activityIcon = BookOpen;
+        
+        if (activity.completed) {
+          activityType = 'Completed module';
+          activityIcon = BookCheck;
+        } else if (activity.highestParagraphIndexReached > 0) {
+          if (activity.highestParagraphIndexReached === activity.moduleDetails?.paragraphCount) {
+            activityType = 'Reached final paragraph';
+            activityIcon = BookOpenCheck;
+          } else {
+            activityType = `Read paragraph ${activity.highestParagraphIndexReached}`;
+            activityIcon = BookMarked;
+          }
+        } else {
+          activityType = 'Started module';
+          activityIcon = BookOpen;
+        }
+
+        return {
+          ...activity,
+          activityType,
+          activityIcon
+        };
+      })
+      .slice(0, 5);
+  }, [progress]);
+
+  if (recentActivities.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">No recent activity</p>
             <Button asChild size="sm">
-              <Link href="/modules">Start Reading</Link>
+              <Link href="/student/modules">Start Reading</Link>
             </Button>
           </div>
-        )}
-      </div>
-      {/* Stats container - matches calendar width */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-[1000px]">
-          <CalendarStats stats={stats} />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Recent Activity
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {recentActivities.map((activity) => {
+            const ActivityIcon = activity.activityIcon;
+            return (
+              <Link 
+                key={activity.id} 
+                href={`/student/modules/${activity.moduleId}`}
+                className="block"
+              >
+                <div className="flex items-center justify-between p-3 rounded-lg border border-transparent hover:border-accent hover:bg-accent/5 dark:hover:bg-accent/10 transition-all">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className={`p-2 rounded-full flex-shrink-0 ${
+                      activity.completed 
+                        ? "bg-success/80 text-primary-foreground" 
+                        : "bg-secondary/80 text-secondary-foreground"
+                    }`}>
+                      <ActivityIcon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">
+                        {activity.title}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="truncate hidden sm:inline">{activity.activityType}</span>
+                        <span className="truncate sm:hidden">
+                          {activity.completed ? 'Completed' : 
+                           activity.highestParagraphIndexReached > 0 ? 
+                           `Para ${activity.highestParagraphIndexReached}` : 
+                           'Started'}
+                        </span>
+                        <span className="flex-shrink-0">•</span>
+                        <span className="flex-shrink-0">
+                          <span className="hidden sm:inline">
+                            {formatDistanceToNow(new Date(activity.updatedAt), { addSuffix: true })}
+                          </span>
+                          <span className="sm:hidden">
+                            {formatDistanceToNow(new Date(activity.updatedAt), { addSuffix: true }).replace(' ago', '')}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -487,19 +627,19 @@ export function StudentHome() {
           <ProgressCard metrics={progressMetrics} />
         </div>
         
-        {/* Activity Calendar */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Activity Calendar</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Middle Row */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-1/2">
+            <RecentActivityCard progress={progress} />
+          </div>
+          <div className="lg:w-1/2">
             <ActivityCalendarCard
               isLoading={activityLoading}
               hasError={!!activityError}
               calendarData={calendarData}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </PageContainer>
   );
