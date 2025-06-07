@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronRight, Home } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { ProfileRole } from '@/types/api';
 
 interface BreadcrumbItem {
   label: string;
@@ -11,12 +12,25 @@ interface BreadcrumbItem {
 interface BreadcrumbProps {
   items: BreadcrumbItem[];
   className?: string;
+  role?: ProfileRole;
 }
 
-export function Breadcrumb({ items, className }: BreadcrumbProps) {
+export function Breadcrumb({ items, className, role }: BreadcrumbProps) {
+  const getHomeRoute = () => {
+    switch (role) {
+      case 'ADMIN':
+      case 'SUPER_ADMIN':
+        return '/admin/home';
+      case 'STUDENT':
+        return '/student/home';
+      default:
+        return '/';
+    }
+  };
+
   return (
     <nav className={cn("flex flex-wrap items-center gap-1 text-xs md:text-sm text-muted-foreground", className)}>
-      <Link href="/student/home" className="hover:text-foreground transition-colors">
+      <Link href={getHomeRoute()} className="hover:text-foreground transition-colors">
         <Home className="h-3 w-3 md:h-4 md:w-4" />
       </Link>
       {items.map((item, index) => (

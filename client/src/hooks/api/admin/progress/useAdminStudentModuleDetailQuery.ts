@@ -14,7 +14,7 @@ const fetchAdminStudentModuleDetail = async (
 ): Promise<StudentProgressDetailsDTO> => {
   if (!studentId || !moduleId) throw new Error("Student ID and Module ID are required for fetchAdminStudentModuleDetail");
   // Use the generic api.get method, specifying the expected return type
-  return api.get<StudentProgressDetailsDTO>(`/api/v1/progress/admin/student/${studentId}/module/${moduleId}`);
+  return api.get<StudentProgressDetailsDTO>(`/progress/admin/student/${studentId}/module/${moduleId}`);
 };
 
 /**

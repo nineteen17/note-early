@@ -8,7 +8,5 @@ export const metadata: Metadata = {
 export default function AdminHomePage() {
   // This page is protected by the (auth)/layout.tsx
   // The AdminHome component is a client component that fetches its own data
-  return <div className='p-12  ' >
-    <AdminHome />
-  </div>
+  return  <AdminHome />
 } 

@@ -6,7 +6,7 @@ export function useModuleQuery(moduleId: string) {
   return useQuery<ReadingModule, ApiError>({
     queryKey: ["module", moduleId],
     queryFn: async () => {
-      const response = await api.get<ReadingModule>(`/api/v1/modules/${moduleId}`);
+      const response = await api.get<ReadingModule>(`/modules/${moduleId}`);
       return response;
     },
   });

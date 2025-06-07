@@ -171,42 +171,113 @@ export class AuthService {
     }
   }
 
-  // Step 1: Admin login with Supabase (email/password only)
-  async loginAdmin(email: string, password: string) {
+  // Resend email verification
+  async resendVerificationEmail(email: string): Promise<void> {
     try {
-      // Sign in with Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Check if user exists first
+      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000, // Set a reasonable limit
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Login failed');
-
-      // Get admin profile using this.db
-      const [profile] = await this.db
-        .select()
-        .from(schema.profiles)
-        .where(eq(schema.profiles.id, authData.user.id));
-
-      if (!profile || profile.role !== "ADMIN") {
-        throw new Error('Admin profile not found');
+      if (listError) {
+        logger.error('Error listing users during resend verification:', listError);
+        throw new AppError('Failed to process verification request.', 500);
       }
 
-      return {
-        user: authData.user,
-        profile,
-        session: authData.session,
-      };
+      // Find user by email
+      const existingUser = listData.users.find(user => user.email?.toLowerCase() === email.toLowerCase());
+      
+      if (!existingUser) {
+        throw new AppError('Email address not found.', 404);
+      }
+
+      // Check if user is already confirmed
+      if (existingUser.email_confirmed_at) {
+        throw new AppError('Email is already verified.', 400);
+      }
+
+      // Resend verification email using admin API
+      const { error: resendError } = await supabaseAdmin.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (resendError) {
+        logger.error('Error resending verification email:', resendError);
+        throw new AppError('Failed to resend verification email.', 500);
+      }
+
+      logger.info(`Verification email resent successfully to: ${email}`);
     } catch (error) {
-      if (error instanceof AuthError) {
-        throw new Error(`Authentication error: ${error.message}`);
+      if (error instanceof AppError) {
+        throw error;
       }
-      logger.error('Failed to login admin:', error);
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to login admin: ${message}`);
+      logger.error('Error resending verification email:', error);
+      throw new AppError('Failed to resend verification email.', 500);
     }
   }
+
+  // Step 1: Admin login with Supabase (email/password only)
+// Step 1: Admin login with Supabase (email/password only)
+async loginAdmin(email: string, password: string) {
+  try {
+    // Sign in with Supabase
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      // Check for email confirmation errors specifically
+      if (authError.message?.includes('Email not confirmed') || 
+          authError.message?.includes('email_not_confirmed') ||
+          authError.message?.includes('confirm') ||
+          authError.message?.includes('verify')) {
+        throw new AppError('Please verify your email address before signing in.', 400);
+      }
+      throw authError;
+    }
+    
+    if (!authData.user) throw new AppError('Login failed', 400);
+
+    // IMPORTANT: Check if email is verified
+    if (!authData.user.email_confirmed_at) {
+      throw new AppError('Please verify your email address before signing in.', 400);
+    }
+
+    // Get admin profile using this.db
+    const [profile] = await this.db
+      .select()
+      .from(schema.profiles)
+      .where(eq(schema.profiles.id, authData.user.id));
+
+    if (!profile || profile.role !== "ADMIN") {
+      throw new AppError('Admin profile not found', 404);
+    }
+
+    return {
+      user: authData.user,
+      profile,
+      session: authData.session,
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    if (error instanceof AuthError) {
+      // Handle specific Supabase auth errors
+      if (error.message?.includes('Email not confirmed') || 
+          error.message?.includes('email_not_confirmed')) {
+        throw new AppError('Please verify your email address before signing in.', 400);
+      }
+      throw new AppError(`Authentication error: ${error.message}`, 400);
+    }
+    logger.error('Failed to login admin:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    throw new AppError(`Failed to login admin: ${message}`, 500);
+  }
+}
 
   async refreshSession(refreshToken: string): Promise<{ accessToken: string; newRefreshToken?: string }> {
     try {
@@ -271,15 +342,7 @@ export class AuthService {
         throw new AppError('Could not determine subscription plan for admin.', 500);
       }
 
-      // 2. Check if the tier allows student creation
-      if (plan.tier === 'free') {
-        throw new AppError(
-          'Student profile creation is not allowed on the Free plan. Please upgrade.',
-          403 // Forbidden
-        );
-      }
-
-      // 3. Count existing students for this admin (uses this.db)
+      // 2. Count existing students for this admin (uses this.db)
       const [studentCountResult] = await this.db
         .select({ value: count() })
         .from(schema.profiles)
@@ -287,7 +350,7 @@ export class AuthService {
 
       const currentStudentCount = studentCountResult.value || 0;
 
-      // 4. Check against plan limit
+      // 3. Check against plan limit
       if (currentStudentCount >= plan.studentLimit) {
         throw new AppError(
           `Student limit (${plan.studentLimit}) for your current plan ('${plan.tier}') has been reached. Please upgrade to create more students.`,

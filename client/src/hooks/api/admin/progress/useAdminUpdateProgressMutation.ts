@@ -28,7 +28,7 @@ const updateAdminStudentProgress = async (
     // For now, let the API call proceed and let the backend potentially handle it
   }
   // Use the generic api.patch method
-  return api.patch<StudentProgressSchema>(`/api/v1/progress/admin/update/${progressId}`, data);
+  return api.patch<StudentProgressSchema>(`/progress/admin/update/${progressId}`, data);
 };
 
 

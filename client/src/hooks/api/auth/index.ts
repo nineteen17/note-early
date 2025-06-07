@@ -73,12 +73,7 @@ const loginAdmin = async (credentials: LoginAdminInput): Promise<LoginAdminRespo
 };
 
 const signupAdmin = async (details: SignupAdminInput): Promise<SignupAdminResponse> => {
-  // Backend handles signup, returns AuthResult structure now
-  // Assuming api.post correctly returns the nested 'data' object which is AuthResult
   const response = await api.post<SignupAdminResponse>('/auth/signup', details);
-  // Adjust based on actual response structure from your api.post wrapper
-  // If api.post returns the FULL { status, message, data }, you need to return response.data
-  // Assuming it returns the data directly here based on previous examples:
   return response; 
 };
 
@@ -122,12 +117,33 @@ export const useLoginAdminMutation = (
   });
 };
 
-// Hook for Admin Signup
+// Hook for Admin Signup - UPDATED with email verification flow
 export const useSignupAdminMutation = (
   options?: Omit<UseMutationOptions<SignupAdminResponse, ApiError, SignupAdminInput>, 'mutationFn'>
 ) => {
+  const router = useRouter();
+  
   return useMutation<SignupAdminResponse, ApiError, SignupAdminInput>({
     mutationFn: signupAdmin,
+    onSuccess: (data, variables, context) => {
+      console.log('Signup mutation successful:', data);
+      
+      // Store email for verification page
+      localStorage.setItem('signup_email', variables.email);
+      
+      // Call the custom onSuccess if provided
+      options?.onSuccess?.(data, variables, context);
+      
+      // Redirect to email verification page
+      router.push(`/email-verification?email=${encodeURIComponent(variables.email)}`);
+    },
+    onError: (error, variables, context) => {
+      console.error('Signup mutation error:', error);
+      
+      // Call the custom onError if provided
+      options?.onError?.(error, variables, context);
+    },
+    // Spread other options but override onSuccess/onError
     ...options,
   });
 };
@@ -143,8 +159,8 @@ export const useLoginStudentMutation = (
     ...options, 
   });
 };
-// In the logout hooks, remove the direct localStorage manipulation:
 
+// In the logout hooks, remove the direct localStorage manipulation:
 export const useLogoutMutation = (
   options?: Omit<UseMutationOptions<void, ApiError, void>, 'mutationFn'>
 ) => {
@@ -185,7 +201,6 @@ export const useLogoutMutation = (
 };
 
 // Similarly for useLogoutStudentMutation - remove direct localStorage manipulation:
-
 export const useLogoutStudentMutation = (
   options?: Omit<UseMutationOptions<void, ApiError, void>, 'mutationFn'>
 ) => {
@@ -240,6 +255,25 @@ export const useLogoutStudentMutation = (
       options?.onError?.(error, variables, context);
     },
     
+    ...options,
+  });
+};
+
+// Resend verification email (uses signup endpoint)
+const resendVerificationEmail = async (email: string): Promise<{ message: string }> => {
+  // Since there's no dedicated resend endpoint, we can try to trigger verification
+  // by attempting signup again. Supabase typically handles this gracefully by 
+  // re-sending the verification email if the user already exists
+  const response = await api.post<{ message: string }>('/auth/resend-verification', { email });
+  return response;
+};
+
+// Hook for Resend Verification Email
+export const useResendVerificationMutation = (
+  options?: Omit<UseMutationOptions<{ message: string }, ApiError, string>, 'mutationFn'>
+) => {
+  return useMutation<{ message: string }, ApiError, string>({
+    mutationFn: resendVerificationEmail,
     ...options,
   });
 };

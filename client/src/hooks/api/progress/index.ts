@@ -9,7 +9,7 @@ const getStudentModuleProgress = async (moduleId: string): Promise<StudentProgre
   if (!moduleId) {
     throw new Error("Module ID is required to fetch progress details.");
   }
-  const response = await api.get<StudentProgressDetailsDTO>(`/api/v1/progress/details/${moduleId}`);
+  const response = await api.get<StudentProgressDetailsDTO>(`/progress/details/${moduleId}`);
   return response;
 };
 
@@ -21,7 +21,7 @@ const submitParagraphSummary = async (input: {
   cumulativeSummary: string;
 }): Promise<StudentProgressDetailsDTO> => {
   const response = await api.post<StudentProgressDetailsDTO>(
-    `/api/v1/progress/submit-summary`,
+    `/progress/submit-summary`,
     input
   );
   return response;

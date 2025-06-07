@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Lock, PlusCircle, Info, AlertCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Lock, PlusCircle, Info, AlertCircle, Filter, Search, X, BookOpen, Plus } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -12,15 +12,21 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 
 import { ReadingModuleDTO } from "@/types/api";
+import type { ModuleGenre, ModuleLanguage, ModuleType, ModuleLevel } from '@/types/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 import { UpgradePlanDisplay } from '@/components/cta/UpgradePlanDisplay';
 import { useCurrentSubscriptionQuery } from '@/hooks/api/admin/subscriptions/useCurrentSubscriptionQuery';
@@ -28,38 +34,449 @@ import { useActiveModulesQuery } from '@/hooks/api/readingModules/useActiveModul
 import { useMyModulesQuery } from '@/hooks/api/admin/modules/useMyModulesQuery';
 import { ModuleListDisplay } from './ModuleListDisplay';
 
+// Sort options type
+type SortOption = 'newest' | 'oldest' | 'level-low' | 'level-high' | 'alphabetical' | 'title';
+
+// Filter state interface
+interface ModuleFilters {
+  type?: ModuleType;
+  genre?: ModuleGenre;
+  level?: ModuleLevel;
+  language?: ModuleLanguage;
+}
+
+interface FilterState extends ModuleFilters {
+  sort: SortOption;
+  search?: string;
+}
+
+const STORAGE_KEY_PUBLIC = 'admin-public-modules-filters';
+const STORAGE_KEY_CUSTOM = 'admin-custom-modules-filters';
+const STORAGE_KEY_ALL = 'admin-all-modules-filters';
+
+// Helper function to apply filters and sorting
+const applyFiltersAndSort = (modules: ReadingModuleDTO[] | undefined, filterState: FilterState): ReadingModuleDTO[] => {
+  if (!modules) return [];
+
+  // Apply filters and search
+  let filteredModules = modules.filter((module: ReadingModuleDTO) => {
+    // Apply search query
+    if (filterState.search) {
+      const searchLower = filterState.search.toLowerCase();
+      const matchesSearch = 
+        (module.title?.toLowerCase() || '').includes(searchLower) ||
+        (module.description?.toLowerCase() || '').includes(searchLower) ||
+        (module.genre?.toLowerCase() || '').includes(searchLower);
+      
+      if (!matchesSearch) return false;
+    }
+
+    // Apply other filters
+    if (filterState.type && module.type !== filterState.type) return false;
+    if (filterState.genre && module.genre !== filterState.genre) return false;
+    if (filterState.level && module.level !== filterState.level) return false;
+    if (filterState.language && module.language !== filterState.language) return false;
+    return true;
+  });
+
+  // Apply sorting
+  filteredModules.sort((a: ReadingModuleDTO, b: ReadingModuleDTO) => {
+    switch (filterState.sort) {
+      case 'newest':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'oldest':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'level-low':
+        return a.level - b.level;
+      case 'level-high':
+        return b.level - a.level;
+      case 'alphabetical':
+        return a.title.localeCompare(b.title);
+      case 'title':
+        return a.title.localeCompare(b.title);
+      default:
+        return 0;
+    }
+  });
+
+  return filteredModules;
+};
+
+// Filter and Search Component
+interface FilterSearchProps {
+  filterState: FilterState;
+  setFilterState: React.Dispatch<React.SetStateAction<FilterState>>;
+  storageKey: string;
+}
+
+const FilterSearch: React.FC<FilterSearchProps> = ({
+  filterState,
+  setFilterState,
+  storageKey,
+}) => {
+  const searchParams = useSearchParams();
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+
+  // Initialize state from URL params or localStorage
+  useEffect(() => {
+    // First check URL params (for shared links)
+    const urlSort = searchParams.get('sort') as SortOption;
+    const urlGenre = searchParams.get('genre') as ModuleGenre;
+    const urlLevel = searchParams.get('level');
+    const urlLanguage = searchParams.get('language') as ModuleLanguage;
+    const urlSearch = searchParams.get('search');
+
+    if (urlSort || urlGenre || urlLevel || urlLanguage || urlSearch) {
+      setFilterState(prev => ({
+        ...prev,
+        sort: urlSort || prev.sort,
+        genre: urlGenre || undefined,
+        level: urlLevel ? parseInt(urlLevel) as ModuleLevel : undefined,
+        language: urlLanguage || undefined,
+        search: urlSearch || undefined,
+      }));
+    } else {
+      // Fallback to localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem(storageKey);
+          if (stored) {
+            const parsedState = JSON.parse(stored);
+            setFilterState(prev => ({ ...prev, ...parsedState }));
+          }
+        } catch {
+          // Ignore errors
+        }
+      }
+    }
+  }, [searchParams, storageKey, setFilterState]);
+
+  // Save to localStorage whenever state changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(filterState));
+      } catch {
+        // Ignore errors
+      }
+    }
+  }, [filterState, storageKey]);
+
+  const { sort: sortBy, type, ...filters } = filterState;
+
+  // Genre options (excluding "Custom" as it's not a real genre for filtering)
+  const genreOptions: ModuleGenre[] = [
+    "History", "Adventure", "Science", "Non-Fiction", "Fantasy", 
+    "Biography", "Mystery", "Science-Fiction", "Folktale"
+  ];
+
+  // Level options
+  const levelOptions: ModuleLevel[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  const updateSort = (newSort: SortOption) => {
+    setFilterState(prev => ({ ...prev, sort: newSort }));
+  };
+
+  const clearAllFilters = () => {
+    setFilterState(prev => ({
+      sort: 'newest',
+      type: prev.type, // Keep the type filter as it's tab-specific
+      genre: undefined,
+      level: undefined,
+      language: undefined,
+    }));
+  };
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+
+  return (
+    <div className="flex items-center justify-between gap-4 mb-6">
+      <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+        <DialogTrigger asChild>
+          <Button 
+            variant="outline" 
+            className="w-[180px] bg-card border-input hover:text-foreground/80"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters & Sort
+            {activeFilterCount > 0 && (
+              <Badge 
+                variant="default" 
+                className="ml-2 px-1.5 py-0.5 text-xs"
+              >
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-[400px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Filters & Sort</DialogTitle>
+            <DialogDescription>
+              Customize how you view your modules
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Genre</Label>
+              <Select
+                value={filters.genre || 'all'}
+                onValueChange={(value) => setFilterState(prev => ({ ...prev, genre: value === 'all' ? undefined : value as ModuleGenre }))}
+              >
+                <SelectTrigger className="w-full bg-popover border-input text-foreground">
+                  <SelectValue placeholder="Filter by genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Genres</SelectItem>
+                  {genreOptions.map((genre) => (
+                    <SelectItem key={genre} value={genre}>
+                      {genre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Level</Label>
+              <Select
+                value={filters.level?.toString() || 'all'}
+                onValueChange={(value) => setFilterState(prev => ({ ...prev, level: value === 'all' ? undefined : parseInt(value) as ModuleLevel }))}
+              >
+                <SelectTrigger className="w-full bg-popover border-input text-foreground">
+                  <SelectValue placeholder="Filter by level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  {levelOptions.map((level) => (
+                    <SelectItem key={level} value={level.toString()}>
+                      Level {level}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Sort By</Label>
+              <Select
+                value={sortBy}
+                onValueChange={(value) => updateSort(value as SortOption)}
+              >
+                <SelectTrigger className="w-full bg-popover border-input text-foreground">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="level-low">Level (Low to High)</SelectItem>
+                  <SelectItem value="level-high">Level (High to Low)</SelectItem>
+                  <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="default" 
+                onClick={() => setIsFilterDialogOpen(false)}
+                className="flex-1"
+              >
+                Apply Filters
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  clearAllFilters();
+                  setIsFilterDialogOpen(false);
+                }}
+                className="flex-1"
+              >
+                Clear All
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="relative w-[300px]">
+        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search modules..."
+          value={filterState.search || ''}
+          onChange={(e) => setFilterState(prev => ({ ...prev, search: e.target.value || undefined }))}
+          className="pl-8"
+        />
+        {filterState.search && (
+          <button
+            onClick={() => setFilterState(prev => ({ ...prev, search: undefined }))}
+            className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const PublicModulesList = () => {
   const { data: modules, isLoading, error } = useActiveModulesQuery();
-  // TODO: Add Filters/Sort controls here and pass filtered/sorted data
+  const [filterState, setFilterState] = useState<FilterState>({
+    sort: 'newest',
+    type: 'curated', // Filter for curated modules only
+    genre: undefined,
+    level: undefined,
+    language: undefined,
+  });
+
+  const filteredModules = applyFiltersAndSort(modules, filterState);
+
+  // Handle empty states
+  if (!isLoading && !error) {
+    if (!modules || modules.length === 0) {
+      return (
+        <div>
+          <FilterSearch 
+            filterState={filterState}
+            setFilterState={setFilterState}
+            storageKey={STORAGE_KEY_PUBLIC}
+          />
+          <Card>
+            <CardContent className="p-6 text-center">
+              <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Public Modules Available</h3>
+              <p className="text-muted-foreground">
+                There are no curated modules available at the moment. Please check back later.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (filteredModules.length === 0) {
+      return (
+        <div>
+          <FilterSearch 
+            filterState={filterState}
+            setFilterState={setFilterState}
+            storageKey={STORAGE_KEY_PUBLIC}
+          />
+          <Card>
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Matching Modules</h3>
+              <p className="text-muted-foreground">
+                No public modules match your current filters. Try adjusting your filters to see more results.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+  }
+
   return (
     <div>
-      {/* Placeholder for Filters/Sort Controls */}
-      <div className="mb-4 p-4 border rounded-md bg-muted/40">
-        Filters & Sort Placeholder (Public)
-      </div>
-      <ModuleListDisplay modules={modules} isLoading={isLoading} error={error} />
+      <FilterSearch 
+        filterState={filterState}
+        setFilterState={setFilterState}
+        storageKey={STORAGE_KEY_PUBLIC}
+      />
+      <ModuleListDisplay modules={filteredModules} isLoading={isLoading} error={error} />
     </div>
   );
 };
 
 const CustomModulesList = () => {
+  const router = useRouter();
   const { data: modules, isLoading, error } = useMyModulesQuery();
-  // TODO: Add Filters/Sort controls here and pass filtered/sorted data
+  const [filterState, setFilterState] = useState<FilterState>({
+    sort: 'newest',
+    type: 'custom', // Filter for custom modules only
+    genre: undefined,
+    level: undefined,
+    language: undefined,
+  });
+
+  const filteredModules = applyFiltersAndSort(modules, filterState);
+
+  // Handle empty states
+  if (!isLoading && !error) {
+    if (!modules || modules.length === 0) {
+      return (
+        <div>
+          <FilterSearch 
+            filterState={filterState}
+            setFilterState={setFilterState}
+            storageKey={STORAGE_KEY_CUSTOM}
+          />
+          <Card>
+            <CardContent className="p-6 text-center">
+              <Plus className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Custom Modules Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                You haven't created any custom modules yet. Create your first module to get started!
+              </p>
+              <Button onClick={() => router.push('/admin/modules/create')}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Create Your First Module
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (filteredModules.length === 0) {
+      return (
+        <div>
+          <FilterSearch 
+            filterState={filterState}
+            setFilterState={setFilterState}
+            storageKey={STORAGE_KEY_CUSTOM}
+          />
+          <Card>
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Matching Modules</h3>
+              <p className="text-muted-foreground mb-4">
+                No custom modules match your current filters. Try adjusting your filters to see more results.
+              </p>
+              <Button variant="outline" onClick={() => router.push('/admin/modules/create')}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Create New Module
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+  }
+
   return (
     <div>
-      {/* Placeholder for Filters/Sort Controls */}
-      <div className="mb-4 p-4 border rounded-md bg-muted/40">
-        Filters & Sort Placeholder (Custom)
-      </div>
-      <ModuleListDisplay modules={modules} isLoading={isLoading} error={error} />
+      <FilterSearch 
+        filterState={filterState}
+        setFilterState={setFilterState}
+        storageKey={STORAGE_KEY_CUSTOM}
+      />
+      <ModuleListDisplay modules={filteredModules} isLoading={isLoading} error={error} />
     </div>
   );
 };
 
 const AllModulesList = () => {
+    const router = useRouter();
     // Fetch both sets of data
     const { data: publicModules, isLoading: isLoadingPublic, error: errorPublic } = useActiveModulesQuery();
     const { data: customModules, isLoading: isLoadingCustom, error: errorCustom } = useMyModulesQuery();
+
+    const [filterState, setFilterState] = useState<FilterState>({
+      sort: 'newest',
+      type: undefined,
+      genre: undefined,
+      level: undefined,
+      language: undefined,
+    });
 
     // Combine loading and error states (prioritize showing error)
     const isLoading = isLoadingPublic || isLoadingCustom;
@@ -80,15 +497,84 @@ const AllModulesList = () => {
         return Array.from(modulesMap.values());
     }, [publicModules, customModules, isLoading, error]); // Dependencies for useMemo
 
-    // TODO: Add Filters/Sort controls here and pass filtered/sorted data
+    const filteredModules = applyFiltersAndSort(combinedModules, filterState);
+
+    // Handle empty states
+    if (!isLoading && !error) {
+      if (!combinedModules || combinedModules.length === 0) {
+        return (
+          <div>
+            <FilterSearch 
+              filterState={filterState}
+              setFilterState={setFilterState}
+              storageKey={STORAGE_KEY_ALL}
+            />
+            <Card>
+              <CardContent className="p-6 text-center">
+                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Modules Available</h3>
+                <p className="text-muted-foreground mb-4">
+                  There are no modules available at the moment. Create your first custom module to get started!
+                </p>
+                <Button onClick={() => router.push('/admin/modules/create')}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Create Your First Module
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }
+
+      if (filteredModules.length === 0) {
+        return (
+          <div>
+            <FilterSearch 
+              filterState={filterState}
+              setFilterState={setFilterState}
+              storageKey={STORAGE_KEY_ALL}
+            />
+            <Card>
+              <CardContent className="p-6 text-center">
+                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Matching Modules</h3>
+                <p className="text-muted-foreground mb-4">
+                  No modules match your current filters. Try adjusting your filters to see more results.
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setFilterState({
+                      sort: 'newest',
+                      type: undefined,
+                      genre: undefined,
+                      level: undefined,
+                      language: undefined,
+                    })}
+                  >
+                    Clear Filters
+                  </Button>
+                  <Button onClick={() => router.push('/admin/modules/create')}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Create Module
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }
+    }
+
     return (
         <div>
-          {/* Placeholder for Filters/Sort Controls */}
-          <div className="mb-4 p-4 border rounded-md bg-muted/40">
-            Filters & Sort Placeholder (All)
-          </div>
-          {/* Pass the memoized and correctly typed array */}
-          <ModuleListDisplay modules={combinedModules} isLoading={isLoading} error={error} />
+          <FilterSearch 
+            filterState={filterState}
+            setFilterState={setFilterState}
+            storageKey={STORAGE_KEY_ALL}
+          />
+          {/* Pass the filtered and sorted array */}
+          <ModuleListDisplay modules={filteredModules} isLoading={isLoading} error={error} />
         </div>
       );
   };
@@ -183,26 +669,15 @@ export function ModulesTabsFeature() {
   // --- Render Component ---
   return (
     <>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">Reading Modules</h1>
-            {/* Show button if user *can* potentially create and meets conditions */} 
-            {showCreateFeatures && (
-                <Button onClick={handleCreateClick} disabled={isLoading || (isLimitReached && userPlanTier !== 'free')}> 
-                    <PlusCircle className="mr-2 h-4 w-4" /> Create New Module
-                </Button>
-            )}
-        </div>
-
         {/* Display Custom Module Usage - Show if user can potentially create */} 
-        {canPotentiallyCreate && (
+        {/* {canPotentiallyCreate && (
           <p className="text-sm text-muted-foreground font-medium mb-4">
             {userPlanTier === 'free' 
               ? `Total custom modules created: ${currentModuleCount} / ${customModuleLimit}` 
               : `${currentPlan?.interval === 'month' ? 'Monthly' : 'Yearly'} custom modules created: ${currentModuleCount} / ${customModuleLimit}`}
             {isLimitReached ? ' (Limit Reached)' : ''}
           </p>
-        )}
+        )} */}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -245,7 +720,6 @@ export function ModulesTabsFeature() {
             <AllModulesList />
         </TabsContent>
       </Tabs>
-    </div>
 
     {/* Upgrade Modal */}
     <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>

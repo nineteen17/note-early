@@ -32,7 +32,22 @@ export const useCreateStudentMutation = () => {
       },
       onError: (error) => {
         console.error("Student creation failed:", error);
-        toast.error(error.message || 'Failed to create student. Please try again.');
+        console.error("Error status:", error.status);
+        console.error("Error message:", error.message);
+        console.error("Error data:", error.data);
+        
+        // Enhanced error message extraction
+        let errorMessage = 'Failed to create student. Please try again.';
+        
+        if (error.status === 403) {
+          // Subscription limit error
+          errorMessage = error.message || 'You have reached your student limit for your current plan. Please upgrade to create more students.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        console.log("Showing toast with message:", errorMessage);
+        toast.error(errorMessage);
       },
     }
   );

@@ -2,7 +2,7 @@ import React from 'react';
 
 interface PageHeaderProps {
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   children?: React.ReactNode;
 }
 
@@ -13,7 +13,7 @@ export function PageHeader({ title, description, children }: PageHeaderProps) {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
           {description && (
-            <p className="mt-2 text-muted-foreground">{description}</p>
+            <div className="mt-2 text-muted-foreground">{description}</div>
           )}
         </div>
         {children && (

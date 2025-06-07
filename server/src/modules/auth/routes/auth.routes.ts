@@ -90,6 +90,37 @@ authRouter.post('/login', authController.loginAdmin); // Renamed route
 
 /**
  * @swagger
+ * /auth/resend-verification:
+ *   post:
+ *     tags: [Auth - Public] 
+ *     summary: Resend email verification
+ *     description: Resends the email verification link to the specified email address.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address to resend verification to.
+ *     responses:
+ *       200:
+ *         description: Verification email sent successfully.
+ *       400:
+ *         description: Invalid email address.
+ *       404:
+ *         description: Email address not found.
+ *       500:
+ *         description: Server error during email sending.
+ */
+authRouter.post('/resend-verification', authController.resendVerificationEmail);
+
+/**
+ * @swagger
  * /auth/google:
  *   get:
  *     tags: [Auth - Public]

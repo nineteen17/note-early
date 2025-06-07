@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { useLoginAdminMutation } from '@/hooks/api/auth';
+import { useLoginAdminMutation, useResendVerificationMutation } from '@/hooks/api/auth';
 import { adminLoginSchema } from '@/lib/schemas/auth';
 import { ApiError } from '@/lib/apiClient';
 import { toast } from 'sonner';
@@ -23,42 +24,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import { NoteEarlyLogoLarge } from '@/components/NoteEarlyLogo';
 import { getMobileAuthMargins, getAuthCardClasses } from '@/lib/utils';
+import { EmailVerificationPending } from '@/components/auth/EmailVerificationPending';
 
-// Define the form data type based on the Zod schema
 type LoginFormData = z.infer<typeof adminLoginSchema>;
 
-// Component now specifically handles Admin/Teacher Login
 export function LoginFeature() {
   const setToken = useAuthStore((s) => s.setToken);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
-  // Setup React Hook Form
+  // Check for verification success from URL params (no useEffect needed)
+  const isEmailVerified = searchParams.get('verified') === 'true';
+
   const {
     register,
     handleSubmit,
     formState: { errors: formErrors },
-    setError: setFormError
+    setError: setFormError,
+    getValues,
+    reset,
   } = useForm<LoginFormData>({
     resolver: zodResolver(adminLoginSchema),
   });
 
-  // Setup the mutation hook
-  const {
-    mutate: loginMutate,
-    isPending,
-  } = useLoginAdminMutation({
-    onSuccess: (data) => {
-      console.log('LoginFeature: Login mutation successful, setting token.');
-      toast.success('Login successful!');
-      setToken(data.accessToken);
-      // Redirect handled by PublicLayout
+  const { mutate: resendVerificationMutate, isPending: isResending } = useResendVerificationMutation({
+    onSuccess: () => {
+      toast.success('Verification email sent!', {
+        description: 'Please check your inbox and spam folder.'
+      });
     },
     onError: (error: ApiError) => {
-      console.error('Login mutation error:', error);
+      toast.error('Failed to resend verification email', {
+        description: error.message || 'Please try again in a few moments.'
+      });
+    }
+  });
+
+  const { mutate: loginMutate, isPending: isLoggingIn } = useLoginAdminMutation({
+    onSuccess: (data) => {
+      toast.success('Login successful!');
+      setToken(data.accessToken);
+    },
+    onError: (error: ApiError) => {
       const message = error.message || 'Login failed. Please try again.';
-      toast.error(message);
+      
+      // Check for email verification errors
+      const isVerificationError = message.includes('verify') || 
+                                 message.includes('verification') ||
+                                 error.status === 400;
+      
+      if (isVerificationError) {
+        const email = getValues('email');
+        setUnverifiedEmail(email);
+        return; // Don't show toast, verification screen will handle UX
+      }
+      
+      toast.error('Login Failed', { description: message });
       setFormError('root.serverError', {
         type: String(error.status || 500),
         message: message
@@ -66,36 +90,73 @@ export function LoginFeature() {
     },
   });
 
-  // Handle form submission
   const onSubmit = (data: LoginFormData) => {
-    console.log("Form submitted with data:", data);
+    setUnverifiedEmail(null); // Reset verification state
     loginMutate(data);
   };
 
-  // Extract the root server error for display
+  const handleResendVerification = async () => {
+    if (unverifiedEmail) {
+      resendVerificationMutate(unverifiedEmail);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setUnverifiedEmail(null);
+    reset(); // Clear form errors
+  };
+
+  // Show verification screen if email needs verification
+  if (unverifiedEmail) {
+    return (
+      <EmailVerificationPending 
+        email={unverifiedEmail}
+        onResendVerification={handleResendVerification}
+        onBackToLogin={handleBackToLogin}
+        showBackButton={true}
+      />
+    );
+  }
+
   const serverError = formErrors.root?.serverError?.message;
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Fixed logo position from top */}
       <div className="pt-12 pb-6 flex justify-center">
         <Link href="/">
           <NoteEarlyLogoLarge />
         </Link>
       </div>
       
-      {/* Flexible content area with mobile margins */}
       <div className={`flex-1 flex items-start justify-center pb-8 ${getMobileAuthMargins()}`}>
         <Card className={getAuthCardClasses()}>
           <CardHeader className="text-center space-y-1 pb-4">
             <CardTitle className="text-xl sm:text-2xl font-bold">Admin Login</CardTitle>
+            <CardDescription className="text-sm sm:text-base text-muted-foreground">
+              Sign in to your NoteEarly admin account
+            </CardDescription>
           </CardHeader>
+
+          {/* Show success message for verified email */}
+          {isEmailVerified && (
+            <div className="px-4 sm:px-6 sm:px-8 pb-4">
+              <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+                <Mail className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  <strong>Email verified successfully!</strong> You can now sign in to your account.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4 px-4 sm:px-6 sm:px-8">
               {serverError && (
                 <Alert variant="destructive">
                   <AlertTitle className="text-sm sm:text-base">Login Failed</AlertTitle>
-                  <AlertDescription className="text-xs sm:text-sm">{serverError}</AlertDescription>
+                  <AlertDescription className="text-xs sm:text-sm">
+                    {serverError}
+                  </AlertDescription>
                 </Alert>
               )}
 
@@ -107,13 +168,12 @@ export function LoginFeature() {
                   placeholder="you@example.com"
                   required
                   aria-invalid={formErrors.email ? "true" : "false"}
-                  aria-describedby="email-rhf-error"
-                  disabled={isPending}
-                  className={`bg-input border-border h-11 ${formErrors.email ? 'border-destructive focus:border-destructive' : ''}`}
+                  disabled={isLoggingIn}
+                  className={`h-11 ${formErrors.email ? 'border-destructive focus:border-destructive' : ''}`}
                   {...register("email")}
                 />
                 {formErrors.email && (
-                  <p id="email-rhf-error" role="alert" className="text-sm font-medium text-destructive">
+                  <p role="alert" className="text-sm font-medium text-destructive">
                     {formErrors.email.message}
                   </p>
                 )}
@@ -122,24 +182,25 @@ export function LoginFeature() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link href="/forgot-password"
-                        className={`text-sm hover:underline ${isPending ? 'pointer-events-none opacity-50' : ''}`}>
+                  <Link 
+                    href="/forgot-password"
+                    className={`text-sm hover:underline ${isLoggingIn ? 'pointer-events-none opacity-50' : ''}`}
+                  >
                     Forgot password?
                   </Link>
                 </div>
                 <Input
                   id="password"
                   type="password"
-                  required
                   placeholder="••••••••"
+                  required
                   aria-invalid={formErrors.password ? "true" : "false"}
-                  aria-describedby="password-rhf-error"
-                  disabled={isPending}
-                  className={`bg-input border-border h-11 ${formErrors.password ? 'border-destructive focus:border-destructive' : ''}`}
+                  disabled={isLoggingIn}
+                  className={`h-11 ${formErrors.password ? 'border-destructive focus:border-destructive' : ''}`}
                   {...register("password")}
                 />
                 {formErrors.password && (
-                  <p id="password-rhf-error" role="alert" className="text-sm font-medium text-destructive">
+                  <p role="alert" className="text-sm font-medium text-destructive">
                     {formErrors.password.message}
                   </p>
                 )}
@@ -148,12 +209,11 @@ export function LoginFeature() {
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="remember-me"
-                  className="border-border data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                  disabled={isPending}
+                  disabled={isLoggingIn}
                 />
                 <Label
                   htmlFor="remember-me"
-                  className={`text-sm font-normal text-muted-foreground ${isPending ? 'opacity-50' : ''}`}
+                  className={`text-sm font-normal text-muted-foreground ${isLoggingIn ? 'opacity-50' : ''}`}
                 >
                   Remember me
                 </Label>
@@ -161,15 +221,22 @@ export function LoginFeature() {
 
               <Button
                 type="submit"
-                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground h-11"
-                disabled={isPending}
+                className="w-full h-11"
+                disabled={isLoggingIn}
               >
-                {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing In...</> : 'Sign In'}
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
+                  <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-background px-2 text-muted-foreground">
@@ -178,28 +245,32 @@ export function LoginFeature() {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full border-border text-foreground hover:bg-muted hover:text-foreground/70 h-11" disabled={isPending}>
-                Sign in with Google
+              <Button 
+                variant="outline" 
+                className="w-full h-11" 
+                disabled
+              >
+                Google sign-in (coming soon)
               </Button>
             </CardContent>
           </form>
 
           <CardFooter className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-4 text-center text-sm px-6 sm:px-8">
             <p>
-                <span className="text-muted-foreground">Don&apos;t have an account?{" "}</span>
-                <Link href="/signup" className={`underline  ${isPending ? 'pointer-events-none opacity-50' : ''}`}>
-                  Create an account
-                </Link>
+              <span className="text-muted-foreground">Don't have an account? </span>
+              <Link href="/signup" className={`underline ${isLoggingIn ? 'pointer-events-none opacity-50' : ''}`}>
+                Create an account
+              </Link>
             </p>
-             <p>
-                <span className="text-muted-foreground">Are you a student?{" "}</span>
-                <Link href="/student-login" className={`underline  ${isPending ? 'pointer-events-none opacity-50' : ''}`}>
-                  Login here
-                </Link>
+            <p>
+              <span className="text-muted-foreground">Are you a student? </span>
+              <Link href="/student-login" className={`underline ${isLoggingIn ? 'pointer-events-none opacity-50' : ''}`}>
+                Login here
+              </Link>
             </p>
-             <p className="">
-              <span className="text-muted-foreground">Need help?{" "}</span>
-              <Link href="/support" className={`underline  ${isPending ? 'pointer-events-none opacity-50' : ''}`}>
+            <p>
+              <span className="text-muted-foreground">Need help? </span>
+              <Link href="/support" className={`underline ${isLoggingIn ? 'pointer-events-none opacity-50' : ''}`}>
                 Contact Support
               </Link>
             </p>
@@ -208,4 +279,4 @@ export function LoginFeature() {
       </div>
     </div>
   );
-} 
+}

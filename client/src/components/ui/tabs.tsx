@@ -70,7 +70,7 @@ function TabsContent({
       data-slot="tabs-content"
       className={cn(
         "flex-1 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "flex items-center justify-center pt-0",
+        "w-full h-full",
         className
       )}
       {...props}

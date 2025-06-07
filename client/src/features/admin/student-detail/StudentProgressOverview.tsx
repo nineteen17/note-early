@@ -25,6 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, CheckCircle, XCircle, Clock, MessageSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 // Define interface for viewing module details/feedback
 interface SelectedModuleInfo {
@@ -38,6 +39,7 @@ interface StudentProgressOverviewProps {
 }
 
 export function StudentProgressOverview({ studentId }: StudentProgressOverviewProps) {
+  const router = useRouter();
   const { 
     data: progressList, 
     isLoading: isLoadingProgress,
@@ -64,14 +66,8 @@ export function StudentProgressOverview({ studentId }: StudentProgressOverviewPr
     }, new Map<string, string>());
   }, [activeModules]);
 
-  const handleViewDetails = (progress: StudentProgressSchema) => {
-    const moduleTitle = moduleTitleMap.get(progress.moduleId) || `Unknown (ID: ${progress.moduleId.substring(0,8)}...)`;
-    console.log("Opening details for progress:", progress.id, "Module:", progress.moduleId, "Title:", moduleTitle);
-    setSelectedModule({ 
-      progressId: progress.id, 
-      moduleId: progress.moduleId, 
-      moduleTitle 
-    });
+  const handleReviewButton = (progress: StudentProgressSchema) => {
+    router.push(`/admin/students/${studentId}/${progress.moduleId}/review`);
   };
 
   const handleCloseDetails = () => {
@@ -136,7 +132,8 @@ export function StudentProgressOverview({ studentId }: StudentProgressOverviewPr
               <TableHead className="text-center hidden sm:table-cell">Status</TableHead>
               <TableHead className="text-center">Score</TableHead>
               <TableHead className="text-center hidden md:table-cell">Feedback</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right">Review</TableHead>
+              <TableHead className="text-right">Report</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -158,11 +155,17 @@ export function StudentProgressOverview({ studentId }: StudentProgressOverviewPr
                     </TableCell>
                     <TableCell className="text-center hidden sm:table-cell">
                       {progress.completed ? (
-                        <Badge variant="secondary" className="flex items-center justify-center w-fit mx-auto">
-                          <CheckCircle className="mr-1 h-3 w-3" /> Completed
-                        </Badge>
+                        progress.score && progress.teacherFeedback ? (
+                          <Badge variant="success" className="flex items-center justify-center w-fit mx-auto">
+                            <CheckCircle className="mr-1 h-3 w-3" /> Completed
+                          </Badge>
+                        ) : (
+                          <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 flex items-center justify-center w-fit mx-auto">
+                            <MessageSquare className="mr-1 h-3 w-3" /> Awaiting Marking
+                          </Badge>
+                        )
                       ) : (
-                        <Badge variant="outline" className="flex items-center justify-center w-fit mx-auto">
+                        <Badge variant="secondary" className="flex items-center justify-center w-fit mx-auto">
                           <Clock className="mr-1 h-3 w-3" /> In Progress
                         </Badge>
                       )}
@@ -183,10 +186,23 @@ export function StudentProgressOverview({ studentId }: StudentProgressOverviewPr
                         <Button 
                           variant="outline"
                           size="sm"
-                          onClick={() => handleViewDetails(progress)}
+                          onClick={() => handleReviewButton(progress)}
                         >
                           View Details
                         </Button>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {progress.completed && progress.score && progress.teacherFeedback ? (
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/admin/students/${studentId}/${progress.moduleId}/report`)}
+                        >
+                          View Report
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Not Available</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

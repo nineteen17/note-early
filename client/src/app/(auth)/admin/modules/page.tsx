@@ -1,17 +1,18 @@
+'use client';
+
 import React from 'react';
-import { ModulesTabsFeature } from '@/features/admin/modules-tabs'; // Adjust path if needed
-import type { Metadata } from 'next';
+import { ModulesTabsFeature } from '@/features/admin/modules-tabs';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { PageHeader } from '@/components/layout/PageHeader';
 
-export const metadata: Metadata = {
-  title: 'My Reading Modules', 
-};
-
-// This page now renders the main tabbed interface feature
-// It can likely remain a Server Component.
-export default function AdminModulesPage() {
+export default function ModulesPage() {
   return (
-    <div className="container mx-auto py-8">
+    <PageContainer>
+      <PageHeader 
+        title="Reading Modules" 
+        description="View and manage your reading modules"
+      />
       <ModulesTabsFeature />
-    </div>
+    </PageContainer>
   );
 } 

@@ -31,7 +31,7 @@ export default function AdminLayout({
     return (
       <div className="flex flex-col min-h-screen bg-background">
         {/* Header Skeleton */}
-        <header className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <header className="sticky top-0 z-50 flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 bg-primary">
            <Skeleton className="h-6 w-32" /> {/* Logo */}
            <div className="ml-auto flex items-center gap-2">
               <Skeleton className="h-8 w-20" />
@@ -39,9 +39,9 @@ export default function AdminLayout({
            </div>
         </header>
         {/* Container for Sidebar + Main Skeleton */}
-        <div className="flex flex-1"> 
+        <div className="flex flex-1">
           {/* Sidebar Skeleton */}
-          <aside className="hidden w-64 flex-col border-r bg-muted/40 sm:flex">
+          <aside className="fixed top-[60px] bottom-0 hidden w-64 flex-col border-r bg-muted/40 sm:flex">
              {/* Simplified sidebar skeleton */}
              <nav className="flex-1 overflow-auto py-4 space-y-1">
                <Skeleton className="h-10 mx-4 rounded-lg" />
@@ -50,8 +50,8 @@ export default function AdminLayout({
              </nav>
           </aside>
           {/* Page Content Skeleton */}
-          <main className="flex-1 p-4 sm:px-6 sm:py-6">
-             <Skeleton className="h-96 w-full" /> 
+          <main className="flex-1 p-4 sm:px-6 sm:py-6 sm:ml-64">
+             <Skeleton className="h-96 w-full" />
           </main>
         </div>
       </div>
@@ -61,7 +61,6 @@ export default function AdminLayout({
   // --- Error State --- 
   if (isProfileError) {
     console.error("AdminLayout: Profile query failed.", profileError);
-    // Removed clearAuth/redirect from here, handle higher up if needed
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Alert variant="destructive" className="max-w-lg">
@@ -79,18 +78,18 @@ export default function AdminLayout({
   if (!profile || (profile.role !== 'ADMIN' && profile.role !== 'SUPER_ADMIN')) {
     console.error(`AdminLayout: Incorrect role (${profile?.role}). Redirecting.`);
     clearAuth();
-    router.push('/login'); 
-    return null; 
+    router.push('/admin/login'); // Redirect to ADMIN login page
+    return null;
   }
   
   // --- Render Actual Layout --- 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
-       <Header profile={profile} /> 
-       <div className="flex flex-1"> 
-          <Sidebar userRole={profile.role} /> 
-          <main className="flex-1 overflow-y-auto"> 
-             {children} 
+       <Header profile={profile} />
+       <div className="flex flex-1">
+          <Sidebar userRole={profile.role} />
+          <main className="flex-1 overflow-y-auto sm:ml-64">
+             {children}
           </main>
        </div>
     </div>

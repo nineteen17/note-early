@@ -29,9 +29,7 @@ export const useCreateModuleMutation = () => {
         // Optional: Could also invalidate a general 'active modules' query if one exists
         // queryClient.invalidateQueries({ queryKey: ['modules', 'active'] });
 
-        toast.success("Module Created", {
-          description: `Module "${newModule.title}" was created successfully.`,
-        });
+        // Removed duplicate toast - let the component handle success notifications
         
         // Consider redirecting the user after successful creation, 
         // e.g., to the module list or the new module's edit page.

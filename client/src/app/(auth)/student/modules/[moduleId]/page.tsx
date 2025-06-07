@@ -333,7 +333,7 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
               )}
               
               {/* Action Button - Proper placement at bottom */}
-              <div className="flex justify-center pt-2">
+              <div className="flex justify-end pt-2">
                 {progress ? (
                   <Button 
                     onClick={() => router.push(`/student/progress/${moduleId}/reading`)}

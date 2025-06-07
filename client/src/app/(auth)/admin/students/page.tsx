@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useAdminStudentsQuery } from '@/hooks/api/admin/students/useAdminStudentsQuery';
+import { useAdminStudentProgressListQuery } from '@/hooks/api/admin/progress/useAdminStudentProgressListQuery';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PlusCircle, AlertCircle, Users, Trash2 } from 'lucide-react';
+import { PlusCircle, AlertCircle, Users, Trash2, Search, MessageSquare } from 'lucide-react';
 import { 
     Table, 
     TableBody, 
@@ -23,24 +24,47 @@ import { getInitials } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CreateStudentModal } from '@/features/admin/create-student-modal';
 import { ProfileDTO } from '@/types/api';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 // Define props for the table, including edit handler
 interface StudentListTableProps {
   students: ProfileDTO[];
+  onCreateClick: () => void;
 }
 
-function StudentListTable({ students }: StudentListTableProps) {
+function StudentListTable({ students, onCreateClick }: StudentListTableProps) {
   const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleRowClick = (profileId: string) => {
     router.push(`/admin/students/${profileId}`);
   };
 
+  const filteredStudents = students.filter(student => 
+    student.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.profileId?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Managed Students</CardTitle>
-        <CardDescription>View and manage student profiles associated with your account.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <div className="flex-1 max-w-sm">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search students"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-7"
+            />
+          </div>
+        </div>
+        <Button onClick={onCreateClick}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Student
+        </Button>
       </CardHeader>
       <CardContent>
         <Table>
@@ -51,39 +75,24 @@ function StudentListTable({ students }: StudentListTableProps) {
               <TableHead className="hidden sm:table-cell">Reading Level</TableHead>
               <TableHead className="hidden md:table-cell">Completed Modules</TableHead>
               <TableHead className="hidden md:table-cell">Joined</TableHead>
+              <TableHead className="text-center">Awaiting Marking</TableHead>
               <TableHead className="text-right"><span className="sr-only">View Profile</span></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {students.length === 0 ? (
+            {filteredStudents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No students found. Get started by creating one!
+                <TableCell colSpan={7} className="h-24 text-center">
+                  {searchQuery ? 'No students found matching your search.' : 'No students found. Get started by creating one!'}
                 </TableCell>
               </TableRow>
             ) : (
-              students.map((student) => (
-                <TableRow 
+              filteredStudents.map((student) => (
+                <StudentRow 
                   key={student.profileId} 
-                  onClick={() => handleRowClick(student.profileId)}
-                  className="cursor-pointer hover:bg-[var(--blue-accent)]/25 transition-colors"
-                >
-                  <TableCell>
-                    <Avatar className="h-10 w-10 border">
-                      <AvatarImage src={student.avatarUrl ?? undefined} alt={student.fullName ?? 'Student'} />
-                      <AvatarFallback>{getInitials(student.fullName ?? 'S')}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                       {student.fullName}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">{student.readingLevel ?? 'N/A'}</TableCell>
-                  <TableCell className="hidden md:table-cell">{student.completedModulesCount ?? 0}</TableCell>
-                  <TableCell className="hidden md:table-cell">{student.createdAt ? format(new Date(student.createdAt), 'PP') : 'N/A'}</TableCell>
-                  {/* Empty cell for alignment, corresponding to the sr-only header */}
-                  <TableCell className="text-right">
-                  </TableCell>
-                </TableRow>
+                  student={student} 
+                  onRowClick={() => handleRowClick(student.profileId)}
+                />
               ))
             )}
           </TableBody>
@@ -93,10 +102,55 @@ function StudentListTable({ students }: StudentListTableProps) {
   );
 }
 
+interface StudentRowProps {
+  student: ProfileDTO;
+  onRowClick: () => void;
+}
+
+function StudentRow({ student, onRowClick }: StudentRowProps) {
+  const { data: progressList } = useAdminStudentProgressListQuery(student.profileId);
+
+  // Count submissions awaiting marking (either score or feedback)
+  const awaitingMarkingCount = progressList?.filter(progress => 
+    progress.completed && (!progress.score || !progress.teacherFeedback)
+  ).length ?? 0;
+
+  return (
+    <TableRow 
+      onClick={onRowClick}
+      className="cursor-pointer hover:bg-[var(--blue-accent)]/25 transition-colors"
+    >
+      <TableCell>
+        <Avatar className="h-10 w-10 border">
+          <AvatarImage src={student.avatarUrl ?? undefined} alt={student.fullName ?? 'Student'} />
+          <AvatarFallback>{getInitials(student.fullName ?? 'S')}</AvatarFallback>
+        </Avatar>
+      </TableCell>
+      <TableCell className="font-medium">
+        {student.fullName}
+      </TableCell>
+      <TableCell className="hidden sm:table-cell">{student.readingLevel ?? 'N/A'}</TableCell>
+      <TableCell className="hidden md:table-cell">{student.completedModulesCount ?? 0}</TableCell>
+      <TableCell className="hidden md:table-cell">{student.createdAt ? format(new Date(student.createdAt), 'PP') : 'N/A'}</TableCell>
+      <TableCell className="text-center">
+        {awaitingMarkingCount > 0 ? (
+          <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+            <MessageSquare className="h-3 w-3 mr-1" />
+            {awaitingMarkingCount}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell className="text-right">
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export default function AdminStudentsPage() {
   const queryClient = useQueryClient();
   const { data: students, isLoading, isError, error } = useAdminStudentsQuery(); 
-
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const handleCloseCreateModal = () => {
@@ -105,21 +159,20 @@ export default function AdminStudentsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold flex items-center">
-          <Users className="mr-3 h-7 w-7" /> Students
-        </h1>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Student
-        </Button>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Students"
+        description="View and manage student profiles associated with your account."
+      />
 
       {isLoading && (
         <Card>
-            <CardHeader>
-                <Skeleton className="h-6 w-1/3" />
-                <Skeleton className="h-4 w-2/3 mt-1" />
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-4 w-2/3 mt-1" />
+                </div>
+                <Skeleton className="h-10 w-32" />
             </CardHeader>
             <CardContent>
                 {[...Array(3)].map((_, i) => (
@@ -129,8 +182,6 @@ export default function AdminStudentsPage() {
                             <Skeleton className="h-4 w-1/2" />
                             <Skeleton className="h-3 w-1/4 hidden sm:block" />
                         </div>
-                        {/* Skeleton for the removed actions column? - Keep layout consistent */}
-                        {/* <Skeleton className="h-8 w-16" /> */} 
                     </div>
                 ))}
             </CardContent>
@@ -148,13 +199,16 @@ export default function AdminStudentsPage() {
       )}
 
       {!isLoading && !isError && students && (
-        <StudentListTable students={students} />
+        <StudentListTable 
+          students={students} 
+          onCreateClick={() => setIsCreateModalOpen(true)}
+        />
       )}
 
       <CreateStudentModal 
         isOpen={isCreateModalOpen}
         onClose={handleCloseCreateModal}
       />
-    </div>
+    </PageContainer>
   );
 } 

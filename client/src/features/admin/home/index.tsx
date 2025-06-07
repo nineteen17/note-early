@@ -13,7 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, BookOpen, Users, CheckSquare } from 'lucide-react'; // Icons for cards
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContainer } from '@/components/layout/PageContainer';
 // Placeholder Stat Card component
 const StatCard = ({
   title,
@@ -57,72 +58,70 @@ export function AdminHome() {
   const pendingSummaries = '-'; // Placeholder
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="flex items-center justify-between">
-        {isProfileLoading ? (
-             <Skeleton className="h-8 w-1/3" />
-           ) : profileError ? (
+    <PageContainer>
+      <div className="space-y-6">
+        {/* Welcome Header */}
+        <div className="flex items-center justify-between">
+          {isProfileLoading ? (
+            <Skeleton className="h-8 w-1/3" />
+          ) : profileError ? (
             <span className="text-xl font-semibold text-destructive">Error loading profile</span>
-           ) : (
-             <h1 className="text-2xl font-semibold">
-               Welcome back, {profile?.fullName || 'Admin'}!
-             </h1>
-           )
-         }
-         {/* Add any header actions if needed, e.g., <Button>Create New</Button> */}
-      </div>
+          ) : (
+            <h1 className="text-2xl font-semibold">
+              Welcome back, {profile?.fullName || 'Admin'}!
+            </h1>
+          )}
+        </div>
 
-      {/* Stat Cards Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard 
-          title="Total Students" 
-          value={totalStudents} 
-          icon={Users} 
-          isLoading={isLoadingStats} 
-          description="Number of active students"
-        />
-        <StatCard 
-          title="Active Modules" 
-          value={activeModules} 
-          icon={BookOpen} 
-          isLoading={isLoadingStats} 
-          description="Curated & custom modules available"
-        />
-         <StatCard 
-          title="Pending Summaries" 
-          value={pendingSummaries} 
-          icon={CheckSquare} 
-          isLoading={isLoadingStats} 
-          description="Summaries awaiting review"
-        />
-      </div>
+        {/* Stat Cards Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <StatCard 
+            title="Total Students" 
+            value={totalStudents} 
+            icon={Users} 
+            isLoading={isLoadingStats} 
+            description="Number of active students"
+          />
+          <StatCard 
+            title="Active Modules" 
+            value={activeModules} 
+            icon={BookOpen} 
+            isLoading={isLoadingStats} 
+            description="Curated & custom modules available"
+          />
+          <StatCard 
+            title="Pending Summaries" 
+            value={pendingSummaries} 
+            icon={CheckSquare} 
+            isLoading={isLoadingStats} 
+            description="Summaries awaiting review"
+          />
+        </div>
 
-      {/* Placeholder Sections */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest student progress and module updates.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground italic">Recent activity feed coming soon...</p>
-            {/* TODO: Implement activity feed */}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Links</CardTitle>
-            <CardDescription>Navigate to key sections.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col space-y-2">
-            <Button variant="outline" asChild><Link href="/admin/students">Manage Students</Link></Button>
-            <Button variant="outline" asChild><Link href="/admin/modules">Manage Modules</Link></Button>
-            {/* Add more links as needed */}
-            <Button variant="outline" asChild><Link href="/settings">Account Settings</Link></Button>
-          </CardContent>
-        </Card>
+        {/* Content Grid */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest student progress and module updates.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground italic">Recent activity feed coming soon...</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Links</CardTitle>
+              <CardDescription>Navigate to key sections.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col space-y-2">
+              <Button variant="outline" asChild><Link href="/admin/students">Manage Students</Link></Button>
+              <Button variant="outline" asChild><Link href="/admin/modules">Manage Modules</Link></Button>
+              <Button variant="outline" asChild><Link href="/settings">Account Settings</Link></Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </PageContainer>
   );
 } 

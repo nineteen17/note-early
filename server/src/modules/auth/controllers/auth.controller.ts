@@ -124,6 +124,37 @@ export class AuthController {
     }
   }
 
+  // Resend email verification
+  resendVerificationEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+      await this.authService.resendVerificationEmail(email);
+      
+      res.status(200).json({
+        status: 'success',
+        message: 'Verification email sent successfully',
+      } as ApiResponse);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Invalid email address',
+          data: error.errors,
+        } as ApiResponse);
+      } else if (error instanceof AppError) {
+        res.status(error.statusCode).json({
+          status: 'error',
+          message: error.message,
+        } as ApiResponse);
+      } else {
+        res.status(500).json({
+          status: 'error',
+          message: 'Failed to resend verification email',
+        } as ApiResponse);
+      }
+    }
+  }
+
   // Initiate Google OAuth sign-in
   initiateGoogleLogin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

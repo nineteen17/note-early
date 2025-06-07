@@ -31,41 +31,49 @@ import { getMobileAuthMargins, getAuthCardClasses } from '@/lib/utils';
 // Define form data type
 type SignupFormData = z.infer<typeof adminSignupSchema>;
 
+// Updated SignupForm component
 export function SignupForm() {
     const router = useRouter();
 
-    // Setup React Hook Form
     const {
         register,
         handleSubmit,
         formState: { errors: formErrors },
         setError: setFormError,
-        reset, // Function to reset form fields
+        reset,
+        getValues,
     } = useForm<SignupFormData>({
         resolver: zodResolver(adminSignupSchema),
     });
 
-    // Setup the mutation hook
+    // Setup the mutation hook - let the hook handle redirect
     const { 
         mutate: signupMutate,
         isPending,
-        // error: mutationError // We handle errors via onError callback
     } = useSignupAdminMutation({
-        onSuccess: (data) => {
-            // data might contain { message: "..." } or be empty
-            console.log('Signup mutation successful:', data);
+        onSuccess: (data, variables) => {
+            // Hook already handles redirect, just show appropriate message
             toast.success("Account Created", { 
-                description: data?.message || "You can now log in."
+                description: "Please check your email to verify your account."
             });
-            reset(); // Clear the form on success
-            // Optionally redirect to login after a delay or directly
-            // router.push('/login'); 
+            reset();
+            // Don't redirect here - let the hook handle it
         },
         onError: (error: ApiError) => {
             console.error('Signup mutation error:', error);
+            
+            // Check if it's a duplicate email error from our database trigger issue
+            if (error.message?.includes('duplicate key') || error.message?.includes('already registered')) {
+                setFormError('root.serverError', {
+                    type: String(error.status || 409),
+                    message: 'This email address is already registered. Please try logging in instead.',
+                });
+                return;
+            }
+            
             const message = error.message || 'Signup failed. Please try again.';
             toast.error("Signup Failed", { description: message });
-            // Set a general form error for display within the form
+            
             setFormError('root.serverError', {
                 type: String(error.status || 500),
                 message: message,
@@ -73,39 +81,48 @@ export function SignupForm() {
         },
     });
 
-    // Handle form submission
     const onSubmit = (data: SignupFormData) => {
         console.log("Signup form submitted:", data);
-        signupMutate(data); // Trigger the mutation
+        signupMutate(data);
     };
 
-    // Extract server error for display
     const serverError = formErrors.root?.serverError?.message;
 
     return (
         <div className="min-h-screen flex flex-col w-full">
-            {/* Fixed logo position from top */}
             <div className="pt-12 pb-6 flex justify-center">
                 <Link href="/">
                     <NoteEarlyLogoLarge />
                 </Link>
             </div>
             
-            {/* Flexible content area with mobile margins */}
             <div className={`flex-1 flex items-start justify-center pb-8 ${getMobileAuthMargins()}`}>
                 <Card className={getAuthCardClasses()}>
                     <CardHeader className="text-center space-y-1 pb-4">
                         <CardTitle className="text-xl sm:text-2xl font-bold">Create Account</CardTitle>
+                        <CardDescription className="text-sm sm:text-base text-muted-foreground">
+                            Get started with your NoteEarly admin account
+                        </CardDescription>
                     </CardHeader>
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <CardContent className="space-y-4 px-4 sm:px-6 sm:px-8">
                             {serverError && (
                                 <Alert variant="destructive">
                                     <AlertTitle className="text-sm sm:text-base">Registration Failed</AlertTitle>
-                                    <AlertDescription className="text-xs sm:text-sm">{serverError}</AlertDescription>
+                                    <AlertDescription className="text-xs sm:text-sm">
+                                        {serverError}
+                                        {serverError.includes('already registered') && (
+                                            <div className="mt-2">
+                                                <Link href="/login" className="text-sm underline">
+                                                    Go to login page
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </AlertDescription>
                                 </Alert>
                             )}
 
+                            {/* Your existing form fields */}
                             <div className="space-y-2">
                                 <Label htmlFor="fullName">Full Name</Label>
                                 <Input
@@ -185,8 +202,12 @@ export function SignupForm() {
                                 </div>
                             </div>
 
-                            <Button variant="outline" className="w-full border-border text-foreground hover:bg-muted hover:text-foreground/70 h-11" disabled={isPending}>
-                                Sign up with Google
+                            <Button 
+                                variant="outline" 
+                                className="w-full border-border text-foreground hover:bg-muted hover:text-foreground/70 h-11" 
+                                disabled
+                            >
+                                Google signup (coming soon)
                             </Button>
                         </CardContent>
                     </form>
@@ -209,4 +230,4 @@ export function SignupForm() {
             </div>
         </div>
     );
-} 
+}

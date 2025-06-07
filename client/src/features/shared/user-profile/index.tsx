@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertCircle, User, Mail, Edit2, Save, X, Calendar, BookOpen, Clock, Info, Hash, Copy } from "lucide-react";
+import { AlertCircle, User, Mail, Edit2, Save, X, Calendar, BookOpen, Clock, Info, Hash, Copy, Users } from "lucide-react";
 import { format } from 'date-fns';
 import type { UserRole } from '@/types/api';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipBoard'; // 
@@ -141,32 +141,6 @@ export function UserProfile() {
                                     <h2 className="text-2xl sm:text-3xl font-bold leading-tight">
                                         {profile?.fullName || 'User Name'}
                                     </h2>
-                                    <div className="space-y-2">
-                                        {isStudent ? (
-                                            <div className="flex items-center justify-center sm:justify-start gap-2 text-muted-foreground">
-                                                <Hash className="h-4 w-4 flex-shrink-0" />
-                                                <span className="text-sm sm:text-base truncate">ID: {profile?.profileId}</span>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleCopy(profile?.profileId ?? '')}
-                                                >
-                                                    <Copy className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center justify-center sm:justify-start gap-2 text-muted-foreground">
-                                                <Mail className="h-4 w-4 flex-shrink-0" />
-                                                <span className="text-sm sm:text-base truncate">{profile?.email}</span>
-                                            </div>
-                                        )}
-                                        <div className="flex items-center justify-center sm:justify-start gap-2 text-muted-foreground">
-                                            <User className="h-4 w-4 flex-shrink-0" />
-                                            <span className="text-sm sm:text-base font-medium capitalize">
-                                                {profile?.role || 'Member'}
-                                            </span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -176,39 +150,90 @@ export function UserProfile() {
                             <h3 className="text-lg font-semibold mb-4 text-center sm:text-left">
                                 Account Details
                             </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {profile?.age && (
-                                    <div className="flex items-center gap-3 p-4 bg-card">
-                                        <div className="p-2 bg-muted rounded-lg">
-                                            <Calendar className="h-4 w-4" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {isStudent ? (
+                                    <>
+                                        <div className="flex items-center gap-3 p-4 bg-card">
+                                            <div className="p-2 bg-muted rounded-lg">
+                                                <Hash className="h-4 w-4" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Student ID</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-semibold truncate">{profile?.profileId}</p>
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleCopy(profile?.profileId ?? '');
+                                                        }}
+                                                    >
+                                                        <Copy className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Age</p>
-                                            <p className="font-semibold">{profile.age} years</p>
+                                        {profile?.age && (
+                                            <div className="flex items-center gap-3 p-4 bg-card">
+                                                <div className="p-2 bg-muted rounded-lg">
+                                                    <Calendar className="h-4 w-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Age</p>
+                                                    <p className="font-semibold">{profile.age} years</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {profile?.readingLevel && (
+                                            <div className="flex items-center gap-3 p-4 bg-card">
+                                                <div className="p-2 bg-muted rounded-lg">
+                                                    <BookOpen className="h-4 w-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Reading Level</p>
+                                                    <p className="font-semibold">{profile.readingLevel}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-3 p-4 bg-card">
+                                            <div className="p-2 bg-muted rounded-lg">
+                                                <Mail className="h-4 w-4" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-semibold truncate">{profile?.email || 'Not set'}</p>
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleCopy(profile?.email ?? '');
+                                                        }}
+                                                    >
+                                                        <Copy className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                {profile?.readingLevel && (
-                                    <div className="flex items-center gap-3 p-4 bg-card">
-                                        <div className="p-2 bg-muted rounded-lg">
-                                            <BookOpen className="h-4 w-4" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Reading Level</p>
-                                            <p className="font-semibold">{profile.readingLevel}</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {profile?.completedModulesCount !== undefined && (
-                                    <div className="flex items-center gap-3 p-4 bg-card">
-                                        <div className="p-2 bg-muted rounded-lg">
-                                            <Clock className="h-4 w-4" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Completed</p>
-                                            <p className="font-semibold">{profile.completedModulesCount} modules</p>
-                                        </div>
-                                    </div>
+                                        {profile?.subscriptionPlan && (
+                                            <div className="flex items-center gap-3 p-4 bg-card">
+                                                <div className="p-2 bg-muted rounded-lg">
+                                                    <BookOpen className="h-4 w-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Subscription</p>
+                                                    <p className="font-semibold capitalize">{profile.subscriptionPlan}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                                 {profile?.createdAt && (
                                     <div className="flex items-center gap-3 p-4 bg-card">
@@ -227,7 +252,7 @@ export function UserProfile() {
                 </CardContent>
 
                 {/* Action Buttons */}
-                {/* <CardFooter className="bg-muted/30 border-t px-6 sm:px-8 py-4">
+                <CardFooter className="bg-muted/30 border-t px-6 sm:px-8 py-4">
                     <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto sm:ml-auto">
                         {!isStudent && (
                             <Button 
@@ -240,7 +265,7 @@ export function UserProfile() {
                             </Button>
                         )}
                     </div>
-                </CardFooter> */}
+                </CardFooter>
             </form>
 
             {/* Edit Dialog */}
