@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/apiClient";
-import { CreateModuleInput } from "@/lib/schemas/module";
+import { CreateModuleInput } from "@/lib/schemas/modules";
 import { ReadingModuleDTO } from "@/types/api";
 import { toast } from "sonner";
 

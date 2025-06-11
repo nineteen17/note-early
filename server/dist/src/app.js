@@ -43,8 +43,12 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 const corsOptions = {
-    origin: env.FRONTEND_URL,
+    origin: env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Set-Cookie'],
+    maxAge: 86400 // 24 hours
 };
 app.use(cors(corsOptions));
 // Swagger documentation setup

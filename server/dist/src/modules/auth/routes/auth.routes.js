@@ -83,6 +83,95 @@ authRouter.post('/signup', authController.signUpAdmin); // Renamed route, contro
 authRouter.post('/login', authController.loginAdmin); // Renamed route
 /**
  * @swagger
+ * /auth/resend-verification:
+ *   post:
+ *     tags: [Auth - Public]
+ *     summary: Resend email verification
+ *     description: Resends the email verification link to the specified email address.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address to resend verification to.
+ *     responses:
+ *       200:
+ *         description: Verification email sent successfully.
+ *       400:
+ *         description: Invalid email address.
+ *       404:
+ *         description: Email address not found.
+ *       500:
+ *         description: Server error during email sending.
+ */
+authRouter.post('/resend-verification', authController.resendVerificationEmail);
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth - Public]
+ *     summary: Request password reset for Admin/SuperAdmin
+ *     description: Sends a password reset email to the specified email address if the account exists.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address to send password reset instructions to.
+ *     responses:
+ *       200:
+ *         description: Password reset email sent (or would have been sent for security).
+ *       400:
+ *         description: Invalid email address.
+ *       500:
+ *         description: Server error during password reset request.
+ */
+authRouter.post('/forgot-password', authController.forgotPassword);
+/**
+ * @swagger
+ * /auth/update-password:
+ *   post:
+ *     tags: [Auth - Public]
+ *     summary: Update password during reset flow
+ *     description: Updates the user's password after they click the reset link from email. User must be in authenticated state from email link.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [newPassword]
+ *             properties:
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 8
+ *                 description: The new password to set.
+ *     responses:
+ *       200:
+ *         description: Password updated successfully.
+ *       400:
+ *         description: Invalid password format.
+ *       401:
+ *         description: Password reset session expired or invalid.
+ *       500:
+ *         description: Server error during password update.
+ */
+authRouter.post('/update-password', authController.updatePassword);
+/**
+ * @swagger
  * /auth/google:
  *   get:
  *     tags: [Auth - Public]
@@ -151,6 +240,51 @@ authRouter.get('/callback', authController.handleOAuthCallback);
  *         description: Server error during student login.
  */
 authRouter.post('/student/login', authController.loginStudent);
+/**
+ * @swagger
+ * /auth/student/refresh:
+ *   post:
+ *     tags: [Auth - Student]
+ *     summary: Refresh Student access token using HttpOnly cookie
+ *     description: Uses the student_refresh_token HttpOnly cookie to generate a new student access token.
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully. Returns new access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse' # Assuming a standard success response structure
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     accessToken:
+ *                       type: string
+ *                       description: The new JWT access token for the student.
+ *       401:
+ *         description: Refresh token missing, invalid, or expired.
+ *       500:
+ *         description: Server error during token refresh.
+ */
+authRouter.post('/student/refresh', authController.refreshStudentToken);
+/**
+ * @swagger
+ * /auth/student/logout:
+ *   post:
+ *     tags: [Auth - Student]
+ *     summary: Log out a Student user
+ *     description: Clears the student_refresh_token cookie.
+ *     responses:
+ *       200:
+ *         description: Student logout successful.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       500:
+ *         description: Server error during logout.
+ */
+authRouter.post('/student/logout', authController.logoutStudent);
 /**
  * @swagger
  * /auth/refresh:

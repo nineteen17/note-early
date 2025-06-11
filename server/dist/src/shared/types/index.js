@@ -29,7 +29,7 @@ export var ReadingLevel;
 // Module Type Enum
 export var ModuleType;
 (function (ModuleType) {
-    ModuleType["CURATED"] = "Adventure";
+    ModuleType["CURATED"] = "curated";
     ModuleType["CUSTOM"] = "custom";
 })(ModuleType || (ModuleType = {}));
 // --- ADDED Language Enum ---

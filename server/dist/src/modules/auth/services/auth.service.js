@@ -1,12 +1,13 @@
-import { supabase } from '@config/supabase';
+import { supabase, supabaseAdmin } from '@config/supabase';
 import * as schema from '@/db/schema'; // Import schema namespace
+import { UserRole } from '@shared/types';
 import { eq, and, count } from 'drizzle-orm'; // Keep count, eq, and, SQL
 import bcrypt from 'bcrypt';
 import { AuthError } from '@supabase/supabase-js';
 import { logger } from '@/utils/logger';
 import { AppError } from '@/utils/errors';
 import { SubscriptionService } from '@/modules/subscription/services/subscription.service';
-import { generateStudentToken } from '@/utils/jwt'; // Import the new utility function
+import { generateStudentAuthTokens, verifyStudentRefreshToken } from '@/utils/jwt'; // Import the new utility function
 export class AuthService {
     // <<< Modify constructor to accept db instance
     constructor(dbInstance) {
@@ -68,53 +69,164 @@ export class AuthService {
     // Sign up with email (now for any public user)
     async signUpWithEmail(email, password, fullName) {
         try {
-            // Create user in Supabase Auth
+            // --- Pre-check using listUsers with pagination ---
+            logger.info(`Checking for existing user with email: ${email}`);
+            const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+                page: 1,
+                perPage: 1,
+                // No direct email filter here, we check the result
+            });
+            if (listError) {
+                logger.error('Error listing users during pre-check:', listError);
+                throw new AppError('Failed to verify email address. Please try again.', 500);
+            }
+            // Check if the first user returned matches the email
+            if (listData && listData.users && listData.users.length > 0) {
+                // Compare emails case-insensitively
+                if (listData.users[0].email?.toLowerCase() === email.toLowerCase()) {
+                    logger.warn(`Signup attempt failed: Email ${email} already registered (found via listUsers).`);
+                    throw new AppError('Email address is already registered.', 409);
+                }
+                // If the first user doesn't match, it's unlikely (though not impossible)
+                // that the target user exists further down the list if listUsers isn't
+                // ordered reliably by email. However, for most practical purposes,
+                // if the *very first* user doesn't match, we can assume the email is available.
+                // A more robust check might involve multiple pages if exact filtering fails,
+                // but that adds complexity. Let's proceed if the first user doesn't match.
+            }
+            logger.info(`Email ${email} appears not registered (or first user didn't match). Proceeding with signup attempt.`);
+            // --- END Pre-check ---
+            // If pre-check passed, proceed to create user in Supabase Auth
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     data: {
-                        full_name: fullName // Pass fullName if needed by trigger or elsewhere
+                        full_name: fullName
                     }
                 }
             });
+            // Fallback check (in case of race conditions or other issues)
             if (authError) {
-                logger.error('Supabase signup error:', authError);
-                // Consider more specific error mapping based on authError.code/status
-                throw new AppError(`Authentication error: ${authError.message}`, authError.status || 400);
+                logger.error('Supabase signup error (after pre-check):', authError);
+                if (authError.message && authError.message.includes('User already registered')) {
+                    throw new AppError('Email address is already registered.', 409);
+                }
+                else {
+                    throw new AppError(`Authentication error: ${authError.message}`, authError.status || 400);
+                }
             }
             if (!authData.user)
                 throw new AppError('User creation failed after signup', 500);
-            // Session might not be immediately available or required depending on email verification settings
-            // The profile will be created automatically by our database trigger
-            // We can optimistically wait a bit and check, or rely on later profile fetch
-            await new Promise(resolve => setTimeout(resolve, 750)); // Increased delay slightly
-            // Check if profile was created
+            await new Promise(resolve => setTimeout(resolve, 750));
             const [profile] = await this.db
                 .select()
                 .from(schema.profiles)
                 .where(eq(schema.profiles.id, authData.user.id));
             if (!profile) {
-                // This might happen due to trigger delay or failure
                 logger.warn(`Profile not found immediately after signup for user ${authData.user.id}`);
-                // Decide if this is an error or just needs later handling
             }
             return {
                 user: authData.user,
-                session: authData.session, // Session might be null if email verification is on
+                session: authData.session,
                 profile: profile || null
             };
         }
         catch (error) {
-            // Log the original error before potentially re-throwing a generic one
             logger.error('Error during email signup:', error);
             if (error instanceof AppError) {
-                throw error; // Re-throw known AppErrors
+                throw error;
             }
-            // Avoid exposing raw AuthError details potentially
             throw new AppError(`Signup failed. Please try again.`, 500);
         }
     }
+    // Resend email verification
+    async resendVerificationEmail(email) {
+        try {
+            // Check if user exists first
+            const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+                page: 1,
+                perPage: 1000, // Set a reasonable limit
+            });
+            if (listError) {
+                logger.error('Error listing users during resend verification:', listError);
+                throw new AppError('Failed to process verification request.', 500);
+            }
+            // Find user by email
+            const existingUser = listData.users.find(user => user.email?.toLowerCase() === email.toLowerCase());
+            if (!existingUser) {
+                throw new AppError('Email address not found.', 404);
+            }
+            // Check if user is already confirmed
+            if (existingUser.email_confirmed_at) {
+                throw new AppError('Email is already verified.', 400);
+            }
+            // Resend verification email using admin API
+            const { error: resendError } = await supabaseAdmin.auth.resend({
+                type: 'signup',
+                email: email,
+            });
+            if (resendError) {
+                logger.error('Error resending verification email:', resendError);
+                throw new AppError('Failed to resend verification email.', 500);
+            }
+            logger.info(`Verification email resent successfully to: ${email}`);
+        }
+        catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            logger.error('Error resending verification email:', error);
+            throw new AppError('Failed to resend verification email.', 500);
+        }
+    }
+    // Forgot password - send reset email
+    async forgotPassword(email) {
+        try {
+            // Use Supabase's built-in password reset functionality
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${process.env.CLIENT_URL || 'http://localhost:3000'}/password-reset`,
+            });
+            if (error) {
+                logger.error('Error sending password reset email:', error);
+                // Don't throw error - for security, always return success response
+                // regardless of whether email exists or not
+            }
+            logger.info(`Password reset email sent (or attempted) for: ${email}`);
+        }
+        catch (error) {
+            logger.error('Error in forgot password flow:', error);
+            // Don't throw error - for security, always return success response
+        }
+    }
+    // Update password during reset flow
+    async updatePassword(accessToken, newPassword) {
+        try {
+            // Set the session with the provided access token
+            const { data: { user }, error: sessionError } = await supabase.auth.getUser(accessToken);
+            if (sessionError || !user) {
+                logger.error(`Invalid or expired session for password update: ${sessionError?.message}`);
+                throw new AppError('Password reset session has expired. Please request a new password reset.', 401);
+            }
+            // Update the user's password using admin API to ensure it works
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+                password: newPassword
+            });
+            if (updateError) {
+                logger.error(`Supabase password update error: ${updateError.message}`, { userId: user.id });
+                throw new AppError('Failed to update password', 500);
+            }
+            logger.info(`Password updated successfully`, { userId: user.id });
+        }
+        catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            logger.error('Unexpected error in updatePassword:', error);
+            throw new AppError('Failed to update password', 500);
+        }
+    }
+    // Step 1: Admin login with Supabase (email/password only)
     // Step 1: Admin login with Supabase (email/password only)
     async loginAdmin(email, password) {
         try {
@@ -123,17 +235,29 @@ export class AuthService {
                 email,
                 password,
             });
-            if (authError)
+            if (authError) {
+                // Check for email confirmation errors specifically
+                if (authError.message?.includes('Email not confirmed') ||
+                    authError.message?.includes('email_not_confirmed') ||
+                    authError.message?.includes('confirm') ||
+                    authError.message?.includes('verify')) {
+                    throw new AppError('Please verify your email address before signing in.', 400);
+                }
                 throw authError;
+            }
             if (!authData.user)
-                throw new Error('Login failed');
+                throw new AppError('Login failed', 400);
+            // IMPORTANT: Check if email is verified
+            if (!authData.user.email_confirmed_at) {
+                throw new AppError('Please verify your email address before signing in.', 400);
+            }
             // Get admin profile using this.db
             const [profile] = await this.db
                 .select()
                 .from(schema.profiles)
                 .where(eq(schema.profiles.id, authData.user.id));
             if (!profile || profile.role !== "ADMIN") {
-                throw new Error('Admin profile not found');
+                throw new AppError('Admin profile not found', 404);
             }
             return {
                 user: authData.user,
@@ -142,12 +266,20 @@ export class AuthService {
             };
         }
         catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
             if (error instanceof AuthError) {
-                throw new Error(`Authentication error: ${error.message}`);
+                // Handle specific Supabase auth errors
+                if (error.message?.includes('Email not confirmed') ||
+                    error.message?.includes('email_not_confirmed')) {
+                    throw new AppError('Please verify your email address before signing in.', 400);
+                }
+                throw new AppError(`Authentication error: ${error.message}`, 400);
             }
             logger.error('Failed to login admin:', error);
             const message = error instanceof Error ? error.message : String(error);
-            throw new Error(`Failed to login admin: ${message}`);
+            throw new AppError(`Failed to login admin: ${message}`, 500);
         }
     }
     async refreshSession(refreshToken) {
@@ -203,18 +335,13 @@ export class AuthService {
             if (!plan) {
                 throw new AppError('Could not determine subscription plan for admin.', 500);
             }
-            // 2. Check if the tier allows student creation
-            if (plan.tier === 'free') {
-                throw new AppError('Student profile creation is not allowed on the Free plan. Please upgrade.', 403 // Forbidden
-                );
-            }
-            // 3. Count existing students for this admin (uses this.db)
+            // 2. Count existing students for this admin (uses this.db)
             const [studentCountResult] = await this.db
                 .select({ value: count() })
                 .from(schema.profiles)
                 .where(and(eq(schema.profiles.adminId, adminId), eq(schema.profiles.role, 'STUDENT')));
             const currentStudentCount = studentCountResult.value || 0;
-            // 4. Check against plan limit
+            // 3. Check against plan limit
             if (currentStudentCount >= plan.studentLimit) {
                 throw new AppError(`Student limit (${plan.studentLimit}) for your current plan ('${plan.tier}') has been reached. Please upgrade to create more students.`, 403 // Forbidden
                 );
@@ -250,41 +377,73 @@ export class AuthService {
             throw new AppError(`Failed to create student: ${message}`, 500);
         }
     }
-    // Student login with PIN - Correct return type Promise<{ profile: Profile, token: string }>
+    // Student login with PIN - MODIFIED
     async loginStudent(studentId, pin) {
         try {
             const [fetchedProfile] = await this.db
                 .select()
                 .from(schema.profiles)
                 .where(eq(schema.profiles.id, studentId));
-            if (!fetchedProfile || fetchedProfile.role !== "STUDENT") {
-                // Use AppError
+            if (!fetchedProfile || fetchedProfile.role !== UserRole.STUDENT) {
                 throw new AppError('Student profile not found', 401);
             }
             if (fetchedProfile.pin === null || fetchedProfile.adminId === null) {
                 logger.error('Fetched student profile is missing required pin or adminId:', fetchedProfile);
-                // Use AppError
                 throw new AppError('Student profile data is invalid.', 400);
             }
             // Verify PIN
             const isValidPin = await bcrypt.compare(pin, fetchedProfile.pin);
             if (!isValidPin) {
-                // Use AppError
                 throw new AppError('Invalid PIN', 401);
             }
-            // --- Use utility to generate token --- 
-            const token = generateStudentToken(fetchedProfile);
-            // Return profile and the generated token
-            return { profile: fetchedProfile, token };
+            // --- Generate BOTH tokens using the updated utility --- 
+            const { accessToken, refreshToken } = generateStudentAuthTokens(fetchedProfile);
+            // Return profile and BOTH tokens
+            return { profile: fetchedProfile, accessToken, refreshToken };
         }
         catch (error) {
-            // Rethrow AppErrors, convert others
             if (error instanceof AppError) {
                 throw error;
             }
             logger.error(`Error logging in student ${studentId}:`, error);
             const message = error instanceof Error ? error.message : String(error);
             throw new AppError(`Failed to login student: ${message}`, 500);
+        }
+    }
+    // --- NEW METHOD for Student Refresh Token --- //
+    async refreshStudentToken(refreshToken) {
+        try {
+            // 1. Verify the refresh token
+            const verifiedPayload = verifyStudentRefreshToken(refreshToken);
+            const studentId = verifiedPayload.id;
+            logger.info(`Verified student refresh token for student ID: ${studentId}`);
+            // 2. Fetch the current student profile from DB
+            const [currentProfile] = await this.db
+                .select()
+                .from(schema.profiles)
+                .where(and(eq(schema.profiles.id, studentId), eq(schema.profiles.role, UserRole.STUDENT)));
+            // Ensure profile exists and is still valid/active (add checks if needed)
+            if (!currentProfile) {
+                logger.warn(`Refresh attempt failed: Student profile ${studentId} not found or invalid.`);
+                throw new AppError('Invalid refresh token: User not found', 401);
+            }
+            // 3. Generate *only* a new access token
+            // We call generateStudentAuthTokens but only need the accessToken part
+            const { accessToken: newAccessToken } = generateStudentAuthTokens(currentProfile);
+            logger.info(`Generated new access token for student ID: ${studentId} via refresh.`);
+            return { newAccessToken };
+        }
+        catch (error) {
+            // Log specific AppErrors from verification/DB fetch
+            if (error instanceof AppError) {
+                logger.error(`Student token refresh error: ${error.message} (Status: ${error.statusCode})`);
+                // Rethrow specific errors (like 401) to be handled by controller
+                throw error;
+            }
+            // Log unexpected errors
+            logger.error('Unexpected error during student token refresh:', error);
+            // Throw generic error for unexpected issues
+            throw new AppError('Failed to refresh student session', 500);
         }
     }
     // Logout (admin only, students don't have sessions)

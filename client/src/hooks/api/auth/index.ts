@@ -41,6 +41,38 @@ interface LoginStudentResponse {
   profile: ProfileDTO; // Backend returns profile for student login
 }
 
+// Password Reset
+interface PasswordResetInput {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string; // Only used for client-side validation
+}
+
+interface PasswordResetResponse {
+  message: string;
+}
+
+// Forgot Password
+interface ForgotPasswordInput {
+  email: string;
+}
+
+interface ForgotPasswordResponse {
+  message: string;
+}
+
+// Update Password (for reset flow)
+interface UpdatePasswordInput {
+  newPassword: string;
+  confirmNewPassword: string;
+}
+
+interface UpdatePasswordResponse {
+  message: string;
+}
+
+
+
 // Logout doesn't typically have a specific response body type on success
 // interface LogoutResponse { message?: string; }
 
@@ -259,6 +291,87 @@ export const useLogoutStudentMutation = (
   });
 };
 
+const resetPassword = async (data: PasswordResetInput): Promise<PasswordResetResponse> => {
+  const { currentPassword, newPassword } = data;
+  try {
+    // API returns a simple success message on 200
+    const response = await api.post<PasswordResetResponse>('/auth/reset-password', {
+      currentPassword,
+      newPassword,
+    });
+    return response;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`API Error resetting password (${error.status}): ${error.message}`, error.data);
+      // Customize error message based on potential status codes (e.g., 403 for wrong current password)
+      const userMessage = error.status === 403
+        ? "Incorrect current password."
+        : error.message || 'Failed to reset password.';
+      throw new Error(userMessage);
+    } else {
+      console.error("Unexpected error resetting password:", error);
+      throw new Error('An unexpected error occurred while resetting the password.');
+    }
+  }
+};
+
+const forgotPassword = async (data: ForgotPasswordInput): Promise<ForgotPasswordResponse> => {
+  try {
+    // The backend returns { status: 'success', message: '...' }
+    // Since we added it to NON_STANDARD_ENDPOINTS, we get the raw response
+    const response = await api.post<{ status: string; message: string }>('/auth/forgot-password', {
+      email: data.email,
+    });
+    
+    // Return the message from the response
+    return { message: response.message };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`API Error requesting password reset (${error.status}): ${error.message}`, error.data);
+      // For security, always show the same message regardless of whether email exists
+      throw new Error('If an account with this email exists, a password reset link has been sent.');
+    } else {
+      console.error("Unexpected error requesting password reset:", error);
+      throw new Error('An unexpected error occurred while requesting password reset.');
+    }
+  }
+};
+
+const updatePassword = async (data: UpdatePasswordInput): Promise<UpdatePasswordResponse> => {
+  try {
+    // Get the stored reset token
+    const resetToken = localStorage.getItem('reset_token');
+    if (!resetToken) {
+      throw new Error('Invalid password reset session. Please request a new password reset.');
+    }
+
+    // Use the stored token in the Authorization header
+    // Since we added it to NON_STANDARD_ENDPOINTS, we get the raw response
+    const response = await api.post<{ status: string; message: string }>('/auth/update-password', {
+      newPassword: data.newPassword,
+    }, {
+      headers: {
+        Authorization: `Bearer ${resetToken}`
+      }
+    } as any);
+    
+    return { message: response.message };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`API Error updating password (${error.status}): ${error.message}`, error.data);
+      const userMessage = error.status === 401
+        ? "Your password reset session has expired. Please request a new password reset."
+        : error.message || 'Failed to update password.';
+      throw new Error(userMessage);
+    } else {
+      console.error("Unexpected error updating password:", error);
+      throw new Error('An unexpected error occurred while updating password.');
+    }
+  }
+};
+
+
+
 // Resend verification email (uses signup endpoint)
 const resendVerificationEmail = async (email: string): Promise<{ message: string }> => {
   // Since there's no dedicated resend endpoint, we can try to trigger verification
@@ -267,6 +380,38 @@ const resendVerificationEmail = async (email: string): Promise<{ message: string
   const response = await api.post<{ message: string }>('/auth/resend-verification', { email });
   return response;
 };
+
+// Hook for Password Reset (logged-in users)
+export const useResetPasswordMutation = (
+  options?: Omit<UseMutationOptions<PasswordResetResponse, Error, PasswordResetInput>, 'mutationFn'>
+) => {
+  return useMutation<PasswordResetResponse, Error, PasswordResetInput>({
+    mutationFn: resetPassword,
+    ...options,
+  });
+};
+
+// Hook for Forgot Password (public users)
+export const useForgotPasswordMutation = (
+  options?: Omit<UseMutationOptions<ForgotPasswordResponse, Error, ForgotPasswordInput>, 'mutationFn'>
+) => {
+  return useMutation<ForgotPasswordResponse, Error, ForgotPasswordInput>({
+    mutationFn: forgotPassword,
+    ...options,
+  });
+};
+
+// Hook for Update Password (password reset flow)
+export const useUpdatePasswordMutation = (
+  options?: Omit<UseMutationOptions<UpdatePasswordResponse, Error, UpdatePasswordInput>, 'mutationFn'>
+) => {
+  return useMutation<UpdatePasswordResponse, Error, UpdatePasswordInput>({
+    mutationFn: updatePassword,
+    ...options,
+  });
+};
+
+
 
 // Hook for Resend Verification Email
 export const useResendVerificationMutation = (

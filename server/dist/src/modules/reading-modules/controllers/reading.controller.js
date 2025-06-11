@@ -21,24 +21,32 @@ export const ParagraphSchema = z.object({
 export const CreateModuleSchema = z.object({
     title: z.string().min(1).max(255, 'Title cannot exceed 255 characters'),
     structuredContent: z.array(ParagraphSchema).min(1).max(40, 'A module cannot have more than 40 paragraphs'),
-    level: z.nativeEnum(ReadingLevel),
+    level: z.number().refine(val => Object.values(ReadingLevel).includes(val), {
+        message: 'Level must be a valid reading level (1-10)',
+    }),
     genre: GenreEnum, // Validate the new genre field
     language: LanguageEnum, // Validate the new language field
     description: z.string().max(2000, 'Description cannot exceed 2000 characters').optional().nullable(),
     imageUrl: z.string().url('Invalid URL format').max(2048, 'Image URL cannot exceed 2048 characters').optional().nullable(),
     estimatedReadingTime: z.number().int().positive('Estimated reading time must be positive').max(1440, 'Estimated time cannot exceed 24 hours (1440 minutes)').optional().nullable(),
+    authorFirstName: z.string().min(1).max(100, 'Author first name cannot exceed 100 characters').optional().nullable(),
+    authorLastName: z.string().min(1).max(100, 'Author last name cannot exceed 100 characters').optional().nullable(),
     isActive: z.boolean().optional(),
 });
 // Schema for updating modules
 export const UpdateModuleSchema = z.object({
     title: z.string().min(1).max(255, 'Title cannot exceed 255 characters').optional(),
     structuredContent: z.array(ParagraphSchema).min(1).max(40, 'A module cannot have more than 40 paragraphs').optional(),
-    level: z.nativeEnum(ReadingLevel).optional(),
+    level: z.number().refine(val => Object.values(ReadingLevel).includes(val), {
+        message: 'Level must be a valid reading level (1-10)',
+    }).optional(),
     genre: GenreEnum.optional(), // Allow updating genre
     language: LanguageEnum.optional(), // Allow updating language
     description: z.string().max(2000, 'Description cannot exceed 2000 characters').nullable().optional(),
     imageUrl: z.string().url('Invalid URL format').max(2048, 'Image URL cannot exceed 2048 characters').nullable().optional(),
     estimatedReadingTime: z.number().int().positive('Estimated reading time must be positive').max(1440, 'Estimated time cannot exceed 24 hours (1440 minutes)').nullable().optional(),
+    authorFirstName: z.string().min(1).max(100, 'Author first name cannot exceed 100 characters').nullable().optional(),
+    authorLastName: z.string().min(1).max(100, 'Author last name cannot exceed 100 characters').nullable().optional(),
     isActive: z.boolean().optional(),
 }).partial().refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided for update',
@@ -59,12 +67,16 @@ export const ParagraphParamsSchema = z.object({
 export const CreateCuratedModuleSchema = z.object({
     title: z.string().min(1).max(255, 'Title cannot exceed 255 characters'),
     structuredContent: z.array(ParagraphSchema).min(1).max(40, 'A module cannot have more than 40 paragraphs'),
-    level: z.nativeEnum(ReadingLevel),
+    level: z.number().refine(val => Object.values(ReadingLevel).includes(val), {
+        message: 'Level must be a valid reading level (1-10)',
+    }),
     genre: GenreEnum, // Validate the new genre field
     language: LanguageEnum, // Validate the new language field
     description: z.string().max(2000, 'Description cannot exceed 2000 characters').optional().nullable(),
     imageUrl: z.string().url('Invalid URL format').max(2048, 'Image URL cannot exceed 2048 characters').optional().nullable(),
     estimatedReadingTime: z.number().int().positive('Estimated reading time must be positive').max(1440, 'Estimated time cannot exceed 24 hours (1440 minutes)').optional().nullable(),
+    authorFirstName: z.string().min(1).max(100, 'Author first name cannot exceed 100 characters').optional().nullable(),
+    authorLastName: z.string().min(1).max(100, 'Author last name cannot exceed 100 characters').optional().nullable(),
     isActive: z.boolean().optional(),
 });
 // --- NEW: Vocabulary Validation Schemas ---
@@ -87,6 +99,7 @@ function mapToReadingModuleDTO(module) {
         id: module.id,
         adminId: module.adminId ?? undefined,
         title: module.title,
+        description: module.description ?? null, // ✅ Added missing description
         paragraphCount: module.paragraphCount,
         structuredContent: module.structuredContent,
         level: module.level,
@@ -94,6 +107,10 @@ function mapToReadingModuleDTO(module) {
         genre: module.genre,
         language: module.language,
         createdAt: module.createdAt,
+        updatedAt: module.updatedAt, // ✅ Added missing updatedAt
+        imageUrl: module.imageUrl ?? null, // ✅ Added missing imageUrl
+        estimatedReadingTime: module.estimatedReadingTime ?? null, // ✅ Added missing estimatedReadingTime
+        isActive: module.isActive, // ✅ Added missing isActive
         authorFirstName: module.authorFirstName ?? null,
         authorLastName: module.authorLastName ?? null,
     };
@@ -163,7 +180,10 @@ export class ReadingModuleController {
                 return next(new AppError('Module not found.', 404));
             }
             const moduleDTO = mapToReadingModuleDTO(dbModule);
-            res.status(200).json(moduleDTO);
+            res.status(200).json({
+                status: 'success',
+                data: moduleDTO
+            });
         }
         catch (error) {
             if (error instanceof z.ZodError) {

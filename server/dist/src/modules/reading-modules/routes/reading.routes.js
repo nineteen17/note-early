@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ReadingModuleController } from '../controllers/reading.controller';
-import { authenticateAdmin, authenticateSuperAdmin } from '@/middleware/auth.middleware';
+import { authenticateAdmin, authenticateSuperAdmin, authenticateUser } from '@/middleware/auth.middleware';
 // Utility to handle async route handlers and catch errors
 const asyncHandler = (fn) => {
     return (req, res, next) => {
@@ -141,7 +141,7 @@ const readingModuleController = new ReadingModuleController();
  *       500:
  *         description: Internal server error.
  */
-router.get('/active', asyncHandler(readingModuleController.getAllActiveReadingModules.bind(readingModuleController)));
+router.get('/active', authenticateUser, asyncHandler(readingModuleController.getAllActiveReadingModules.bind(readingModuleController)));
 // --- Admin/SuperAdmin Routes --- //
 /**
  * @swagger

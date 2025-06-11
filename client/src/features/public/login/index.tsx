@@ -27,7 +27,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Mail } from 'lucide-react';
 import { NoteEarlyLogoLarge } from '@/components/NoteEarlyLogo';
 import { getMobileAuthMargins, getAuthCardClasses } from '@/lib/utils';
-import { EmailVerificationPending } from '@/components/auth/EmailVerificationPending';
+import { EmailVerificationPending } from '@/features/public/login/EmailVerificationPending';
 
 type LoginFormData = z.infer<typeof adminLoginSchema>;
 
@@ -71,10 +71,15 @@ export function LoginFeature() {
     onError: (error: ApiError) => {
       const message = error.message || 'Login failed. Please try again.';
       
-      // Check for email verification errors
-      const isVerificationError = message.includes('verify') || 
-                                 message.includes('verification') ||
-                                 error.status === 400;
+      // Check for email verification errors - be more specific
+      const isVerificationError = (
+        message.toLowerCase().includes('verify') || 
+        message.toLowerCase().includes('verification') ||
+        message.toLowerCase().includes('unverified') ||
+        message.toLowerCase().includes('not verified') ||
+        message.toLowerCase().includes('email verification') ||
+        (error.status === 403 && message.toLowerCase().includes('email'))
+      );
       
       if (isVerificationError) {
         const email = getValues('email');
@@ -82,6 +87,7 @@ export function LoginFeature() {
         return; // Don't show toast, verification screen will handle UX
       }
       
+      // For all other errors (including wrong password), show toast and form error
       toast.error('Login Failed', { description: message });
       setFormError('root.serverError', {
         type: String(error.status || 500),
@@ -132,9 +138,6 @@ export function LoginFeature() {
         <Card className={getAuthCardClasses()}>
           <CardHeader className="text-center space-y-1 pb-4">
             <CardTitle className="text-xl sm:text-2xl font-bold">Admin Login</CardTitle>
-            <CardDescription className="text-sm sm:text-base text-muted-foreground">
-              Sign in to your NoteEarly admin account
-            </CardDescription>
           </CardHeader>
 
           {/* Show success message for verified email */}
@@ -183,7 +186,7 @@ export function LoginFeature() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
                   <Link 
-                    href="/forgot-password"
+                    href="/password-reset"
                     className={`text-sm hover:underline ${isLoggingIn ? 'pointer-events-none opacity-50' : ''}`}
                   >
                     Forgot password?
@@ -220,6 +223,7 @@ export function LoginFeature() {
               </div>
 
               <Button
+                variant="accent"
                 type="submit"
                 className="w-full h-11"
                 disabled={isLoggingIn}

@@ -218,6 +218,58 @@ export class AuthService {
     }
   }
 
+  // Forgot password - send reset email
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      // Use Supabase's built-in password reset functionality
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.CLIENT_URL || 'http://localhost:3000'}/password-reset`,
+      });
+
+      if (error) {
+        logger.error('Error sending password reset email:', error);
+        // Don't throw error - for security, always return success response
+        // regardless of whether email exists or not
+      }
+
+      logger.info(`Password reset email sent (or attempted) for: ${email}`);
+    } catch (error) {
+      logger.error('Error in forgot password flow:', error);
+      // Don't throw error - for security, always return success response
+    }
+  }
+
+  // Update password during reset flow
+  async updatePassword(accessToken: string, newPassword: string): Promise<void> {
+    try {
+      // Set the session with the provided access token
+      const { data: { user }, error: sessionError } = await supabase.auth.getUser(accessToken);
+      
+      if (sessionError || !user) {
+        logger.error(`Invalid or expired session for password update: ${sessionError?.message}`);
+        throw new AppError('Password reset session has expired. Please request a new password reset.', 401);
+      }
+
+      // Update the user's password using admin API to ensure it works
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        password: newPassword
+      });
+
+      if (updateError) {
+        logger.error(`Supabase password update error: ${updateError.message}`, { userId: user.id });
+        throw new AppError('Failed to update password', 500);
+      }
+
+      logger.info(`Password updated successfully`, { userId: user.id });
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      logger.error('Unexpected error in updatePassword:', error);
+      throw new AppError('Failed to update password', 500);
+    }
+  }
+
   // Step 1: Admin login with Supabase (email/password only)
 // Step 1: Admin login with Supabase (email/password only)
 async loginAdmin(email: string, password: string) {

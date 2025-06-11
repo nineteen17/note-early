@@ -100,9 +100,9 @@ export function SignupForm() {
                 <Card className={getAuthCardClasses()}>
                     <CardHeader className="text-center space-y-1 pb-4">
                         <CardTitle className="text-xl sm:text-2xl font-bold">Create Account</CardTitle>
-                        <CardDescription className="text-sm sm:text-base text-muted-foreground">
+                        {/* <CardDescription className="text-sm sm:text-base text-muted-foreground">
                             Get started with your NoteEarly admin account
-                        </CardDescription>
+                        </CardDescription> */}
                     </CardHeader>
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <CardContent className="space-y-4 px-4 sm:px-6 sm:px-8">
@@ -185,7 +185,7 @@ export function SignupForm() {
 
                             <Button
                                 type="submit"
-                                className="w-full h-11 bg-accent hover:bg-accent/90 text-accent-foreground font-medium"
+                                variant="accent"
                                 disabled={isPending}
                             >
                                 {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...</> : 'Create Admin Account'}

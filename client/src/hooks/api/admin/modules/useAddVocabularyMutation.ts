@@ -36,7 +36,6 @@ export const useAddVocabularyMutation = (moduleId: string): UseMutationResult<Vo
             // queryClient.setQueryData(['moduleVocabulary', moduleId], (oldData: VocabularyEntryDTO[] | undefined) => {
             //     return oldData ? [...oldData, data] : [data];
             // });
-            toast.success(`Vocabulary word "${data.word}" added successfully!`);
         },
         onError: (error) => {
             // Display error toast

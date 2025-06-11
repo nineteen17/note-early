@@ -17,7 +17,7 @@ export const createModuleSchema = z.object({
   description: z.string().optional().nullable(), // Allow null for optional text
   level: z.number().refine(val => levelOptions.includes(val as typeof levelOptions[number]), {
       message: `Level must be one of ${levelOptions.join(', ')}`,
-  }),
+  }).transform(val => val), // Keep as number since backend expects ReadingLevel enum values (1-10)
   genre: z.enum(genreOptions), // Use Zod enum for validation
   language: z.enum(languageOptions), // Use Zod enum for validation
   imageUrl: z.string().url('Must be a valid URL').optional().nullable(), // Allow null
@@ -26,6 +26,8 @@ export const createModuleSchema = z.object({
     (val) => (val === '' || val == null || isNaN(Number(val)) ? undefined : Number(val)),
     z.number().int().positive('Est. reading time must be a positive integer').optional().nullable() // Allow null
   ),
+  authorFirstName: z.string().optional().nullable(),
+  authorLastName: z.string().optional().nullable(),
   isActive: z.boolean(),
   structuredContent: z.array(structuredContentItemSchema).min(1, 'Module must have at least one paragraph'),
 });
@@ -46,6 +48,8 @@ export const updateModuleSchema = z.object({
         (val) => (val === '' || val == null || isNaN(Number(val)) ? undefined : Number(val)),
         z.number().int().positive('Est. reading time must be a positive integer').optional().nullable()
     ),
+    authorFirstName: z.string().optional().nullable(),
+    authorLastName: z.string().optional().nullable(),
     isActive: z.boolean().optional(),
     structuredContent: z.array(structuredContentItemSchema).min(1, 'Module must have at least one paragraph').optional(),
 });

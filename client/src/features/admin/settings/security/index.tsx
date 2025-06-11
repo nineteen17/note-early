@@ -2,7 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { passwordResetSchema, type PasswordResetInput } from '@/lib/schemas/profile';
-import { useResetPasswordMutation } from '@/hooks/api/profile/useResetPasswordMutation';
+import { useResetPasswordMutation } from '@/hooks/api/auth';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,22 +11,23 @@ import { CardContent } from "@/components/ui/card";
 
 // Renamed component
 export function SecurityTab() {
-    const resetPasswordMutation = useResetPasswordMutation();
+    const { mutate: resetPasswordMutate, isPending: isResetting } = useResetPasswordMutation({
+        onSuccess: () => {
+            reset(); // Clear form on success
+        },
+    });
+    
     const { 
         register, 
         handleSubmit, 
         reset, 
-        formState: { errors, isSubmitting, isDirty }
+        formState: { errors, isDirty }
     } = useForm<PasswordResetInput>({
         resolver: zodResolver(passwordResetSchema),
     });
 
     const onSubmit = (data: PasswordResetInput) => {
-        resetPasswordMutation.mutate(data, {
-            onSuccess: () => {
-                reset(); // Clear form on success
-            },
-        });
+        resetPasswordMutate(data);
     };
 
     return (
@@ -71,9 +72,9 @@ export function SecurityTab() {
                         <p className="text-sm text-destructive mt-1">{errors.confirmNewPassword.message}</p>
                     )}
                 </div>
-                <Button type="submit" disabled={isSubmitting || !isDirty}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
+                <Button type="submit" disabled={isResetting || !isDirty}>
+                    {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isResetting ? 'Resetting Password...' : 'Reset Password'}
                 </Button>
             </form>
         </CardContent>

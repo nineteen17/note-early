@@ -121,6 +121,67 @@ authRouter.post('/resend-verification', authController.resendVerificationEmail);
 
 /**
  * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth - Public]
+ *     summary: Request password reset for Admin/SuperAdmin
+ *     description: Sends a password reset email to the specified email address if the account exists.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address to send password reset instructions to.
+ *     responses:
+ *       200:
+ *         description: Password reset email sent (or would have been sent for security).
+ *       400:
+ *         description: Invalid email address.
+ *       500:
+ *         description: Server error during password reset request.
+ */
+authRouter.post('/forgot-password', authController.forgotPassword);
+
+/**
+ * @swagger
+ * /auth/update-password:
+ *   post:
+ *     tags: [Auth - Public]
+ *     summary: Update password during reset flow
+ *     description: Updates the user's password after they click the reset link from email. User must be in authenticated state from email link.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [newPassword]
+ *             properties:
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 8
+ *                 description: The new password to set.
+ *     responses:
+ *       200:
+ *         description: Password updated successfully.
+ *       400:
+ *         description: Invalid password format.
+ *       401:
+ *         description: Password reset session expired or invalid.
+ *       500:
+ *         description: Server error during password update.
+ */
+authRouter.post('/update-password', authController.updatePassword);
+
+/**
+ * @swagger
  * /auth/google:
  *   get:
  *     tags: [Auth - Public]

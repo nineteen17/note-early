@@ -32,6 +32,12 @@ const resetPinSchema = z.object({
     studentId: z.string(),
     newPin: z.string().min(4).max(6),
 });
+const forgotPasswordSchema = z.object({
+    email: z.string().email('Invalid email format').max(254, 'Email cannot exceed 254 characters'),
+});
+const updatePasswordSchema = z.object({
+    newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+});
 // Google OAuth callback schema
 const oauthCallbackSchema = z.object({
     code: z.string(),
@@ -53,14 +59,22 @@ function mapToStudentProfileDTO(profile) {
         readingLevel: profile.readingLevel
     };
 }
-// Define reusable cookie options
-const refreshTokenCookieOptions = {
+// Define reusable cookie options for ADMIN refresh token
+const adminRefreshTokenCookieOptions = {
     httpOnly: true,
-    // Explicitly set secure based on NODE_ENV. Ensure NODE_ENV is NOT 'production' for local HTTP development.
     secure: env.NODE_ENV === 'production',
     path: '/',
-    sameSite: 'lax', // Changed back to 'lax' from 'strict'
+    sameSite: 'lax',
     maxAge: ms('30d')
+};
+// Define reusable cookie options for STUDENT refresh token
+const studentRefreshTokenCookieOptions = {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    path: '/', // Specify a path if needed, e.g., '/api/v1/auth' or '/'
+    sameSite: 'lax',
+    // Use the specific expiry for student refresh tokens
+    maxAge: env.JWT_REFRESH_TOKEN_EXPIRY_SECONDS * 1000, // Convert seconds to milliseconds
 };
 export class AuthController {
     constructor(authService) {
@@ -98,6 +112,109 @@ export class AuthController {
                     res.status(500).json({
                         status: 'error',
                         message: 'Failed to create admin account',
+                    });
+                }
+            }
+        };
+        // Resend email verification
+        this.resendVerificationEmail = async (req, res, next) => {
+            try {
+                const { email } = z.object({ email: z.string().email() }).parse(req.body);
+                await this.authService.resendVerificationEmail(email);
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Verification email sent successfully',
+                });
+            }
+            catch (error) {
+                if (error instanceof z.ZodError) {
+                    res.status(400).json({
+                        status: 'error',
+                        message: 'Invalid email address',
+                        data: error.errors,
+                    });
+                }
+                else if (error instanceof AppError) {
+                    res.status(error.statusCode).json({
+                        status: 'error',
+                        message: error.message,
+                    });
+                }
+                else {
+                    res.status(500).json({
+                        status: 'error',
+                        message: 'Failed to resend verification email',
+                    });
+                }
+            }
+        };
+        // Forgot password request
+        this.forgotPassword = async (req, res, next) => {
+            try {
+                const { email } = forgotPasswordSchema.parse(req.body);
+                await this.authService.forgotPassword(email);
+                res.status(200).json({
+                    status: 'success',
+                    message: 'If an account with this email exists, a password reset link has been sent.',
+                });
+            }
+            catch (error) {
+                if (error instanceof z.ZodError) {
+                    res.status(400).json({
+                        status: 'error',
+                        message: 'Invalid email address',
+                        data: error.errors,
+                    });
+                }
+                else if (error instanceof AppError) {
+                    res.status(error.statusCode).json({
+                        status: 'error',
+                        message: error.message,
+                    });
+                }
+                else {
+                    res.status(500).json({
+                        status: 'error',
+                        message: 'Failed to process password reset request',
+                    });
+                }
+            }
+        };
+        // Update password during reset flow
+        this.updatePassword = async (req, res, next) => {
+            try {
+                const { newPassword } = updatePasswordSchema.parse(req.body);
+                // Get the current user from Supabase session
+                // The user should be authenticated via the email link
+                const authHeader = req.headers.authorization;
+                const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+                if (!token) {
+                    return next(new AppError('No authentication token provided. Please use the link from your email.', 401));
+                }
+                await this.authService.updatePassword(token, newPassword);
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Password updated successfully. You can now sign in with your new password.',
+                });
+            }
+            catch (error) {
+                if (error instanceof z.ZodError) {
+                    res.status(400).json({
+                        status: 'error',
+                        message: 'Invalid password format',
+                        data: error.errors,
+                    });
+                }
+                else if (error instanceof AppError) {
+                    res.status(error.statusCode).json({
+                        status: 'error',
+                        message: error.message,
+                    });
+                }
+                else {
+                    res.status(500).json({
+                        status: 'error',
+                        message: 'Failed to update password',
                     });
                 }
             }
@@ -142,7 +259,7 @@ export class AuthController {
                 }
                 // Set refresh token cookie before potential redirect
                 if (result.session.refresh_token) {
-                    res.cookie('refresh-token', result.session.refresh_token, refreshTokenCookieOptions);
+                    res.cookie('refresh-token', result.session.refresh_token, adminRefreshTokenCookieOptions); // Use admin options
                 }
                 else {
                     logger.warn('Refresh token missing from Supabase session on OAuth callback');
@@ -178,11 +295,9 @@ export class AuthController {
                     // Use next(error) for consistency if using global error handler
                     return next(new AppError('Login failed, no session returned.', 500));
                 }
-                // Set refresh-token cookie
-                // logger.info('Session object received:', session); // Log the whole session
+                // Set ADMIN refresh-token cookie
                 if (session.refresh_token) {
-                    //  logger.info(`Attempting to set refresh-token cookie with value: ${session.refresh_token.substring(0, 10)}...`); // Log first 10 chars
-                    res.cookie('refresh-token', session.refresh_token, refreshTokenCookieOptions);
+                    res.cookie('refresh-token', session.refresh_token, adminRefreshTokenCookieOptions); // Use admin options
                 }
                 else {
                     logger.warn('Refresh token missing from Supabase session on admin login');
@@ -195,13 +310,14 @@ export class AuthController {
                         userId: user.id,
                         accessToken: session.access_token, // Keep access token in body
                         email: user.email,
+                        // Optionally return limited profile info if needed
+                        // profile: { role: profile.role, fullName: profile.fullName } 
                     }
                 });
             }
             catch (error) {
                 // Consistent error handling
                 if (error instanceof z.ZodError) {
-                    // Log the Zod error details for better debugging
                     console.error('Zod validation error during admin login:', error.errors);
                     next(new AppError('Invalid input', 400));
                 }
@@ -229,13 +345,12 @@ export class AuthController {
                 res.status(201).json({
                     status: 'success',
                     message: 'Student created successfully',
-                    data: studentDTO,
+                    data: studentDTO, // Return the mapped DTO
                 });
             }
             catch (error) {
                 if (error instanceof z.ZodError) {
-                    logger.error("Zod Validation Error (createStudent):", error.errors);
-                    next(new AppError('Invalid input: ' + error.errors.map(e => e.message).join(', '), 400));
+                    next(new AppError('Invalid input', 400));
                 }
                 else if (error instanceof AppError) {
                     next(error);
@@ -246,124 +361,152 @@ export class AuthController {
                 }
             }
         };
-        // Student login with PIN - MODIFIED
+        // Student login
         this.loginStudent = async (req, res, next) => {
             try {
                 const { studentId, pin } = studentLoginSchema.parse(req.body);
-                // Get profile and token from the service
-                const { profile: studentProfile, token } = await this.authService.loginStudent(studentId, pin);
-                const studentDTO = mapToStudentProfileDTO(studentProfile);
-                // Respond with token and profile in JSON body
-                res.json({
-                    status: 'success',
-                    message: 'Student login successful', // Added success message
-                    data: {
-                        accessToken: token, // Include the token here
-                        profile: studentDTO
-                    }
+                // Service now returns profile, accessToken, refreshToken
+                const { profile, accessToken, refreshToken } = await this.authService.loginStudent(studentId, pin);
+                // --- Set HttpOnly Cookie for Refresh Token ---
+                res.cookie('student_refresh_token', refreshToken, studentRefreshTokenCookieOptions); // Use student options
+                // Map profile to DTO (excluding sensitive info like pin)
+                const studentDTO = mapToStudentProfileDTO(profile);
+                // Return access token and DTO in the response body
+                res.status(200).json({
+                    // Non-standard wrapper for student login
+                    accessToken,
+                    profile: studentDTO,
                 });
             }
             catch (error) {
-                // Consistent error handling
                 if (error instanceof z.ZodError) {
                     next(new AppError('Invalid input', 400));
                 }
                 else if (error instanceof AppError) {
+                    // Pass specific status code (e.g., 401 for invalid pin/id)
                     next(error);
                 }
                 else {
                     logger.error('Student login failed:', error);
-                    // Return 401 for invalid credentials instead of 500
-                    next(new AppError('Invalid Student ID or PIN', 401));
+                    next(new AppError('Student login failed', 500));
                 }
             }
         };
-        // Refresh token handler
-        this.refreshToken = async (req, res, next) => {
+        // --- Refresh Student Token (New Method) --- //
+        this.refreshStudentToken = async (req, res, next) => {
             try {
-                const refreshToken = req.cookies['refresh-token'];
-                console.log("refreshToken", refreshToken);
-                console.log("req.cookies", req.cookies);
+                const refreshToken = req.cookies?.student_refresh_token;
                 if (!refreshToken) {
-                    return next(new AppError('Refresh token missing', 401));
+                    return next(new AppError('Refresh token not found', 401));
                 }
-                // Call the service to refresh the session
-                const newSessionData = await this.authService.refreshSession(refreshToken);
-                // Set the new refresh token cookie IF it was rotated/returned
-                if (newSessionData.newRefreshToken) {
-                    res.cookie('refresh-token', newSessionData.newRefreshToken, refreshTokenCookieOptions);
-                }
-                // Send the new access token
+                const { newAccessToken } = await this.authService.refreshStudentToken(refreshToken);
+                // Send the new access token in the standard response format
                 res.status(200).json({
                     status: 'success',
-                    message: 'Token refreshed',
                     data: {
-                        accessToken: newSessionData.accessToken, // Correct key: accessToken
-                    },
+                        accessToken: newAccessToken
+                    }
                 });
-                logger.info('New access token:', newSessionData.accessToken);
             }
             catch (error) {
-                // Pass errors (like invalid refresh token from service) to the error handler
+                // Errors from service (like expired/invalid token) will be AppErrors
                 next(error);
             }
         };
-        // Logout
-        this.logout = async (req, res, next) => {
+        // Refresh ADMIN token (Existing, ensure it uses admin cookie options if different)
+        this.refreshToken = async (req, res, next) => {
             try {
-                // Sign out from Supabase (handles admin/oauth sessions)
-                await this.authService.logout();
-                // Clear BOTH potential cookies
-                res.clearCookie('refresh-token', { path: '/', sameSite: 'lax' }); // Use same path/samesite as when set
-                res.clearCookie('student_token', { path: '/', sameSite: 'strict' }); // Use same path/samesite as when set
-                res.json({
+                const refreshToken = req.cookies?.['refresh-token']; // Use the admin cookie name
+                if (!refreshToken) {
+                    return next(new AppError('Refresh token not found', 401));
+                }
+                const { accessToken, newRefreshToken } = await this.authService.refreshSession(refreshToken);
+                // If Supabase rotated the refresh token, set the new one
+                if (newRefreshToken) {
+                    logger.info('Setting new rotated refresh token cookie (admin).');
+                    res.cookie('refresh-token', newRefreshToken, adminRefreshTokenCookieOptions); // Use admin options
+                }
+                // Send only the new access token in the standard response format
+                res.status(200).json({
                     status: 'success',
-                    message: 'Logged out successfully',
+                    data: {
+                        accessToken: accessToken
+                    }
                 });
             }
             catch (error) {
-                // Consistent error handling
-                logger.error('Logout failed:', error);
-                next(new AppError('Failed to logout', 500));
+                // Clear potentially invalid cookie on failure
+                res.clearCookie('refresh-token', adminRefreshTokenCookieOptions); // Use admin options
+                next(error); // Pass error to global handler
             }
         };
-        // Reset admin password
+        // --- Logout Student (New Method) --- //
+        this.logoutStudent = async (req, res, next) => {
+            try {
+                // Clear the student refresh token cookie
+                res.clearCookie('student_refresh_token', studentRefreshTokenCookieOptions); // Use student options
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Student logged out successfully'
+                });
+            }
+            catch (error) {
+                // Should generally not fail, but handle just in case
+                logger.error('Error during student logout:', error);
+                next(new AppError('Logout failed', 500));
+            }
+        };
+        // Logout Admin (Existing, ensure it uses admin cookie)
+        this.logout = async (req, res, next) => {
+            try {
+                await this.authService.logout();
+                // Clear ADMIN refresh token cookie
+                res.clearCookie('refresh-token', adminRefreshTokenCookieOptions); // Use admin options
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Logout successful'
+                });
+            }
+            catch (error) {
+                next(error); // Pass error to global handler
+            }
+        };
+        // Reset admin password (Existing)
         this.resetAdminPassword = async (req, res, next) => {
             try {
                 const { currentPassword, newPassword } = resetPasswordSchema.parse(req.body);
                 const userId = req.user?.id;
                 if (!userId) {
-                    res.status(401).json({
-                        status: 'error',
-                        message: 'Unauthorized',
-                    });
-                    return;
+                    return next(new AppError('User ID not found in request', 401));
                 }
-                await this.authService.resetAdminPassword(userId, currentPassword, newPassword);
-                res.json({
+                const updatedProfile = await this.authService.resetAdminPassword(userId, currentPassword, newPassword);
+                res.status(200).json({
                     status: 'success',
                     message: 'Password reset successfully',
+                    // Optionally return limited profile data
+                    // data: { userId: updatedProfile.id }
                 });
             }
             catch (error) {
                 if (error instanceof z.ZodError) {
                     next(new AppError('Invalid input', 400));
                 }
-                else if (error instanceof AppError) {
-                    next(error);
-                }
                 else {
-                    logger.error('Reset admin password failed:', error);
-                    next(new AppError('Invalid password or failed to reset', 401));
+                    next(error); // Handles AppErrors from service (like 403 for wrong password)
                 }
             }
         };
-        // Reset student PIN
+        // Reset student PIN (Existing)
         this.resetStudentPin = async (req, res, next) => {
             try {
                 const { studentId, newPin } = resetPinSchema.parse(req.body);
+                const adminId = req.user?.id; // Get admin ID from authentication middleware
+                if (!adminId) {
+                    return next(new AppError('Admin authentication required', 401));
+                }
+                // Optional: Add service layer check if admin owns this student
                 await this.authService.resetStudentPin(studentId, newPin);
-                res.json({
+                res.status(200).json({
                     status: 'success',
                     message: 'Student PIN reset successfully',
                 });
@@ -373,10 +516,11 @@ export class AuthController {
                     next(new AppError('Invalid input', 400));
                 }
                 else if (error instanceof AppError) {
+                    // Pass specific errors like 404 Not Found from service
                     next(error);
                 }
                 else {
-                    logger.error('Reset student PIN failed:', error);
+                    logger.error('Failed to reset student PIN:', error);
                     next(new AppError('Failed to reset student PIN', 500));
                 }
             }

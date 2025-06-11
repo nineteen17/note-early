@@ -47,6 +47,8 @@ const NON_STANDARD_ENDPOINTS = [
   '/auth/logout',
   '/auth/student/login',
   '/auth/student/logout',
+  '/auth/forgot-password',
+  '/auth/update-password',
   // Add other non-standard endpoints here
 ];
 

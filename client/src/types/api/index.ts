@@ -140,6 +140,8 @@ export interface CreateModuleInput {
     description?: string | null;
     imageUrl?: string | null; // format: uri
     estimatedReadingTime?: number | null; // minimum: 1 (exclusiveMinimum: 0)
+    authorFirstName?: string | null;
+    authorLastName?: string | null;
     isActive?: boolean; // Note: Schema doesn't show required, but might be needed
 }
 
@@ -230,8 +232,9 @@ export interface StudentProgressDetailsDTO {
 
 export interface ReadingModuleDTO {
     id: string;
+    adminId?: string;
     title: string;
-    description: string;
+    description?: string | null;
     type: ModuleType;
     genre: ModuleGenre;
     level: ModuleLevel;
@@ -239,6 +242,12 @@ export interface ReadingModuleDTO {
     createdAt: string;
     updatedAt: string;
     paragraphCount: number;
+    structuredContent: Paragraph[];
+    imageUrl?: string | null;
+    estimatedReadingTime?: number | null;
+    isActive?: boolean;
+    authorFirstName?: string | null;
+    authorLastName?: string | null;
     progress?: {
         percentage: number;
         isCompleted: boolean;

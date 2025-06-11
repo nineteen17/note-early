@@ -43,6 +43,14 @@ const resetPinSchema = z.object({
   newPin: z.string().min(4).max(6),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email format').max(254, 'Email cannot exceed 254 characters'),
+});
+
+const updatePasswordSchema = z.object({
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
 // Google OAuth callback schema
 const oauthCallbackSchema = z.object({
   code: z.string(),
@@ -150,6 +158,78 @@ export class AuthController {
         res.status(500).json({
           status: 'error',
           message: 'Failed to resend verification email',
+        } as ApiResponse);
+      }
+    }
+  }
+
+  // Forgot password request
+  forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+      await this.authService.forgotPassword(email);
+      
+      res.status(200).json({
+        status: 'success',
+        message: 'If an account with this email exists, a password reset link has been sent.',
+      } as ApiResponse);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Invalid email address',
+          data: error.errors,
+        } as ApiResponse);
+      } else if (error instanceof AppError) {
+        res.status(error.statusCode).json({
+          status: 'error',
+          message: error.message,
+        } as ApiResponse);
+      } else {
+        res.status(500).json({
+          status: 'error',
+          message: 'Failed to process password reset request',
+        } as ApiResponse);
+      }
+    }
+  }
+
+  // Update password during reset flow
+  updatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { newPassword } = updatePasswordSchema.parse(req.body);
+      
+      // Get the current user from Supabase session
+      // The user should be authenticated via the email link
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+      
+      if (!token) {
+        return next(new AppError('No authentication token provided. Please use the link from your email.', 401));
+      }
+      
+      await this.authService.updatePassword(token, newPassword);
+      
+      res.status(200).json({
+        status: 'success',
+        message: 'Password updated successfully. You can now sign in with your new password.',
+      } as ApiResponse);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Invalid password format',
+          data: error.errors,
+        } as ApiResponse);
+      } else if (error instanceof AppError) {
+        res.status(error.statusCode).json({
+          status: 'error',
+          message: error.message,
+        } as ApiResponse);
+      } else {
+        res.status(500).json({
+          status: 'error',
+          message: 'Failed to update password',
         } as ApiResponse);
       }
     }

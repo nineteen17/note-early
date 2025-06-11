@@ -60,10 +60,16 @@ export class SubscriptionService {
                 }
                 // Now TypeScript knows plan.product is a Stripe.Product
                 const product = plan.product;
-                const metadata = product.metadata || {};
-                // Validate and determine the tier
+                const priceMetadata = plan.metadata || {}; // Metadata from the Price object
+                const productMetadata = product.metadata || {}; // Metadata from the Product object
+                // --- Logic to get limit: Prioritize Price metadata ---
+                // Use Price metadata if available, otherwise fallback to Product metadata, then default
+                const studentLimitString = priceMetadata.studentLimit || productMetadata.studentLimit || '3';
+                const moduleLimitString = priceMetadata.moduleLimit || productMetadata.moduleLimit || '3';
+                const customModuleLimitString = priceMetadata.customModuleLimit || productMetadata.customModuleLimit || '1';
+                // Validate and determine the tier (Prioritize Price metadata)
                 let validatedTier = 'free'; // Default to 'free'
-                const metadataTier = metadata.tier;
+                const metadataTier = priceMetadata.tier || productMetadata.tier; // Read tier prioritizing PRICE metadata
                 if (metadataTier) {
                     if (allowedTiers.includes(metadataTier)) {
                         validatedTier = metadataTier;
@@ -80,10 +86,10 @@ export class SubscriptionService {
                     description: product.description || null,
                     price: plan.unit_amount ? (plan.unit_amount / 100).toString() : '0', // Convert cents to dollars string
                     interval: plan.recurring?.interval || 'month',
-                    tier: validatedTier, // Use validated tier
-                    studentLimit: parseInt(metadata.studentLimit || '3'),
-                    moduleLimit: parseInt(metadata.moduleLimit || '3'),
-                    customModuleLimit: parseInt(metadata.customModuleLimit || '1'),
+                    tier: validatedTier, // Use validated tier (now prioritized from Price)
+                    studentLimit: parseInt(studentLimitString), // Use prioritized limit
+                    moduleLimit: parseInt(moduleLimitString), // Use prioritized limit
+                    customModuleLimit: parseInt(customModuleLimitString), // Use prioritized limit
                     isActive: plan.active,
                 })
                     .onConflictDoUpdate({
@@ -93,10 +99,10 @@ export class SubscriptionService {
                         description: product.description || null,
                         price: plan.unit_amount ? (plan.unit_amount / 100).toString() : '0', // Convert cents to dollars string
                         interval: plan.recurring?.interval || 'month',
-                        tier: validatedTier, // Use validated tier
-                        studentLimit: parseInt(metadata.studentLimit || '3'),
-                        moduleLimit: parseInt(metadata.moduleLimit || '3'),
-                        customModuleLimit: parseInt(metadata.customModuleLimit || '1'),
+                        tier: validatedTier, // Use validated tier (now prioritized from Price)
+                        studentLimit: parseInt(studentLimitString), // Use prioritized limit
+                        moduleLimit: parseInt(moduleLimitString), // Use prioritized limit
+                        customModuleLimit: parseInt(customModuleLimitString), // Use prioritized limit
                         isActive: plan.active,
                         updatedAt: new Date(),
                     },
@@ -237,7 +243,8 @@ export class SubscriptionService {
             }
             // Create a checkout session
             const session = await stripeService.createCheckoutSession(stripeCustomerId, planId, `${env.CLIENT_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`, // Ensure CLIENT_URL is in env.ts
-            `${env.CLIENT_URL}/subscription/cancel` // Ensure CLIENT_URL is in env.ts
+            `${env.CLIENT_URL}/subscription/cancel`, // Ensure CLIENT_URL is in env.ts
+            userId // <-- PASS USER ID HERE
             );
             return session;
         }
@@ -410,25 +417,69 @@ export class SubscriptionService {
             case 'invoice.paid':
                 const invoice = event.data.object;
                 logger.info(`Processing invoice.paid: ${invoice.id}, Reason: ${invoice.billing_reason}`);
-                // Safely access subscription ID - check if the property exists and is a string
-                const subscriptionIdFromInvoice = invoice.subscription;
-                if (subscriptionIdFromInvoice && typeof subscriptionIdFromInvoice === 'string' &&
-                    invoice.billing_reason === 'subscription_cycle') {
+                // Use type assertion for subscription ID extraction
+                let subscriptionIdFromInvoice = null;
+                const invSub = invoice.subscription; // Use assertion
+                if (typeof invSub === 'string') {
+                    subscriptionIdFromInvoice = invSub;
+                }
+                else if (invSub?.id) {
+                    subscriptionIdFromInvoice = invSub.id;
+                }
+                if (subscriptionIdFromInvoice) {
+                    // --- Reset Module Counter (if applicable) --- 
+                    if (invoice.billing_reason === 'subscription_cycle') {
+                        try {
+                            const result = await db.update(schema.customerSubscriptions)
+                                .set({ customModulesCreatedThisPeriod: 0 })
+                                .where(eq(schema.customerSubscriptions.id, subscriptionIdFromInvoice))
+                                .returning({ updatedId: schema.customerSubscriptions.id });
+                            if (result.length > 0) {
+                                logger.info(`Reset monthly module count for subscription ${subscriptionIdFromInvoice}`);
+                            }
+                            else {
+                                // Log warning, but don't stop the update process below
+                                logger.warn(`Subscription ${subscriptionIdFromInvoice} not found in DB for resetting module count.`);
+                            }
+                        }
+                        catch (dbError) {
+                            logger.error(`Database error resetting module count for sub ${subscriptionIdFromInvoice}:`, dbError);
+                        }
+                    }
+                    // --- Update Subscription Record with Confirmed Dates/Status --- 
                     try {
-                        const result = await db.update(schema.customerSubscriptions)
-                            .set({ customModulesCreatedThisPeriod: 0 })
+                        // Fetch the latest subscription details from Stripe
+                        const latestSubscription = await this.stripeInstance.subscriptions.retrieve(subscriptionIdFromInvoice);
+                        // Use type assertions for period dates
+                        const periodStart = latestSubscription.current_period_start;
+                        const periodEnd = latestSubscription.current_period_end;
+                        // Prepare update data
+                        const updateData = {
+                            status: latestSubscription.status,
+                            // Use the potentially asserted number timestamps
+                            ...(typeof periodStart === 'number' && { currentPeriodStart: new Date(periodStart * 1000) }),
+                            ...(typeof periodEnd === 'number' && { currentPeriodEnd: new Date(periodEnd * 1000) }),
+                            cancelAtPeriodEnd: latestSubscription.cancel_at_period_end,
+                            updatedAt: new Date()
+                        };
+                        // Update the record in our database
+                        const updateResult = await db.update(schema.customerSubscriptions)
+                            .set(updateData)
                             .where(eq(schema.customerSubscriptions.id, subscriptionIdFromInvoice))
                             .returning({ updatedId: schema.customerSubscriptions.id });
-                        if (result.length > 0) {
-                            logger.info(`Reset monthly module count for subscription ${subscriptionIdFromInvoice}`);
+                        if (updateResult.length > 0) {
+                            logger.info(`Updated subscription ${subscriptionIdFromInvoice} dates/status from invoice.paid event.`);
                         }
                         else {
-                            logger.warn(`Subscription ${subscriptionIdFromInvoice} not found in DB for resetting module count.`);
+                            logger.warn(`Subscription ${subscriptionIdFromInvoice} not found in DB for updating dates/status.`);
                         }
                     }
-                    catch (dbError) {
-                        logger.error(`Database error resetting module count for sub ${subscriptionIdFromInvoice}:`, dbError);
+                    catch (stripeError) {
+                        logger.error(`Stripe/DB error updating subscription ${subscriptionIdFromInvoice} from invoice.paid:`, stripeError);
                     }
+                }
+                else {
+                    logger.warn(`Received invoice.paid event (${invoice.id}) without a valid subscription ID.`);
                 }
                 break;
             // --- Handle Subscription Creation/Update/Deletion to keep DB in sync --- 
@@ -437,58 +488,65 @@ export class SubscriptionService {
                 const subscription = event.data.object;
                 logger.info(`Processing ${event.type}: ${subscription.id}`);
                 try {
-                    const plan = await db.query.subscriptionPlans.findFirst({ where: eq(schema.subscriptionPlans.id, subscription.items.data[0]?.price.id) });
-                    if (!plan) {
-                        logger.error(`Plan ${subscription.items.data[0]?.price.id} not found in DB for subscription ${subscription.id}`);
+                    // Check for Plan ID early
+                    const priceId = subscription.items.data[0]?.price.id;
+                    if (!priceId) {
+                        logger.error(`Missing priceId for subscription ${subscription.id} in ${event.type} event.`);
                         break;
                     }
-                    // Safely access potentially missing properties
-                    const currentPeriodStart = subscription.current_period_start;
-                    const currentPeriodEnd = subscription.current_period_end;
+                    const plan = await db.query.subscriptionPlans.findFirst({ where: eq(schema.subscriptionPlans.id, priceId) });
+                    if (!plan) {
+                        logger.error(`Plan ${priceId} not found in DB for subscription ${subscription.id}`);
+                        break;
+                    }
+                    // Extract IDs
                     const userId = subscription.metadata?.userId;
                     const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
-                    const status = subscription.status;
-                    const cancelAtEnd = subscription.cancel_at_period_end;
                     if (!userId) {
                         logger.error(`Missing userId in metadata for subscription ${subscription.id}`);
-                        break; // Cannot link subscription without userId
+                        break;
                     }
                     if (!customerId) {
                         logger.error(`Could not determine customer ID for subscription ${subscription.id}`);
-                        break; // Cannot link subscription without customerId
+                        break;
                     }
-                    if (!currentPeriodStart || !currentPeriodEnd) {
-                        logger.error(`Missing period dates for subscription ${subscription.id}`);
-                        break; // Need dates for storage
-                    }
-                    await db.insert(schema.customerSubscriptions)
-                        .values({
+                    // Use type assertions for period dates
+                    const currentPeriodStart = subscription.current_period_start;
+                    const currentPeriodEnd = subscription.current_period_end;
+                    const status = subscription.status;
+                    const cancelAtEnd = subscription.cancel_at_period_end;
+                    // Prepare base values for insert/update
+                    const baseValues = {
                         id: subscription.id,
                         userId: userId,
                         planId: plan.id,
                         stripeCustomerId: customerId,
                         status: status,
-                        currentPeriodStart: new Date(currentPeriodStart * 1000),
-                        currentPeriodEnd: new Date(currentPeriodEnd * 1000),
                         cancelAtPeriodEnd: cancelAtEnd,
-                        customModulesCreatedThisPeriod: 0, // Initialize counter
-                    })
+                        // Only include dates if they exist, convert number timestamp to Date
+                        ...(typeof currentPeriodStart === 'number' && { currentPeriodStart: new Date(currentPeriodStart * 1000) }),
+                        ...(typeof currentPeriodEnd === 'number' && { currentPeriodEnd: new Date(currentPeriodEnd * 1000) }),
+                    };
+                    // Prepare update set (don't overwrite existing dates with null)
+                    const updateSet = {
+                        planId: plan.id,
+                        status: status,
+                        cancelAtPeriodEnd: cancelAtEnd,
+                        updatedAt: new Date(),
+                        // Only update dates if they are newly provided, convert number timestamp to Date
+                        ...(typeof currentPeriodStart === 'number' && { currentPeriodStart: new Date(currentPeriodStart * 1000) }),
+                        ...(typeof currentPeriodEnd === 'number' && { currentPeriodEnd: new Date(currentPeriodEnd * 1000) }),
+                    };
+                    await db.insert(schema.customerSubscriptions)
+                        .values(baseValues) // Assert type after conditionally adding dates
                         .onConflictDoUpdate({
                         target: schema.customerSubscriptions.id,
-                        set: {
-                            planId: plan.id,
-                            status: status,
-                            currentPeriodStart: new Date(currentPeriodStart * 1000),
-                            currentPeriodEnd: new Date(currentPeriodEnd * 1000),
-                            cancelAtPeriodEnd: cancelAtEnd,
-                            updatedAt: new Date()
-                            // NOTE: Counter is NOT reset on general updates here, only on invoice.paid
-                        }
+                        set: updateSet
                     });
-                    logger.info(`Subscription ${subscription.id} upserted in DB.`);
+                    logger.info(`Subscription ${subscription.id} upserted in DB via ${event.type}.`);
                 }
                 catch (dbError) {
-                    logger.error(`Database error upserting subscription ${subscription.id}:`, dbError);
+                    logger.error(`Database error upserting subscription ${subscription.id} via ${event.type}:`, dbError);
                 }
                 break;
             case 'customer.subscription.deleted':

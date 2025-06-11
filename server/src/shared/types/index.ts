@@ -39,7 +39,7 @@ export enum Language {
 }
 
 // Define allowed genres for the NEW genre column
-export const allowedGenres = ['History', 'Adventure', 'Science', 'Non-Fiction', 'Fantasy', 'Biography', 'Mystery', 'Science-Fiction', 'Folktale'] as const;
+export const allowedGenres = ['History', 'Adventure', 'Science', 'Non-Fiction', 'Fantasy', 'Biography', 'Mystery', 'Science-Fiction', 'Folktale', 'Custom'] as const;
 export type Genre = typeof allowedGenres[number];
 
 // Base response type for all API responses
@@ -81,17 +81,22 @@ export interface ReadingModule {
   id: string;
   adminId?: string; // Only for custom modules
   title: string;
+  description?: string | null; // Optional description
   structuredContent: Paragraph[];
   paragraphCount: number;
   level: ReadingLevel;
   type: 'curated' | 'custom';
   genre: Genre;
   language: Language; // --- ADDED Language
+  imageUrl?: string | null; // Optional image URL
+  estimatedReadingTime?: number | null; // Optional reading time in minutes
+  isActive?: boolean; // Whether module is active
   // --- NEW AUTHOR FIELDS (Shared DTO) ---
   authorFirstName?: string | null; // Optional
   authorLastName?: string | null;  // Optional
   // --- END NEW AUTHOR FIELDS ---
   createdAt: Date;
+  updatedAt?: Date; // Optional updated timestamp
 }
 
 // Progress tracking types

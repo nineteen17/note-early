@@ -30,9 +30,9 @@ export const NoteEarlyLogoLarge = ({
                     className="rounded-full object-cover shadow-lg"
                 />
             </div>
-            <div className="text-center">
+            {/* <div className="text-center">
                 <h1 className="text-3xl font-bold text-foreground">NoteEarly</h1>
-            </div>
+            </div> */}
         </div>
     );
 };

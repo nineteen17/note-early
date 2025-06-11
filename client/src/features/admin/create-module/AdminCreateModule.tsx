@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { createModuleSchema, CreateModuleInput } from '@/lib/schemas/modules';
+import { CreateModuleInput } from '@/lib/schemas/modules';
 import { useCreateModuleMutation } from '@/hooks/api/admin/modules/useCreateModuleMutation';
+import { api } from '@/lib/apiClient';
 import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -52,17 +53,35 @@ type ModuleLevel = typeof levelOptions[number];
 const genreOptions = ["History", "Adventure", "Science", "Non-Fiction", "Fantasy", "Biography", "Mystery", "Science-Fiction", "Folktale", "Custom"] as const;
 const languageOptions = ["UK", "US"] as const;
 
-// Define vocabulary schema
-const vocabularySchema = z.object({
-  paragraphIndex: z.number().int().positive('Paragraph index must be a positive integer'),
-  word: z.string().min(1, 'Word cannot be empty').max(100, 'Word cannot exceed 100 characters'),
-  description: z.string().min(1, 'Description cannot be empty').max(1000, 'Description cannot exceed 1000 characters'),
+// Define vocabulary type separately (not part of the main form schema)
+interface VocabularyEntry {
+  paragraphIndex: number;
+  word: string;
+  description: string;
+}
+
+// Create a form-specific schema that handles the type issues
+const formCreateModuleSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  level: z.union([
+    z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5),
+    z.literal(6), z.literal(7), z.literal(8), z.literal(9), z.literal(10)
+  ]),
+  genre: z.enum(genreOptions),
+  language: z.enum(languageOptions),
+  imageUrl: z.string().optional(),
+  estimatedReadingTime: z.number().int().positive().optional(),
+  authorFirstName: z.string().optional(),
+  authorLastName: z.string().optional(),
+  isActive: z.boolean(),
+  structuredContent: z.array(z.object({
+    index: z.number().int().positive(),
+    text: z.string().min(1, 'Paragraph text cannot be empty'),
+  })).min(1, 'Module must have at least one paragraph'),
 });
 
-// Extend the createModuleSchema to include vocabulary
-const extendedCreateModuleSchema = createModuleSchema.extend({
-  vocabulary: z.array(vocabularySchema).optional(),
-});
+type FormCreateModuleInput = z.infer<typeof formCreateModuleSchema>;
 
 // Define form steps
 const steps = [
@@ -92,7 +111,7 @@ const steps = [
     title: 'Final Settings',
     description: 'Configure additional options',
     icon: Settings,
-    fields: ['imageUrl', 'estimatedReadingTime', 'isActive']
+    fields: ['imageUrl', 'estimatedReadingTime', 'authorFirstName', 'authorLastName', 'isActive']
   }
 ];
 
@@ -115,21 +134,23 @@ export function AdminCreateModule({
   const mutation = useCreateModuleMutation();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
 
-  const form = useForm({
-    resolver: zodResolver(extendedCreateModuleSchema),
+  const form = useForm<FormCreateModuleInput>({
+    resolver: zodResolver(formCreateModuleSchema) as any,
     mode: 'onBlur',
     defaultValues: {
       title: '',
-      description: null,
-      level: 1,
+      description: '',
+      level: 1 as ModuleLevel,
       genre: 'Adventure',
       language: 'UK',
-      imageUrl: null,
-      estimatedReadingTime: null,
+      imageUrl: '',
+      estimatedReadingTime: undefined,
+      authorFirstName: '',
+      authorLastName: '',
       isActive: true,
       structuredContent: [{ index: 1, text: '' }],
-      vocabulary: [],
     },
   });
 
@@ -139,23 +160,27 @@ export function AdminCreateModule({
     keyName: "id",
   });
 
-  const { fields: vocabularyFields, append: appendVocabulary, remove: removeVocabulary } = useFieldArray({
-    control: form.control,
-    name: "vocabulary",
-    keyName: "id",
-  });
-
   const addParagraph = () => {
     const nextIndex = paragraphFields.length + 1;
     appendParagraph({ index: nextIndex, text: '' });
   };
 
   const addVocabulary = () => {
-    appendVocabulary({
+    setVocabulary(prev => [...prev, {
       paragraphIndex: 1,
       word: '',
       description: '',
-    });
+    }]);
+  };
+
+  const removeVocabulary = (index: number) => {
+    setVocabulary(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateVocabulary = (index: number, field: keyof VocabularyEntry, value: string | number) => {
+    setVocabulary(prev => prev.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    ));
   };
 
   // Validate current step
@@ -167,12 +192,11 @@ export function AdminCreateModule({
       return true;
     }
     
-    const isValid = await form.trigger(stepFields as any);
+    const isValid = await form.trigger(stepFields as (keyof FormCreateModuleInput)[]);
     return isValid;
   };
 
   const nextStep = async (e?: React.MouseEvent) => {
-    // Prevent any default form submission behavior
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -185,7 +209,6 @@ export function AdminCreateModule({
   };
 
   const prevStep = (e?: React.MouseEvent) => {
-    // Prevent any default form submission behavior
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -200,10 +223,9 @@ export function AdminCreateModule({
     if (stepIndex > currentStep) return false;
     const stepFields = steps[stepIndex].fields;
     
-    // Check if required fields in this step have values
     const formValues = form.getValues();
     return stepFields.every(field => {
-      const value = formValues[field as keyof typeof formValues];
+      const value = formValues[field as keyof FormCreateModuleInput];
       if (field === 'structuredContent') {
         return Array.isArray(value) && value.length > 0 && value[0]?.text?.trim();
       }
@@ -211,36 +233,76 @@ export function AdminCreateModule({
         return typeof value === 'string' && value.trim().length > 0;
       }
       // Optional fields don't need to be completed
-      if (['description', 'imageUrl', 'estimatedReadingTime', 'vocabulary'].includes(field)) {
+      if (['description', 'imageUrl', 'estimatedReadingTime', 'authorFirstName', 'authorLastName', 'vocabulary'].includes(field)) {
         return true;
       }
       return value !== null && value !== undefined && value !== '';
     });
   };
 
-  const onSubmit: SubmitHandler<CreateModuleInput> = (data) => {
-    // Only submit if we're on the final step
+  const onSubmit: SubmitHandler<FormCreateModuleInput> = (data) => {
     if (currentStep !== steps.length - 1) {
       return;
     }
     
-    // Prevent multiple submissions with local state
     if (isSubmitting || mutation.isPending) {
       return;
     }
 
     setIsSubmitting(true);
     
-    mutation.mutate({ 
-      ...data,
-      level: data.level as ModuleLevel
-    }, {
-      onSuccess: (newModule) => {
-        // Single success toast
-        toast.success(`Module "${newModule.title}" created successfully!`);
-        form.reset();
-        setIsSubmitting(false);
-        router.push('/admin/modules');
+
+
+    // Transform form data to match API expectations
+    const submitData = {
+      title: data.title,
+      structuredContent: data.structuredContent,
+      level: data.level,
+      genre: data.genre,
+      language: data.language,
+      description: data.description && data.description.trim() ? data.description.trim() : null,
+      imageUrl: data.imageUrl && data.imageUrl.trim() ? data.imageUrl.trim() : null,
+      estimatedReadingTime: data.estimatedReadingTime || null,
+      authorFirstName: data.authorFirstName && data.authorFirstName.trim() ? data.authorFirstName.trim() : null,
+      authorLastName: data.authorLastName && data.authorLastName.trim() ? data.authorLastName.trim() : null,
+      isActive: data.isActive,
+    };
+
+
+    
+    mutation.mutate(submitData as CreateModuleInput, {
+      onSuccess: async (newModule) => {
+        try {
+          // Create vocabulary entries if any exist
+          if (vocabulary.length > 0) {
+            // Create vocabulary entries sequentially to avoid overwhelming the API
+            for (const vocab of vocabulary) {
+              try {
+                await api.post(`/reading-modules/${newModule.id}/vocabulary`, {
+                  paragraphIndex: vocab.paragraphIndex,
+                  word: vocab.word,
+                  description: vocab.description,
+                });
+              } catch (vocabError) {
+                console.error('Failed to create vocabulary entry:', vocab.word, vocabError);
+                // Continue with other vocabulary entries even if one fails
+              }
+            }
+          }
+          
+          toast.success(`Module "${newModule.title}" created successfully!`);
+          form.reset();
+          setVocabulary([]);
+          setIsSubmitting(false);
+          router.push('/admin/modules');
+        } catch (error) {
+          console.error('Error creating vocabulary entries:', error);
+          toast.warning(`Module "${newModule.title}" created, but some vocabulary entries may have failed. You can add them later in the edit page.`);
+          form.reset();
+          setVocabulary([]);
+          setIsSubmitting(false);
+          router.push('/admin/modules');
+        }
       },
       onError: (error) => {
         console.error("Module creation failed:", error);
@@ -248,7 +310,6 @@ export function AdminCreateModule({
         setIsSubmitting(false);
       },
       onSettled: () => {
-        // Ensure we always reset the submitting state
         setIsSubmitting(false);
       }
     });
@@ -287,8 +348,10 @@ export function AdminCreateModule({
                     <Textarea
                       placeholder="Provide a brief, engaging summary of the module content..."
                       className="min-h-[100px] border-border/50 focus:border-primary transition-colors resize-none"
-                      {...field}
-                      value={field.value ?? ''}
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
                     />
                   </FormControl>
                   <FormDescription>
@@ -310,7 +373,7 @@ export function AdminCreateModule({
                       Reading Level
                     </FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(Number(value))}
+                      onValueChange={(value) => field.onChange(Number(value) as ModuleLevel)}
                       defaultValue={String(field.value)}
                     >
                       <FormControl>
@@ -458,124 +521,91 @@ export function AdminCreateModule({
 
       case 2: // Vocabulary Support
         return (
-          <FormField
-            control={form.control}
-            name="vocabulary"
-            render={({ field }) => (
-              <FormItem>
-                <div className="space-y-4">
-                  {vocabularyFields.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No vocabulary entries yet</p>
-                      <p className="text-sm">Add definitions for challenging words to help students</p>
-                    </div>
-                  )}
-                  
-                  {vocabularyFields.map((vocab, index) => (
-                    <div key={vocab.id} className="group relative">
-                      <div className="p-6 border border-border/50 rounded-lg bg-card/50 hover:bg-card transition-colors">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-sm font-medium">Vocabulary Entry {index + 1}</h4>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeVocabulary(index)}
-                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            aria-label="Remove vocabulary entry"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <FormField
-                            control={form.control}
-                            name={`vocabulary.${index}.paragraphIndex`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-sm font-medium">Paragraph Reference</FormLabel>
-                                <FormControl>
-                                  <Select
-                                    onValueChange={(value) => field.onChange(Number(value))}
-                                    defaultValue={String(field.value)}
-                                  >
-                                    <SelectTrigger className="h-11 border-border/50">
-                                      <SelectValue placeholder="Select paragraph" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {Array.from({ length: paragraphFields.length }, (_, i) => i + 1).map(num => (
-                                        <SelectItem key={num} value={String(num)}>
-                                          Paragraph {num}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </FormControl>
-                                <FormDescription>Which paragraph contains this word?</FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`vocabulary.${index}.word`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-sm font-medium">Word</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Enter the challenging word..." 
-                                    className="h-11 border-border/50 focus:border-primary transition-colors"
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        <FormField
-                          control={form.control}
-                          name={`vocabulary.${index}.description`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium">Definition</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Provide a clear, student-friendly definition..."
-                                  className="border-border/50 focus:border-primary transition-colors resize-none"
-                                  {...field}
-                                  rows={3}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 border-dashed border-border/50 hover:border-primary hover:bg-primary/5 transition-all"
-                    onClick={addVocabulary}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Vocabulary Entry
-                  </Button>
-                </div>
-                <FormDescription className="mt-3 text-sm text-muted-foreground">
-                  Help students understand difficult words by providing clear definitions linked to specific paragraphs. This step is optional.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
+          <div className="space-y-4">
+            {vocabulary.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No vocabulary entries yet</p>
+                <p className="text-sm">Add definitions for challenging words to help students</p>
+              </div>
             )}
-          />
+            
+            {vocabulary.map((vocab, index) => (
+              <div key={index} className="group relative">
+                <div className="p-6 border border-border/50 rounded-lg bg-card/50 hover:bg-card transition-colors">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-medium">Vocabulary Entry {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeVocabulary(index)}
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      aria-label="Remove vocabulary entry"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <Label className="text-sm font-medium">Paragraph Reference</Label>
+                      <Select
+                        value={String(vocab.paragraphIndex)}
+                        onValueChange={(value) => updateVocabulary(index, 'paragraphIndex', Number(value))}
+                      >
+                        <SelectTrigger className="h-11 border-border/50">
+                          <SelectValue placeholder="Select paragraph" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: paragraphFields.length }, (_, i) => i + 1).map(num => (
+                            <SelectItem key={num} value={String(num)}>
+                              Paragraph {num}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">Which paragraph contains this word?</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Word</Label>
+                      <Input 
+                        placeholder="Enter the challenging word..." 
+                        className="h-11 border-border/50 focus:border-primary transition-colors"
+                        value={vocab.word}
+                        onChange={(e) => updateVocabulary(index, 'word', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium">Definition</Label>
+                    <Textarea
+                      placeholder="Provide a clear, student-friendly definition..."
+                      className="border-border/50 focus:border-primary transition-colors resize-none"
+                      value={vocab.description}
+                      onChange={(e) => updateVocabulary(index, 'description', e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12 border-dashed border-border/50 hover:border-primary hover:bg-primary/5 transition-all"
+              onClick={addVocabulary}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Vocabulary Entry
+            </Button>
+            
+            <FormDescription className="mt-3 text-sm text-muted-foreground">
+              Help students understand difficult words by providing clear definitions linked to specific paragraphs. This step is optional.
+            </FormDescription>
+          </div>
         );
 
       case 3: // Final Settings
@@ -595,8 +625,10 @@ export function AdminCreateModule({
                       <Input
                         placeholder="https://example.com/image.jpg"
                         className="h-11 border-border/50 focus:border-primary transition-colors"
-                        {...field}
-                        value={field.value ?? ''}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
                       />
                     </FormControl>
                     <FormDescription>
@@ -621,13 +653,14 @@ export function AdminCreateModule({
                         type="number"
                         min="1"
                         className="h-11 border-border/50 focus:border-primary transition-colors"
-                        {...field}
-                        value={field.value === null || field.value === undefined ? '' : String(field.value)}
-                        onChange={e => {
-                          const value = e.target.value;
-                          field.onChange(value === '' ? null : parseInt(value, 10));
-                        }}
                         placeholder="e.g., 15"
+                        value={field.value || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === '' ? undefined : parseInt(value, 10));
+                        }}
+                        onBlur={field.onBlur}
+                        name={field.name}
                       />
                     </FormControl>
                     <FormDescription>
@@ -637,6 +670,56 @@ export function AdminCreateModule({
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="authorFirstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Author First Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Jane"
+                          className="h-11 border-border/50 focus:border-primary transition-colors"
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Optional: Add the author's first name
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="authorLastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Author Last Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Smith"
+                          className="h-11 border-border/50 focus:border-primary transition-colors"
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Optional: Add the author's last name
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             <Separator />
@@ -758,8 +841,8 @@ export function AdminCreateModule({
           {isApproachingLimit && (
             <Alert className="mt-4 border-warning/50 bg-warning/10">
               <AlertCircle className="h-4 w-4 text-warning" />
-              <AlertTitle className="text-foreground">Approaching Limit</AlertTitle>
-              <AlertDescription className="text-muted-foreground">
+              <AlertTitle >Approaching Limit</AlertTitle>
+              <AlertDescription >
                 You have {remainingModules} module{remainingModules !== 1 ? 's' : ''} remaining on your {userPlanTier} plan.
                 {userPlanTier !== 'pro' && ' Consider upgrading for more modules.'}
               </AlertDescription>
