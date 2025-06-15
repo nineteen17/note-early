@@ -177,6 +177,7 @@ export function DetailedProgressView({
                     placeholder="Provide constructive feedback for the student..."
                     className="min-h-[100px]"
                     aria-describedby="teacherFeedback-error"
+                    autoFocus={false}
                   />
                    {errors.teacherFeedback && (
                      <p id="teacherFeedback-error" className="text-sm text-red-600">
@@ -196,6 +197,7 @@ export function DetailedProgressView({
                         {...register("score", { valueAsNumber: true })} 
                         placeholder="0-100"
                         aria-describedby="score-error"
+                        autoFocus={false}
                       />
                        {errors.score && (
                          <p id="score-error" className="text-sm text-red-600">

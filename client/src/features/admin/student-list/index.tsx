@@ -396,7 +396,7 @@ export function AdminStudentList() {
                     {...field}
                     id="newPin"
                     aria-describedby="newPin-error"
-                    autoFocus
+                    autoFocus={false}
                   >
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />

@@ -1,13 +1,11 @@
-// Placeholder: Renders the AdminViewModuleProgress feature component
-// Note: Feature component name might differ.
 import { use } from 'react';
-import { AdminViewModuleProgress } from '@/features/admin/view-module-progress'; // Assuming feature location
+import { AdminEditModuleFeature } from '@/features/admin/edit-module';
 
-type AdminModuleProgressPageProps = {
+type AdminEditModulePageProps = {
   params: Promise<{ moduleId: string }>;
 };
 
-export default function AdminModuleProgressPage({ params }: AdminModuleProgressPageProps) {
+export default function AdminEditModulePage({ params }: AdminEditModulePageProps) {
   const { moduleId } = use(params);
-  return <AdminViewModuleProgress moduleId={moduleId} />;
+  return <AdminEditModuleFeature moduleId={moduleId} />;
 } 

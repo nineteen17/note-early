@@ -28,7 +28,7 @@ const envSchema = z.object({
         .default(604800), // 7 days in seconds
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
-    RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+    RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(200),
     // Stripe
     STRIPE_SECRET_KEY: z.string().min(1, 'Stripe Secret Key is required'),
     STRIPE_WEBHOOK_SECRET: z.string().min(1, 'Stripe Webhook Secret is required'),

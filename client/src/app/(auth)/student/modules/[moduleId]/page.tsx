@@ -16,6 +16,7 @@ import { BookOpen, Clock, AlignLeft, User, CheckCircle } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { format } from 'date-fns';
+import { getModuleTypeDisplayName } from '@/lib/utils';
 
 interface ModuleDetailsPageProps {
   params: Promise<{
@@ -137,7 +138,7 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
                       ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                       : "bg-pink-50 text-pink-700 border-pink-200"
                   }>
-                    {module.type === 'curated' ? '⭐ Curated' : '✨ Custom'}
+                    {module.type === 'curated' ? '⭐ ' : '✨ '}{getModuleTypeDisplayName(module.type)}
                   </Badge>
                 </div>
 

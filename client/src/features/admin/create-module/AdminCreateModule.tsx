@@ -290,11 +290,11 @@ export function AdminCreateModule({
             }
           }
           
-          toast.success(`Module "${newModule.title}" created successfully!`);
-          form.reset();
+        toast.success(`Module "${newModule.title}" created successfully!`);
+        form.reset();
           setVocabulary([]);
-          setIsSubmitting(false);
-          router.push('/admin/modules');
+        setIsSubmitting(false);
+        router.push('/admin/modules');
         } catch (error) {
           console.error('Error creating vocabulary entries:', error);
           toast.warning(`Module "${newModule.title}" created, but some vocabulary entries may have failed. You can add them later in the edit page.`);
@@ -521,90 +521,90 @@ export function AdminCreateModule({
 
       case 2: // Vocabulary Support
         return (
-          <div className="space-y-4">
+                <div className="space-y-4">
             {vocabulary.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No vocabulary entries yet</p>
-                <p className="text-sm">Add definitions for challenging words to help students</p>
-              </div>
-            )}
-            
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No vocabulary entries yet</p>
+                      <p className="text-sm">Add definitions for challenging words to help students</p>
+                    </div>
+                  )}
+                  
             {vocabulary.map((vocab, index) => (
               <div key={index} className="group relative">
-                <div className="p-6 border border-border/50 rounded-lg bg-card/50 hover:bg-card transition-colors">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-medium">Vocabulary Entry {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeVocabulary(index)}
-                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      aria-label="Remove vocabulary entry"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="p-6 border border-border/50 rounded-lg bg-card/50 hover:bg-card transition-colors">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-sm font-medium">Vocabulary Entry {index + 1}</h4>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeVocabulary(index)}
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            aria-label="Remove vocabulary entry"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <Label className="text-sm font-medium">Paragraph Reference</Label>
-                      <Select
+                                  <Select
                         value={String(vocab.paragraphIndex)}
                         onValueChange={(value) => updateVocabulary(index, 'paragraphIndex', Number(value))}
-                      >
-                        <SelectTrigger className="h-11 border-border/50">
-                          <SelectValue placeholder="Select paragraph" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: paragraphFields.length }, (_, i) => i + 1).map(num => (
-                            <SelectItem key={num} value={String(num)}>
-                              Paragraph {num}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                                  >
+                                    <SelectTrigger className="h-11 border-border/50">
+                                      <SelectValue placeholder="Select paragraph" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {Array.from({ length: paragraphFields.length }, (_, i) => i + 1).map(num => (
+                                        <SelectItem key={num} value={String(num)}>
+                                          Paragraph {num}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                       <p className="text-xs text-muted-foreground mt-1">Which paragraph contains this word?</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Word</Label>
-                      <Input 
-                        placeholder="Enter the challenging word..." 
-                        className="h-11 border-border/50 focus:border-primary transition-colors"
+                                  <Input 
+                                    placeholder="Enter the challenging word..." 
+                                    className="h-11 border-border/50 focus:border-primary transition-colors"
                         value={vocab.word}
                         onChange={(e) => updateVocabulary(index, 'word', e.target.value)}
-                      />
+                          />
                     </div>
-                  </div>
-                  
+                        </div>
+                        
                   <div>
                     <Label className="text-sm font-medium">Definition</Label>
-                    <Textarea
-                      placeholder="Provide a clear, student-friendly definition..."
-                      className="border-border/50 focus:border-primary transition-colors resize-none"
+                                <Textarea
+                                  placeholder="Provide a clear, student-friendly definition..."
+                                  className="border-border/50 focus:border-primary transition-colors resize-none"
                       value={vocab.description}
                       onChange={(e) => updateVocabulary(index, 'description', e.target.value)}
-                      rows={3}
-                    />
+                                  rows={3}
+                        />
                   </div>
-                </div>
-              </div>
-            ))}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 border-dashed border-border/50 hover:border-primary hover:bg-primary/5 transition-all"
+                    onClick={addVocabulary}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Vocabulary Entry
+                  </Button>
             
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-12 border-dashed border-border/50 hover:border-primary hover:bg-primary/5 transition-all"
-              onClick={addVocabulary}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Vocabulary Entry
-            </Button>
-            
-            <FormDescription className="mt-3 text-sm text-muted-foreground">
-              Help students understand difficult words by providing clear definitions linked to specific paragraphs. This step is optional.
-            </FormDescription>
+                <FormDescription className="mt-3 text-sm text-muted-foreground">
+                  Help students understand difficult words by providing clear definitions linked to specific paragraphs. This step is optional.
+                </FormDescription>
           </div>
         );
 
@@ -714,11 +714,11 @@ export function AdminCreateModule({
                       </FormControl>
                       <FormDescription>
                         Optional: Add the author's last name
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               </div>
             </div>
 

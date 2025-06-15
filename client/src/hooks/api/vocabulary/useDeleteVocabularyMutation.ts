@@ -25,13 +25,10 @@ export const useDeleteVocabularyMutation = (
     return useMutation<void, ApiError, string>({ // <TData = void, TError, TVariables = vocabularyId>
         mutationFn: deleteVocabularyEntry,
         onSuccess: (_, vocabularyId) => { // First arg is data (void), second is variables (vocabularyId)
-            // Invalidate the query for the associated module's vocabulary
+            // Invalidate all vocabulary queries for this module
+            queryClient.invalidateQueries({ queryKey: ['vocabulary', moduleId] });
+            // Also invalidate the general module vocabulary query if it exists
             queryClient.invalidateQueries({ queryKey: ['moduleVocabulary', moduleId] });
-
-            // Optional: Optimistically remove the item from the cache
-            // queryClient.setQueryData(['moduleVocabulary', moduleId], (oldData: VocabularyEntryDTO[] | undefined) => {
-            //     return oldData?.filter(entry => entry.id !== vocabularyId) ?? [];
-            // });
 
             toast.success(`Vocabulary entry deleted successfully!`);
         },

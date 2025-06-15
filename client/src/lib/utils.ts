@@ -37,3 +37,19 @@ export function getMobileAuthMargins() {
 export function getAuthCardClasses() {
   return "sm:min-w-[600px] w-full max-w-md sm:max-w-4xl mx-auto sm:border sm:shadow-md border-0 shadow-none sm:bg-card bg-transparent";
 }
+
+/**
+ * Maps module type to display name
+ * @param type - The module type ('custom' | 'curated')
+ * @returns The display name for the module type
+ */
+export function getModuleTypeDisplayName(type: 'custom' | 'curated'): string {
+  switch (type) {
+    case 'custom':
+      return 'Private';
+    case 'curated':
+      return 'Public';
+    default:
+      return type; // fallback to original value
+  }
+}

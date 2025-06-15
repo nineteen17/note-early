@@ -53,13 +53,14 @@ interface FilterState extends ModuleFilters {
 const STORAGE_KEY_PUBLIC = 'admin-public-modules-filters';
 const STORAGE_KEY_CUSTOM = 'admin-custom-modules-filters';
 const STORAGE_KEY_ALL = 'admin-all-modules-filters';
+const STORAGE_KEY_ACTIVE_TAB = 'admin-modules-active-tab';
 
 // Helper function to apply filters and sorting
 const applyFiltersAndSort = (modules: ReadingModuleDTO[] | undefined, filterState: FilterState): ReadingModuleDTO[] => {
   if (!modules) return [];
 
   // Apply filters and search
-  let filteredModules = modules.filter((module: ReadingModuleDTO) => {
+  const filteredModules = modules.filter((module: ReadingModuleDTO) => {
     // Apply search query
     if (filterState.search) {
       const searchLower = filterState.search.toLowerCase();
@@ -195,14 +196,14 @@ const FilterSearch: React.FC<FilterSearchProps> = ({
         <DialogTrigger asChild>
           <Button 
             variant="outline" 
-            className="w-[180px] bg-card border-input hover:text-foreground/80"
+            className="w-[180px] border-2 border-inputhover:text-foreground/80"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters & Sort
             {activeFilterCount > 0 && (
               <Badge 
                 variant="default" 
-                className="ml-2 px-1.5 py-0.5 text-xs"
+                className="ml-2 px-2 py-0.5 text-xs bg-accent/20 text-accent border border-accent/30 rounded-full font-bold"
               >
                 {activeFilterCount}
               </Badge>
@@ -210,74 +211,92 @@ const FilterSearch: React.FC<FilterSearchProps> = ({
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-[400px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Filters & Sort</DialogTitle>
+          <DialogHeader className="pb-6 border-b">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Filter className="h-5 w-5" />
+              Filters & Sort
+            </DialogTitle>
             <DialogDescription>
               Customize how you view your modules
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Genre</Label>
-              <Select
-                value={filters.genre || 'all'}
-                onValueChange={(value) => setFilterState(prev => ({ ...prev, genre: value === 'all' ? undefined : value as ModuleGenre }))}
-              >
-                <SelectTrigger className="w-full bg-popover border-input text-foreground">
-                  <SelectValue placeholder="Filter by genre" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Genres</SelectItem>
-                  {genreOptions.map((genre) => (
-                    <SelectItem key={genre} value={genre}>
-                      {genre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-6 py-6">
+            <div className="space-y-6">
+              <h4 className="text-lg font-semibold flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filter Options
+              </h4>
+              
+              <div className="grid gap-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Genre
+                  </Label>
+                  <Select
+                    value={filters.genre || 'all'}
+                    onValueChange={(value) => setFilterState(prev => ({ ...prev, genre: value === 'all' ? undefined : value as ModuleGenre }))}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Filter by genre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Genres</SelectItem>
+                      {genreOptions.map((genre) => (
+                        <SelectItem key={genre} value={genre}>
+                          {genre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Level</Label>
+                  <Select
+                    value={filters.level?.toString() || 'all'}
+                    onValueChange={(value) => setFilterState(prev => ({ ...prev, level: value === 'all' ? undefined : parseInt(value) as ModuleLevel }))}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Filter by level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Levels</SelectItem>
+                      {levelOptions.map((level) => (
+                        <SelectItem key={level} value={level.toString()}>
+                          Level {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Sort By</Label>
+                  <Select
+                    value={sortBy}
+                    onValueChange={(value) => updateSort(value as SortOption)}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
+                      <SelectItem value="level-low">Level (Low to High)</SelectItem>
+                      <SelectItem value="level-high">Level (High to Low)</SelectItem>
+                      <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label>Level</Label>
-              <Select
-                value={filters.level?.toString() || 'all'}
-                onValueChange={(value) => setFilterState(prev => ({ ...prev, level: value === 'all' ? undefined : parseInt(value) as ModuleLevel }))}
-              >
-                <SelectTrigger className="w-full bg-popover border-input text-foreground">
-                  <SelectValue placeholder="Filter by level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  {levelOptions.map((level) => (
-                    <SelectItem key={level} value={level.toString()}>
-                      Level {level}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label>Sort By</Label>
-              <Select
-                value={sortBy}
-                onValueChange={(value) => updateSort(value as SortOption)}
-              >
-                <SelectTrigger className="w-full bg-popover border-input text-foreground">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="level-low">Level (Low to High)</SelectItem>
-                  <SelectItem value="level-high">Level (High to Low)</SelectItem>
-                  <SelectItem value="alphabetical">Alphabetical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-2 pt-2">
+            
+            <div className="flex gap-2 pt-4">
               <Button 
                 variant="default" 
                 onClick={() => setIsFilterDialogOpen(false)}
-                className="flex-1"
+                className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all duration-200"
               >
                 Apply Filters
               </Button>
@@ -297,17 +316,18 @@ const FilterSearch: React.FC<FilterSearchProps> = ({
       </Dialog>
 
       <div className="relative w-[300px]">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search modules..."
           value={filterState.search || ''}
           onChange={(e) => setFilterState(prev => ({ ...prev, search: e.target.value || undefined }))}
-          className="pl-8"
+          className="pl-10 h-11 border-2 border-primary/20 focus:border-primary/50 bg-gradient-to-br from-primary/5 to-primary/10 shadow-inner focus:shadow-lg transition-all duration-200"
+          autoFocus={false}
         />
         {filterState.search && (
           <button
             onClick={() => setFilterState(prev => ({ ...prev, search: undefined }))}
-            className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors duration-200"
           >
             <X className="h-4 w-4" />
           </button>
@@ -339,11 +359,13 @@ const PublicModulesList = () => {
             setFilterState={setFilterState}
             storageKey={STORAGE_KEY_PUBLIC}
           />
-          <Card>
-            <CardContent className="p-6 text-center">
-              <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Public Modules Available</h3>
-              <p className="text-muted-foreground">
+          <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+            <CardContent className="p-8 text-center">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
+                <BookOpen className="h-8 w-8 text-popover-foreground" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3">No Public Modules Available</h3>
+              <p className="text-muted-foreground leading-relaxed">
                 There are no curated modules available at the moment. Please check back later.
               </p>
             </CardContent>
@@ -360,11 +382,13 @@ const PublicModulesList = () => {
             setFilterState={setFilterState}
             storageKey={STORAGE_KEY_PUBLIC}
           />
-          <Card>
-            <CardContent className="p-6 text-center">
-              <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Matching Modules</h3>
-              <p className="text-muted-foreground">
+          <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+            <CardContent className="p-8 text-center">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
+                <AlertCircle className="h-8 w-8 text-popover-foreground" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3">No Matching Modules</h3>
+              <p className="text-muted-foreground leading-relaxed">
                 No public modules match your current filters. Try adjusting your filters to see more results.
               </p>
             </CardContent>
@@ -409,14 +433,19 @@ const CustomModulesList = () => {
             setFilterState={setFilterState}
             storageKey={STORAGE_KEY_CUSTOM}
           />
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Plus className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Custom Modules Yet</h3>
-              <p className="text-muted-foreground mb-4">
+          <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+            <CardContent className="p-8 text-center">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
+                <Plus className="h-8 w-8 text-popover-foreground" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3">No Custom Modules Yet</h3>
+              <p className="text-muted-foreground leading-relaxed mb-6">
                 You haven't created any custom modules yet. Create your first module to get started!
               </p>
-              <Button onClick={() => router.push('/admin/modules/create')}>
+              <Button 
+                onClick={() => router.push('/admin/modules/create')}
+                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all duration-200"
+              >
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Create Your First Module
               </Button>
@@ -434,14 +463,20 @@ const CustomModulesList = () => {
             setFilterState={setFilterState}
             storageKey={STORAGE_KEY_CUSTOM}
           />
-          <Card>
-            <CardContent className="p-6 text-center">
-              <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Matching Modules</h3>
-              <p className="text-muted-foreground mb-4">
+          <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+            <CardContent className="p-8 text-center">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
+                <AlertCircle className="h-8 w-8 text-popover-foreground" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3">No Matching Modules</h3>
+              <p className="text-muted-foreground leading-relaxed mb-6">
                 No custom modules match your current filters. Try adjusting your filters to see more results.
               </p>
-              <Button variant="outline" onClick={() => router.push('/admin/modules/create')}>
+              <Button 
+                variant="outline" 
+                onClick={() => router.push('/admin/modules/create')}
+                className="border-2 border-dashed border-primary/30 text-popover-foreground hover:bg-primary/10 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200"
+              >
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Create New Module
               </Button>
@@ -509,14 +544,19 @@ const AllModulesList = () => {
               setFilterState={setFilterState}
               storageKey={STORAGE_KEY_ALL}
             />
-            <Card>
-              <CardContent className="p-6 text-center">
-                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Modules Available</h3>
-                <p className="text-muted-foreground mb-4">
+            <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+              <CardContent className="p-8 text-center">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
+                  <BookOpen className="h-8 w-8 text-popover-foreground" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">No Modules Available</h3>
+                <p className="text-muted-foreground leading-relaxed mb-6">
                   There are no modules available at the moment. Create your first custom module to get started!
                 </p>
-                <Button onClick={() => router.push('/admin/modules/create')}>
+                <Button 
+                  onClick={() => router.push('/admin/modules/create')}
+                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all duration-200"
+                >
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Create Your First Module
                 </Button>
@@ -534,14 +574,16 @@ const AllModulesList = () => {
               setFilterState={setFilterState}
               storageKey={STORAGE_KEY_ALL}
             />
-            <Card>
-              <CardContent className="p-6 text-center">
-                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Matching Modules</h3>
-                <p className="text-muted-foreground mb-4">
+            <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+              <CardContent className="p-8 text-center">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
+                  <AlertCircle className="h-8 w-8 text-popover-foreground" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">No Matching Modules</h3>
+                <p className="text-muted-foreground leading-relaxed mb-6">
                   No modules match your current filters. Try adjusting your filters to see more results.
                 </p>
-                <div className="flex gap-2 justify-center">
+                <div className="flex gap-3 justify-center">
                   <Button 
                     variant="outline" 
                     onClick={() => setFilterState({
@@ -551,10 +593,14 @@ const AllModulesList = () => {
                       level: undefined,
                       language: undefined,
                     })}
+                    className="border-2 border-dashed border-primary/30 text-popover-foreground hover:bg-primary/10 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200"
                   >
                     Clear Filters
                   </Button>
-                  <Button onClick={() => router.push('/admin/modules/create')}>
+                  <Button 
+                    onClick={() => router.push('/admin/modules/create')}
+                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all duration-200"
+                  >
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Create Module
                   </Button>
@@ -579,7 +625,7 @@ const AllModulesList = () => {
       );
   };
 
-export function ModulesTabsFeature() {
+export function ModulesFeature() {
   const router = useRouter();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
@@ -641,14 +687,75 @@ export function ModulesTabsFeature() {
     }
   };
 
-  const [activeTab, setActiveTab] = useState("public");
+  // Initialize active tab from localStorage with fallback to "public"
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_ACTIVE_TAB);
+        return stored || "public";
+      } catch {
+        return "public";
+      }
+    }
+    return "public";
+  });
 
-  // Skeleton Loading State
+  // Save active tab to localStorage whenever it changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_ACTIVE_TAB, value);
+      } catch {
+        // Ignore errors
+      }
+    }
+  };
+
+  // Skeleton Loading State - Match the actual card layout
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-1/4" /> 
-        <Skeleton className="h-64 w-full" /> 
+      <div className="space-y-6">
+        {/* Tabs skeleton */}
+        <div className="flex items-center justify-between gap-4">
+          <Skeleton className="h-11 w-[300px] rounded-lg" />
+          <Skeleton className="h-11 w-[120px] rounded-lg" />
+        </div>
+        
+        {/* Filter skeleton */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-10 w-[120px] rounded-lg" />
+                <Skeleton className="h-10 w-[100px] rounded-lg" />
+                <Skeleton className="h-10 w-[100px] rounded-lg" />
+                <Skeleton className="h-10 w-[100px] rounded-lg" />
+              </div>
+              <Skeleton className="h-10 w-[280px] rounded-lg" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Module cards skeleton - matches ModuleListDisplay */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-1" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <div className="flex items-center justify-between pt-2">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -679,15 +786,29 @@ export function ModulesTabsFeature() {
           </p>
         )} */}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="public">Public</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-2 border-primary/10 shadow-lg">
+          <TabsTrigger 
+            value="public"
+            className=""
+          >
+            Public
+          </TabsTrigger>
            {/* Enable tab if user can potentially create and meets conditions */}
-          <TabsTrigger value="custom" disabled={!showCreateFeatures} className="relative">
+          <TabsTrigger 
+            value="custom" 
+            disabled={!showCreateFeatures} 
+            className=""
+          >
              My Modules 
              {!showCreateFeatures && <Lock className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />} 
           </TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger 
+            value="all"
+            className=""
+          >
+            All
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="public" className="mt-4">
@@ -699,16 +820,18 @@ export function ModulesTabsFeature() {
           {showCreateFeatures ? (
             <CustomModulesList />
           ) : (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center">
-                        <Lock className="mr-2 h-5 w-5" /> 
+            <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+                <CardHeader className="pb-6 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-b-2 border-primary/10">
+                    <CardTitle className="flex items-center gap-3 text-xl">
+                        <div className="p-2 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg">
+                            <Lock className="h-5 w-5 text-popover-foreground" />
+                        </div>
                         {userPlanTier === 'free' ? 'Feature Not Available' : 'Upgrade Required'} 
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-8">
                     {userPlanTier === 'free' 
-                      ? <p>Creating custom modules requires a paid subscription.</p>
+                      ? <p className="text-muted-foreground leading-relaxed">Creating custom modules requires a paid subscription.</p>
                       : <UpgradePlanDisplay currentPlan={userPlanTier} />
                     }
                 </CardContent>
@@ -724,8 +847,11 @@ export function ModulesTabsFeature() {
     {/* Upgrade Modal */}
     <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
       <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Upgrade Required</DialogTitle>
+        <DialogHeader className="pb-6 border-b">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Lock className="h-5 w-5" />
+            Upgrade Required
+          </DialogTitle>
           <DialogDescription>
             You have reached the custom module limit for the free plan.
           </DialogDescription>
@@ -733,7 +859,12 @@ export function ModulesTabsFeature() {
         <UpgradePlanDisplay currentPlan={'free'} />
         <DialogFooter>
            <DialogClose asChild>
-             <Button variant="outline">Close</Button>
+             <Button 
+               variant="outline"
+               className="border-2 border-dashed border-primary/30 text-popover-foreground hover:bg-primary/10 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200"
+             >
+               Close
+             </Button>
            </DialogClose>
         </DialogFooter>
       </DialogContent>

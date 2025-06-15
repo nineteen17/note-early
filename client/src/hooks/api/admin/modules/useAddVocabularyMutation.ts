@@ -30,12 +30,10 @@ export const useAddVocabularyMutation = (moduleId: string): UseMutationResult<Vo
     return useMutation<VocabularyEntryDTO, ApiError, VocabularyBodySchema>({ // <TData, TError, TVariables>
         mutationFn: (data) => addVocabularyEntry({ moduleId, data }), // Pass data to the API call function
         onSuccess: (data) => {
-            // Invalidate the query for this module's vocabulary to refetch
+            // Invalidate all vocabulary queries for this module
+            queryClient.invalidateQueries({ queryKey: ['vocabulary', moduleId] });
+            // Also invalidate the general module vocabulary query if it exists
             queryClient.invalidateQueries({ queryKey: ['moduleVocabulary', moduleId] });
-            // Optionally, update the cache directly for a faster UI update
-            // queryClient.setQueryData(['moduleVocabulary', moduleId], (oldData: VocabularyEntryDTO[] | undefined) => {
-            //     return oldData ? [...oldData, data] : [data];
-            // });
         },
         onError: (error) => {
             // Display error toast

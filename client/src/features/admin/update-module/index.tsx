@@ -190,7 +190,7 @@ export function AdminUpdateModule({ moduleId }: AdminUpdateModuleProps) {
           {/* Description */} 
           <div className="grid gap-2 col-span-2">
             <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea id="description" {...register('description')} />
+            <Textarea id="description" {...register('description')} autoFocus={false} />
             {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
           </div>
           {/* Level */} 
@@ -304,6 +304,7 @@ export function AdminUpdateModule({ moduleId }: AdminUpdateModuleProps) {
                   id={`structuredContent.${index}.text`}
                   {...register(`structuredContent.${index}.text`)}
                   rows={4}
+                  autoFocus={false}
                 />
                 {/* Display errors for text */}
                 {errors.structuredContent?.[index]?.text && (

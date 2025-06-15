@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ModuleGenre, ModuleLanguage, ModuleType, ModuleLevel, ReadingModuleDTO } from '@/types/api';
+import { cn, getModuleTypeDisplayName } from '@/lib/utils';
 
 interface FilteredModuleListProps {
   sortBy: 'newest' | 'oldest' | 'level-low' | 'level-high' | 'alphabetical' | 'title';
@@ -93,7 +94,7 @@ export const FilteredModuleList: React.FC<FilteredModuleListProps> = ({
   }
 
   // Apply filters and search
-  let filteredModules = modules.filter((module: ReadingModuleDTO) => {
+  const filteredModules = modules.filter((module: ReadingModuleDTO) => {
     // Apply search query
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
@@ -183,11 +184,14 @@ export const FilteredModuleList: React.FC<FilteredModuleListProps> = ({
                     <span className="text-xs bg-muted px-2 py-0.5 rounded-md">
                       {module.language === 'UK' ? 'British English' : 'American English'}
                     </span>
-                    {module.type === 'curated' && (
-                      <span className="text-xs bg-muted px-2 py-0.5 rounded-md">
-                        ⭐ Curated
-                      </span>
-                    )}
+                    <span className={cn(
+                      "px-2 py-1 rounded-md text-xs font-medium",
+                      module.type === 'curated' 
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                          : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                  )}>
+                      {module.type === 'curated' ? '⭐ ' : '✨ '}{getModuleTypeDisplayName(module.type)}
+                    </span>
                   </div>
                 </div>
               </div>

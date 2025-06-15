@@ -84,7 +84,7 @@ export function CreateStudentModal({ isOpen, onClose }: CreateStudentModalProps)
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Jane Doe" {...field} />
+                    <Input placeholder="e.g., Jane Doe" {...field} autoFocus={false} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,7 +97,7 @@ export function CreateStudentModal({ isOpen, onClose }: CreateStudentModalProps)
                 <FormItem>
                   <FormLabel>4-Digit PIN</FormLabel>
                   <FormControl>
-                    <Input type="password" maxLength={4} placeholder="e.g., 1234" {...field} />
+                    <Input type="password" maxLength={4} placeholder="e.g., 1234" {...field} autoFocus={false} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

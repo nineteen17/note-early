@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAdminStudentProfileQuery } from '@/hooks/api/admin/students/useAdminStudentProfileQuery';
 import { useResetStudentPinMutation } from '@/hooks/api/admin/students/useResetStudentPinMutation';
 import { useDeleteStudentMutation } from '@/hooks/api/admin/students/useDeleteStudentMutation';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipBoard';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { resetStudentPinSchema, ResetStudentPinInput } from '@/lib/schemas/student';
@@ -23,20 +24,38 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"; 
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; 
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Edit, UserCircle, BookOpen, Activity, Calendar, CheckCircle, KeyRound, Trash2, Copy } from 'lucide-react';
+import { 
+  Edit, 
+  UserCircle, 
+  BookOpen, 
+  Activity, 
+  Calendar, 
+  KeyRound, 
+  Trash2, 
+  Copy,
+  AlertCircle,
+  GraduationCap,
+  Check,
+  User
+} from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
-import { getInitials } from '@/lib/utils';
+import { getInitials, cn } from '@/lib/utils';
 import { EditStudentModal } from '@/features/admin/edit-student-modal';
 import { ProfileDTO } from '@/types/api';
 import { StudentProgressOverview } from '@/features/admin/student-detail/StudentProgressOverview';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
-import { toast } from 'sonner';
-// Add onEdit, onResetPin, and onDelete props to trigger modal open
+
 interface StudentDetailDisplayProps {
   profile: ProfileDTO;
   onEdit: () => void;
@@ -44,71 +63,123 @@ interface StudentDetailDisplayProps {
   onDelete: () => void;
 }
 
-function handleCopy(text: string) {
-  navigator.clipboard.writeText(text);
-  toast.success('Copied to clipboard');
-}
-
 function StudentDetailDisplay({ profile, onEdit, onResetPin, onDelete }: StudentDetailDisplayProps) {
+  const { copyToClipboard, copied } = useCopyToClipboard();
+
+  const handleCopyId = async () => {
+    await copyToClipboard(profile?.profileId ?? '');
+  };
+
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <Avatar className="h-20 w-20 border">
-          <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.fullName ?? 'Student'} />
-          <AvatarFallback>{getInitials(profile.fullName ?? 'S')}</AvatarFallback>
-        </Avatar>
-        <div className="flex-grow">
-          <CardTitle className="text-2xl mb-1">{profile.fullName || 'Student Profile'}</CardTitle>
-          <CardDescription></CardDescription>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Student ID</p>
-            <div className="flex items-center gap-2">
-              <p className="font-semibold truncate">{profile?.profileId}</p>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleCopy(profile?.profileId ?? '');
-                }}
-              >
-                <Copy className="h-4 w-4" />
-              </button>
+    <Card className="border-0 shadow-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <CardHeader className="pb-6">
+        <div className="flex flex-col space-y-6">
+          {/* Main Profile Section */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+            <div className="flex-shrink-0">
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-white dark:border-gray-800 shadow-lg">
+                <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.fullName ?? 'Student'} />
+                <AvatarFallback className="text-base sm:text-lg font-semibold bg-gradient-to-br from-primary/20 to-accent/20">
+                  {getInitials(profile.fullName ?? 'S')}
+                </AvatarFallback>
+              </Avatar>
             </div>
-            <Badge variant={profile.role === 'STUDENT' ? "blue" : "outline"} className="mt-2">
-              {profile.role}
-            </Badge>
-          </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="icon" onClick={onEdit}> 
-              <Edit className="h-4 w-4" />
-              <span className="sr-only">Edit Student</span>
-            </Button>
-            <Button variant="outline" size="icon" onClick={onResetPin}> 
-              <KeyRound className="h-4 w-4" />
-              <span className="sr-only">Reset PIN</span>
-            </Button>
-            <Button variant="destructive" size="icon" onClick={onDelete}> 
-              <Trash2 className="h-4 w-4" />
-              <span className="sr-only">Delete Student</span>
-            </Button>
+            
+            <div className="flex-grow space-y-4 min-w-0">
+              {/* Title Row */}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="space-y-2 min-w-0 flex-grow">
+                  <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight truncate max-w-[200px] sm:max-w-[300px] md:max-w-[400px] cursor-pointer hover:text-primary transition-colors">
+                          {profile.fullName || 'Student Profile'}
+                        </CardTitle>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-w-sm">
+                        <DropdownMenuItem className="flex items-center gap-2 p-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">Full Name:</span>
+                          <span className="ml-auto">{profile.fullName || 'Student Profile'}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <CardDescription className="leading-relaxed text-sm">
+                    Student Profile
+                  </CardDescription>
+                </div>
+              </div>
+
+              {/* Student ID - Mobile: Own line, Desktop: Inline */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 pt-2 border-t border-border/40">
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <UserCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground font-medium flex-shrink-0">Student ID:</span>
+                  <span className="font-mono font-semibold truncate max-w-[160px] sm:max-w-[200px] md:max-w-[300px]" title={profile?.profileId}>
+                    {profile?.profileId}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyId}
+                    className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-accent/50 flex-shrink-0"
+                  >
+                    {copied ? (
+                      <Check className="h-3 w-3 text-green-600 animate-in fade-in-0 zoom-in-95 duration-300" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Other Meta Information */}
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                {profile.age && (
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Age:</span>
+                    <span className="font-semibold">{profile.age}</span>
+                  </div>
+                )}
+                
+                {profile.readingLevel && (
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Level:</span>
+                    <span className="font-semibold truncate max-w-[60px]" title={profile.readingLevel?.toString()}>
+                      {profile.readingLevel}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Joined:</span>
+                  <span className="font-semibold">
+                    {profile.createdAt ? format(new Date(profile.createdAt), 'MMM yyyy') : 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Controls */}
+              <div className="flex items-center gap-2 pt-4 border-t border-border/40">
+                <Button variant="outline" size="icon" onClick={onEdit} title="Edit Student"> 
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={onResetPin} title="Reset PIN"> 
+                  <KeyRound className="h-4 w-4" />
+                </Button>
+                <Button variant="destructive" size="icon" onClick={onDelete} title="Delete Student"> 
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <h3 className="font-semibold text-lg mb-2">Details</h3>
-          <p className="text-sm flex items-center"><UserCircle className="mr-2 h-4 w-4 text-muted-foreground" /> Age: {profile.age ?? 'N/A'}</p>
-          <p className="text-sm flex items-center"><BookOpen className="mr-2 h-4 w-4 text-muted-foreground" /> Reading Level: {profile.readingLevel ?? 'N/A'}</p>
-          <p className="text-sm flex items-center"><Calendar className="mr-2 h-4 w-4 text-muted-foreground" /> Joined: {profile.createdAt ? format(new Date(profile.createdAt), 'PPP') : 'N/A'}</p>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-semibold text-lg mb-2">Progress Summary</h3>
-          <p className="text-sm flex items-center"><CheckCircle className="mr-2 h-4 w-4 text-muted-foreground" /> Modules Completed: {profile.completedModulesCount ?? 0}</p>
-          <p className="text-sm text-muted-foreground italic">(More detailed progress coming soon)</p>
-        </div>
-      </CardContent>
     </Card>
   );
 }
@@ -150,19 +221,16 @@ export default function AdminStudentDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['admin', 'students'] }); 
   };
 
-  // Open reset PIN dialog
   const handleOpenResetPinDialog = () => {
     resetPinForm({ newPin: '' });
     setResetPinDialogOpen(true);
   };
 
-  // Close reset PIN dialog
   const handleCloseResetPinDialog = () => {
     setResetPinDialogOpen(false);
     resetPinForm({ newPin: '' });
   };
 
-  // Handle Reset PIN form submission
   const onResetPinSubmit = (data: ResetStudentPinInput) => {
     if (profile?.profileId) {
       resetPinMutation.mutate(
@@ -171,21 +239,19 @@ export default function AdminStudentDetailPage() {
           onSuccess: () => {
             handleCloseResetPinDialog();
           },
-          onError: () => {
-             // Error toast is handled by the mutation hook 
-          }
         }
       );
     }
   };
 
-  // --- Delete Handlers ---
   const handleOpenDeleteDialog = () => {
     setIsDeleteDialogOpen(true);
   };
+
   const handleCloseDeleteDialog = () => {
     setIsDeleteDialogOpen(false);
   };
+
   const confirmDelete = () => {
     if (profile?.profileId) {
       deleteMutation.mutate(profile.profileId, {
@@ -193,9 +259,6 @@ export default function AdminStudentDetailPage() {
           handleCloseDeleteDialog();
           router.push('/admin/students');
         },
-        onError: () => {
-          // Toast handled by hook
-        }
       });
     }
   };
@@ -207,42 +270,40 @@ export default function AdminStudentDetailPage() {
           role="ADMIN"
           items={[
             { label: 'Students', href: '/admin/students' },
-            { label: profile?.fullName || '' }
+            { label: profile?.fullName || 'Student' }
           ]}
         />
 
         {isLoading && (
-          <Card className="w-full">
-            <CardHeader className="flex flex-row items-center gap-4">
-              <Skeleton className="h-20 w-20 rounded-full" />
-              <div className="flex-grow space-y-2">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-5 w-16 mt-1" />
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-6">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+                <Skeleton className="h-20 w-20 sm:h-24 sm:w-24 rounded-full border-4" />
+                <div className="flex-grow space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-4 w-full max-w-md" />
+                  <div className="flex flex-wrap gap-3 sm:gap-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-9 w-9" />
+                    <Skeleton className="h-9 w-9" />
+                    <Skeleton className="h-9 w-9" />
+                  </div>
+                </div>
               </div>
-              <Skeleton className="h-9 w-9" />
-              <Skeleton className="h-9 w-9" />
-              <Skeleton className="h-9 w-9" />
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-               <div className="space-y-3">
-                   <Skeleton className="h-5 w-1/4 mb-2" />
-                   <Skeleton className="h-4 w-full" />
-                   <Skeleton className="h-4 w-full" />
-                   <Skeleton className="h-4 w-3/4" />
-               </div>
-               <div className="space-y-3">
-                   <Skeleton className="h-5 w-1/3 mb-2" />
-                   <Skeleton className="h-4 w-full" />
-                   <Skeleton className="h-4 w-2/3" />
-               </div>
-            </CardContent>
           </Card>
         )}
 
         {isError && !isLoading && (
-          <Alert variant="destructive">
-            <Activity className="h-4 w-4" />
+          <Alert variant="destructive" className="max-w-2xl">
+            <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error Loading Student</AlertTitle>
             <AlertDescription>
               {error?.message || "Could not load the student details. Please try again or go back."}
@@ -252,20 +313,17 @@ export default function AdminStudentDetailPage() {
 
         {!isLoading && !isError && profile && (
           <StudentDetailDisplay 
-             profile={profile} 
-             onEdit={handleOpenEditModal} 
-             onResetPin={handleOpenResetPinDialog}
-             onDelete={handleOpenDeleteDialog}
+            profile={profile} 
+            onEdit={handleOpenEditModal} 
+            onResetPin={handleOpenResetPinDialog}
+            onDelete={handleOpenDeleteDialog}
           />
         )}
 
         {profileId && (
-          <>
-            <div className="mt-8">
-              <StudentProgressOverview studentId={profileId} />
-            </div>
-
-          </>
+          <div className="mt-6">
+            <StudentProgressOverview studentId={profileId} />
+          </div>
         )}
 
         {profile && (
@@ -296,7 +354,7 @@ export default function AdminStudentDetailPage() {
                       {...field}
                       id="newPin"
                       aria-describedby="newPin-error"
-                      autoFocus
+                      autoFocus={false}
                     >
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
@@ -342,7 +400,7 @@ export default function AdminStudentDetailPage() {
                 onClick={confirmDelete} 
                 disabled={deleteMutation.isPending}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-               >
+              >
                 {deleteMutation.isPending ? "Deleting..." : "Yes, delete student"}
               </AlertDialogAction>
             </AlertDialogFooter>

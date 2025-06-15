@@ -1,6 +1,6 @@
 'use client'; // Sidebar might need client-side logic for active links eventually
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils'; // For conditional class names
@@ -52,28 +52,25 @@ export function Sidebar({ userRole, isMobile = false }: SidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  let navItems: NavItem[] = [];
+  const navItems = useMemo(() => {
+    switch (userRole) {
+      case 'ADMIN':
+        return baseAdminNavItems;
+      case 'STUDENT':
+        return baseStudentNavItems;
+      case 'SUPER_ADMIN':
+        return [
+          ...baseAdminNavItems, 
+          { href: '/superadmin/analytics', label: 'Analytics', icon: BarChart3 },
+          { href: '/superadmin/curated-modules', label: 'Curated Modules', icon: BookOpen },
+        ];
+      default:
+        return [];
+    }
+  }, [userRole]);
 
-  switch (userRole) {
-    case 'ADMIN':
-      navItems = baseAdminNavItems;
-      break;
-    case 'STUDENT':
-      navItems = baseStudentNavItems;
-      break;
-    case 'SUPER_ADMIN':
-      navItems = [
-        ...baseAdminNavItems, 
-        { href: '/superadmin/analytics', label: 'Analytics', icon: BarChart3 },
-        { href: '/superadmin/curated-modules', label: 'Curated Modules', icon: BookOpen },
-      ];
-      break;
-    default:
-      navItems = [];
-  }
-
-  const isRouteActive = (href: string, hasChildren: boolean = false) => {
-    // For parent items with children, don't highlight them
+  const isRouteActive = useCallback((href: string, hasChildren: boolean = false) => {
+    // For parent items with children, never highlight them - only children should be highlighted
     if (hasChildren) {
       return false;
     }
@@ -113,7 +110,35 @@ export function Sidebar({ userRole, isMobile = false }: SidebarProps) {
     }
     // Exact match for other routes
     return pathname === href;
-  };
+  }, [pathname]);
+
+  // Function to check if any child is active
+  const hasActiveChild = useCallback((item: NavItem): boolean => {
+    if (!item.children) return false;
+    return item.children.some(child => isRouteActive(child.href, false));
+  }, [isRouteActive]);
+
+  // Function to get items that should be expanded based on active routes
+  const getItemsToExpand = useCallback((items: NavItem[]): string[] => {
+    const toExpand: string[] = [];
+    items.forEach(item => {
+      if (item.children && hasActiveChild(item)) {
+        toExpand.push(item.href);
+      }
+    });
+    return toExpand;
+  }, [hasActiveChild]);
+
+  // Auto-expand parent items when children are active and persist on refresh
+  useEffect(() => {
+    const itemsToExpand = getItemsToExpand(navItems);
+    if (itemsToExpand.length > 0) {
+      setExpandedItems(prev => {
+        const newExpanded = [...new Set([...prev, ...itemsToExpand])];
+        return newExpanded;
+      });
+    }
+  }, [getItemsToExpand, navItems]);
 
   const toggleExpand = (href: string) => {
     setExpandedItems(prev => 
@@ -127,6 +152,7 @@ export function Sidebar({ userRole, isMobile = false }: SidebarProps) {
     const hasChildren = item.children && item.children.length > 0;
     const isActive = isRouteActive(item.href, hasChildren);
     const isExpanded = expandedItems.includes(item.href);
+    const hasActiveChildItem = hasActiveChild(item);
 
     return (
       <div key={item.href} className={cn(level > 0 && "pl-4")}>
@@ -135,7 +161,9 @@ export function Sidebar({ userRole, isMobile = false }: SidebarProps) {
             variant="ghost"
             className={cn(
               "w-full justify-start",
-              "hover:bg-accent/10 hover:text-accent"
+              hasActiveChildItem 
+                ? "text-accent" // Subtle indication that a child is active
+                : "hover:bg-accent/10 hover:text-accent"
             )}
             onClick={() => toggleExpand(item.href)}
           >
@@ -154,8 +182,8 @@ export function Sidebar({ userRole, isMobile = false }: SidebarProps) {
             className={cn(
               "w-full justify-start",
               isActive 
-                ? "bg-accent text-accent-foreground hover:bg-accent/90" 
-                : "hover:bg-accent/10 hover:text-accent"
+                ? "bg-accent/80 text-accent-foreground" 
+                : "hover:bg-accent/20 hover:text-accent"
             )}
           >
             <Link href={item.href}>

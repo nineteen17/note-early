@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ModulesTabsFeature } from '@/features/admin/modules-tabs';
+import { ModulesFeature } from '@/features/admin/modules-tabs';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
 
@@ -12,7 +12,7 @@ export default function ModulesPage() {
         title="Reading Modules" 
         description="View and manage your reading modules"
       />
-      <ModulesTabsFeature />
+      <ModulesFeature />
     </PageContainer>
   );
 } 

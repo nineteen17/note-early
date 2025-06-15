@@ -46,7 +46,10 @@ export const createModuleSchema = z.object({
   genre: moduleGenreSchema,
   language: moduleLanguageSchema,
   description: z.string().nullable().optional(), // Nullable and optional
-  imageUrl: z.string().url({ message: "Invalid image URL." }).nullable().optional(),
+  imageUrl: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().url({ message: "Invalid image URL." }).nullable().optional()
+  ),
   estimatedReadingTime: z.coerce // Use coerce for number input from string
     .number()
     .int()

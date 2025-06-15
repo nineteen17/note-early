@@ -231,6 +231,7 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
                       value={paragraphSummary}
                       onChange={(e) => setParagraphSummary(e.target.value)}
                       className="min-h-[100px]"
+                      autoFocus={false}
                     />
                   </div>
                   {currentParagraphIndex > 1 && (
@@ -261,6 +262,7 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
                         value={cumulativeSummary}
                         onChange={(e) => setCumulativeSummary(e.target.value)}
                         className="min-h-[100px]"
+                        autoFocus={false}
                       />
                     </div>
                   )}

@@ -120,6 +120,7 @@ export function AdminUpdateProgressModal({
                                         const value = e.target.value;
                                         field.onChange(value === '' ? null : Number(value)); // Convert back to number or null
                                     }}
+                                    autoFocus={false}
                                 />
                             )}
                         />
@@ -133,6 +134,7 @@ export function AdminUpdateProgressModal({
                             id="teacherFeedback"
                             placeholder="Provide feedback to the student..."
                             {...register("teacherFeedback")}
+                            autoFocus={false}
                         />
                         {errors.teacherFeedback && <p className="text-sm text-red-600">{errors.teacherFeedback.message}</p>}
                     </div>

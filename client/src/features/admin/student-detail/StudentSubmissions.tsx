@@ -158,6 +158,7 @@ export function StudentSubmissions({ studentId }: StudentSubmissionsProps) {
                               id="score"
                               type="number"
                               {...register('score', { valueAsNumber: true })}
+                              autoFocus={false}
                             />
                             {errors.score && (
                               <p className="text-sm text-red-500">{errors.score.message}</p>
@@ -169,6 +170,7 @@ export function StudentSubmissions({ studentId }: StudentSubmissionsProps) {
                               id="feedback"
                               {...register('feedback')}
                               placeholder="Enter your feedback here..."
+                              autoFocus={false}
                             />
                             {errors.feedback && (
                               <p className="text-sm text-red-500">{errors.feedback.message}</p>

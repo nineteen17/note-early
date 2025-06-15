@@ -31,11 +31,12 @@ export const useUpdateModuleMutation = (moduleId: string) => {
     mutationFn: (data) => updateModule({ moduleId, data }),
     onSuccess: (updatedModule) => {
       // Invalidate queries related to the specific module
+      queryClient.invalidateQueries({ queryKey: ['reading-module', moduleId] });
       queryClient.invalidateQueries({ queryKey: ['modules', moduleId] });
       // Invalidate queries related to the list of admin modules (if applicable)
       queryClient.invalidateQueries({ queryKey: ['admin', 'my-modules'] });
-      // Optionally, update the cache directly for a faster UI update
-      // queryClient.setQueryData(['modules', moduleId], updatedModule);
+      // Invalidate module lists that might show updated module info
+      queryClient.invalidateQueries({ queryKey: ['reading-modules'] });
 
       toast.success('Module updated successfully!');
     },

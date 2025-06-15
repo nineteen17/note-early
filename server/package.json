@@ -61,7 +61,7 @@
     "@types/cors": "^2.8.17",
     "@types/node": "^22.14.0",
     "@types/pg": "^8.11.11",
-    "axios": "^1.8.4",
+    "axios": "^1.9.0",
     "drizzle-kit": "^0.30.6",
     "drizzle-orm": "^0.41.0",
     "eslint": "^9.24.0",

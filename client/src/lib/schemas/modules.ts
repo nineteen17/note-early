@@ -20,7 +20,10 @@ export const createModuleSchema = z.object({
   }).transform(val => val), // Keep as number since backend expects ReadingLevel enum values (1-10)
   genre: z.enum(genreOptions), // Use Zod enum for validation
   language: z.enum(languageOptions), // Use Zod enum for validation
-  imageUrl: z.string().url('Must be a valid URL').optional().nullable(), // Allow null
+  imageUrl: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().url('Must be a valid URL').nullable().optional()
+  ), // Allow empty string (converted to null) or valid URL
   // Rename and keep logic for optional positive integer
   estimatedReadingTime: z.preprocess(
     (val) => (val === '' || val == null || isNaN(Number(val)) ? undefined : Number(val)),
@@ -43,7 +46,10 @@ export const updateModuleSchema = z.object({
     }).optional(),
     genre: z.enum(genreOptions).optional(),
     language: z.enum(languageOptions).optional(),
-    imageUrl: z.string().url('Must be a valid URL').optional().nullable(),
+    imageUrl: z.preprocess(
+        (val) => (val === '' ? null : val),
+        z.string().url('Must be a valid URL').nullable().optional()
+    ),
     estimatedReadingTime: z.preprocess(
         (val) => (val === '' || val == null || isNaN(Number(val)) ? undefined : Number(val)),
         z.number().int().positive('Est. reading time must be a positive integer').optional().nullable()

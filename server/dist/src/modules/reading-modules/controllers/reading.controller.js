@@ -251,7 +251,10 @@ export class ReadingModuleController {
             const updatedDbModule = await readingModuleService.updateModule(id, updates, requestingUserId);
             // Use the updated DTO mapping
             const moduleDTO = mapToReadingModuleDTO(updatedDbModule);
-            res.status(200).json(moduleDTO);
+            res.status(200).json({
+                status: 'success',
+                data: moduleDTO
+            });
         }
         catch (error) {
             if (error instanceof z.ZodError) {
@@ -325,7 +328,10 @@ export class ReadingModuleController {
             // Service method should allow updating any module by ID
             const updatedDbModule = await readingModuleService.superAdminUpdateModule(id, updates);
             const moduleDTO = mapToReadingModuleDTO(updatedDbModule);
-            res.status(200).json(moduleDTO);
+            res.status(200).json({
+                status: 'success',
+                data: moduleDTO
+            });
         }
         catch (error) {
             if (error instanceof z.ZodError) {

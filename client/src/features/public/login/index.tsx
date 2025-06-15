@@ -9,7 +9,8 @@ import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useLoginAdminMutation, useResendVerificationMutation } from '@/hooks/api/auth';
 import { adminLoginSchema } from '@/lib/schemas/auth';
-import { ApiError } from '@/lib/apiClient';
+import { ApiError, api } from '@/lib/apiClient';
+import type { ProfileDTO } from '@/types/api';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ type LoginFormData = z.infer<typeof adminLoginSchema>;
 
 export function LoginFeature() {
   const setToken = useAuthStore((s) => s.setToken);
+  const setProfile = useAuthStore((s) => s.setProfile);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
@@ -64,9 +66,18 @@ export function LoginFeature() {
   });
 
   const { mutate: loginMutate, isPending: isLoggingIn } = useLoginAdminMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success('Login successful!');
       setToken(data.accessToken);
+      
+      // Fetch and set profile after successful login
+      try {
+        const profileData = await api.get<ProfileDTO>('/profiles/me');
+        setProfile(profileData);
+      } catch (error) {
+        console.error('Failed to fetch profile after login:', error);
+        // Don't show error to user as login was successful
+      }
     },
     onError: (error: ApiError) => {
       const message = error.message || 'Login failed. Please try again.';

@@ -428,7 +428,7 @@ export function PasswordResetFeature() {
     default: // 'request-email'
       const emailServerError = emailFormErrors.root?.serverError?.message;
 
-      return (
+  return (
         <div className="min-h-screen flex flex-col">
           <div className="pt-12 pb-6 flex justify-center">
             <Link href="/">
@@ -511,8 +511,8 @@ export function PasswordResetFeature() {
               </form>
             </Card>
           </div>
-        </div>
-      );
+    </div>
+  );
   }
 }
 

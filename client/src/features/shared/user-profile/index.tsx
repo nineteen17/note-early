@@ -285,6 +285,7 @@ export function UserProfile() {
                                     {...register("fullName")}
                                     className={errors.fullName ? "border-destructive focus:ring-destructive" : ""}
                                     placeholder="Enter your full name"
+                                    autoFocus={false}
                                 />
                                 {errors.fullName && (
                                     <p className="text-sm text-destructive flex items-center gap-1">

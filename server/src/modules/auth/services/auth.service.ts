@@ -332,56 +332,87 @@ async loginAdmin(email: string, password: string) {
 }
 
   async refreshSession(refreshToken: string): Promise<{ accessToken: string; newRefreshToken?: string }> {
-    try {
-      logger.info('Attempting to refresh session using refreshSession method.');
+    const maxRetries = 2;
+    let lastError: any;
 
-      // Use refreshSession explicitly with the provided refresh token
-      const { data, error } = await supabase.auth.refreshSession({
-         refresh_token: refreshToken
-      });
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        logger.info(`Attempting to refresh session using refreshSession method (attempt ${attempt}/${maxRetries}).`);
 
-      if (error) {
-        logger.error('Supabase session refresh failed', { error: error.message });
-        // Check Supabase error details if needed, e.g., error.message might indicate invalid token
-        throw new AppError('Invalid or expired refresh token', 401);
+        // Use refreshSession explicitly with the provided refresh token
+        const { data, error } = await supabase.auth.refreshSession({
+           refresh_token: refreshToken
+        });
+
+        if (error) {
+          // Check for specific "already used" error
+          if (error.message?.includes('Already Used') && attempt < maxRetries) {
+            logger.warn(`Refresh token already used on attempt ${attempt}, retrying...`);
+            lastError = error;
+            // Wait a bit before retrying to avoid race conditions
+            await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+            continue;
+          }
+          
+          logger.error('Supabase session refresh failed', { error: error.message, attempt });
+          throw new AppError('Invalid or expired refresh token', 401);
+        }
+
+        if (!data || !data.session) {
+          logger.error('Supabase refreshSession succeeded but no session data returned');
+          throw new AppError('Failed to refresh session: No session data received', 500);
+        }
+
+        // It's good practice to verify the user still exists after refresh
+        // Use the new access token from the refreshed session
+        const { data: userData, error: userError } = await supabase.auth.getUser(data.session.access_token);
+        if (userError || !userData?.user) {
+          logger.error('Failed to retrieve user after session refresh', { error: userError?.message });
+          // It's possible refresh worked but user was deleted - treat as auth failure
+          throw new AppError('Refreshed session user not found', 401);
+        }
+
+        // Check if Supabase returned a new refresh token (rotation)
+        const newRefreshToken =
+          data.session.refresh_token && data.session.refresh_token !== refreshToken
+            ? data.session.refresh_token
+            : undefined;
+
+        if (newRefreshToken) {
+          logger.info('Supabase returned a new refresh token (rotation detected).');
+        }
+
+        logger.info(`Session refreshed successfully on attempt ${attempt}.`);
+        return {
+          accessToken: data.session.access_token,
+          newRefreshToken: newRefreshToken,
+        };
+
+      } catch (error) {
+        lastError = error;
+        
+        if (error instanceof AppError) {
+          // Don't retry AppErrors unless it's a specific "already used" case
+          if (error.message.includes('Invalid or expired refresh token') && attempt < maxRetries) {
+            logger.warn(`Refresh failed on attempt ${attempt}, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+            continue;
+          }
+          throw error;
+        }
+        
+        logger.error(`Unexpected error during session refresh attempt ${attempt}:`, error);
+        if (attempt === maxRetries) {
+          throw new AppError('An unexpected error occurred during session refresh', 500);
+        }
       }
-
-      if (!data || !data.session) {
-        logger.error('Supabase refreshSession succeeded but no session data returned');
-        throw new AppError('Failed to refresh session: No session data received', 500);
-      }
-
-      // It's good practice to verify the user still exists after refresh
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData?.user) {
-        logger.error('Failed to retrieve user after session refresh', { error: userError?.message });
-        // It's possible refresh worked but user was deleted - treat as auth failure
-        throw new AppError('Refreshed session user not found', 401);
-      }
-
-      // Check if Supabase returned a new refresh token (rotation)
-      const newRefreshToken =
-        data.session.refresh_token && data.session.refresh_token !== refreshToken
-          ? data.session.refresh_token
-          : undefined;
-
-      if (newRefreshToken) {
-        logger.info('Supabase returned a new refresh token (rotation detected).');
-      }
-
-      logger.info('Session refreshed successfully.');
-      return {
-        accessToken: data.session.access_token,
-        newRefreshToken: newRefreshToken,
-      };
-
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-      logger.error('Unexpected error during session refresh:', error);
-      throw new AppError('An unexpected error occurred during session refresh', 500);
     }
+
+    // If we get here, all retries failed
+    if (lastError instanceof AppError) {
+      throw lastError;
+    }
+    throw new AppError('Failed to refresh session after multiple attempts', 500);
   }
 
   // Create student profile (requires admin authentication)

@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ReadingModuleDTO } from '@/types/api'; // Assuming types are generated
 import { ApiError } from '@/lib/apiClient';
+import { getModuleTypeDisplayName, cn } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -9,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from '@/components/ui/button';
@@ -83,14 +84,19 @@ export const ModuleListDisplay: React.FC<ModuleListDisplayProps> = ({
                 {module.description || "No description provided."} 
             </p>
             <div className="flex items-center justify-between pt-2">
-                <Badge variant={module.type === 'curated' ? 'default' : 'secondary'}>
-                    {module.type === 'curated' ? 'Curated' : 'Custom'}
-                </Badge>
+                <span className={cn(
+                    "px-2 py-1 rounded-md text-xs font-medium",
+                    module.type === 'curated' 
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                        : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                )}>
+                    {module.type === 'curated' ? '⭐ ' : '✨ '}{getModuleTypeDisplayName(module.type)}
+                </span>
                  {/* TODO: Link destination depends on role/module type */}
                  {/* For Admin view, might link to edit or progress page */}
                  <Button variant="outline" size="sm" asChild>
                     {/* Placeholder link, needs correct destination */}
-                    <Link href={`/admin/modules/${module.id}/edit`} aria-label={`View details for ${module.title}`}>
+                    <Link href={`/admin/modules/${module.id}`} aria-label={`View details for ${module.title}`}>
                         View Details <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                  </Button>
