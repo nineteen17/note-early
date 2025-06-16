@@ -83,6 +83,7 @@ const CompletedModuleCard: React.FC<CompletedModuleCardProps> = ({ progress, mod
             <Progress 
               value={progress.score || 0} 
               className="h-2" 
+              variant="completed"
             />
           </div>
           
@@ -134,7 +135,7 @@ const CompletedProgressList: React.FC<{ sortBy: SortOption; searchQuery?: string
     return modules.reduce((map, module) => {
       map.set(module.id, { 
         paragraphCount: module.paragraphCount,
-        description: module.description
+        description: module.description || 'No description available'
       });
       return map;
     }, new Map<string, { paragraphCount: number; description?: string }>());

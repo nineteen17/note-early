@@ -147,48 +147,59 @@ export function StudentProgressOverview({ studentId }: StudentProgressOverviewPr
   // --- Success State --- 
   return (
     <TooltipProvider>
-      <Card>
-        <CardHeader>
-          <CardTitle>Module Progress</CardTitle>
-          <CardDescription>Overview of modules attempted by the student.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Module Title</TableHead>
+    <Card>
+      <CardHeader>
+        <CardTitle>Module Progress</CardTitle>
+        <CardDescription>Overview of modules attempted by the student.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Module Title</TableHead>
                 <TableHead className="text-center w-12">Status</TableHead>
                 <TableHead className="text-center w-20">Score</TableHead>
                 <TableHead className="text-center w-12 hidden md:table-cell">Feedback</TableHead>
                 <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {!progressList || progressList.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  No progress records found for this student.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {!progressList || progressList.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No progress records found for this student.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                progressList.map((progress) => {
-                  // Get module title from the map
-                  const moduleTitle = moduleTitleMap.get(progress.moduleId) || `Unknown (ID: ${progress.moduleId.substring(0,8)}...)`;
-                  
-                  return (
-                    <TableRow key={progress.id}>
-                      <TableCell className="font-medium">
+            ) : (
+              progressList.map((progress) => {
+                // Get module title from the map
+                const moduleTitle = moduleTitleMap.get(progress.moduleId) || `Unknown (ID: ${progress.moduleId.substring(0,8)}...)`;
+                
+                return (
+                  <TableRow key={progress.id}>
+                    <TableCell className="font-medium">
                         <div className="flex items-center justify-between gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px] cursor-help">
-                                {moduleTitle}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">{moduleTitle}</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          {/* Desktop: Show full title, Mobile: Show truncated with dropdown */}
+                          <div className="flex-1 min-w-0">
+                            {/* Desktop view - full title */}
+                            <span className="hidden md:block">
+                              {moduleTitle}
+                            </span>
+                            
+                            {/* Mobile view - clickable dropdown */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <span className="md:hidden truncate max-w-[120px] sm:max-w-[200px] cursor-pointer hover:text-primary transition-colors block">
+                                  {moduleTitle}
+                                </span>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" className="max-w-sm">
+                                <DropdownMenuItem className="flex items-center gap-2 p-3">
+                                  <span className="ml-auto">{moduleTitle}</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                           
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -210,16 +221,16 @@ export function StudentProgressOverview({ studentId }: StudentProgressOverviewPr
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
-                      </TableCell>
+                    </TableCell>
                       
                       <TableCell className="text-center">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="flex justify-center">
-                              {progress.completed ? (
-                                progress.score && progress.teacherFeedback ? (
+                      {progress.completed ? (
+                        progress.score && progress.teacherFeedback ? (
                                   <CheckCircle className="h-4 w-4 text-green-600" />
-                                ) : (
+                        ) : (
                                   <MessageSquare className="h-4 w-4 text-yellow-600" />
                                 )
                               ) : (
@@ -235,55 +246,55 @@ export function StudentProgressOverview({ studentId }: StudentProgressOverviewPr
                             </p>
                           </TooltipContent>
                         </Tooltip>
-                      </TableCell>
+                     </TableCell>
                       
-                      <TableCell className="text-center">
-                        {progress.score !== null ? `${progress.score}%` : 'N/A'}
-                      </TableCell>
+                    <TableCell className="text-center">
+                      {progress.score !== null ? `${progress.score}%` : 'N/A'}
+                    </TableCell>
                       
-                      <TableCell className="text-center hidden md:table-cell">
+                    <TableCell className="text-center hidden md:table-cell">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="flex justify-center">
-                              {progress.teacherFeedback ? (
+                      {progress.teacherFeedback ? (
                                 <MessageSquare className="h-4 w-4 text-blue-600" />
                               ) : (
                                 <div className="h-4 w-4 flex items-center justify-center">
                                   <span className="text-xs text-muted-foreground">-</span>
                                 </div>
-                              )}
+                      )}
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>{progress.teacherFeedback ? 'Feedback Provided' : 'No Feedback'}</p>
                           </TooltipContent>
                         </Tooltip>
-                      </TableCell>
+                    </TableCell>
                       
                       <TableCell>
                         {/* Empty cell for spacing */}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-        
-        {/* Render the DetailedProgressView Dialog when a module is selected */} 
-        {selectedModule && (
-            <DetailedProgressView 
-              studentId={studentId}
-              moduleId={selectedModule.moduleId}
-              progressId={selectedModule.progressId}
-              moduleTitle={selectedModule.moduleTitle}
-              isOpen={!!selectedModule} // Dialog is open if selectedModule is not null
-              onClose={handleCloseDetails} // Pass the close handler
-            />
-        )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+      
+      {/* Render the DetailedProgressView Dialog when a module is selected */} 
+      {selectedModule && (
+          <DetailedProgressView 
+            studentId={studentId}
+            moduleId={selectedModule.moduleId}
+            progressId={selectedModule.progressId}
+            moduleTitle={selectedModule.moduleTitle}
+            isOpen={!!selectedModule} // Dialog is open if selectedModule is not null
+            onClose={handleCloseDetails} // Pass the close handler
+          />
+      )}
 
-      </Card>
+    </Card>
     </TooltipProvider>
   );
 } 

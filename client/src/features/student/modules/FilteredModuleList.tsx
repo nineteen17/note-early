@@ -235,6 +235,7 @@ export const FilteredModuleList: React.FC<FilteredModuleListProps> = ({
                         <Progress 
                           value={progressPercentage} 
                           className="h-2"
+                          variant={isCompleted ? 'completed' : 'in-progress'}
                         />
                         <span className="text-xs text-muted-foreground">
                           {progressPercentage}%

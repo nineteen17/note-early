@@ -107,3 +107,6 @@ export {
   CardDescription,
   CardContent,
 }
+
+
+// bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800

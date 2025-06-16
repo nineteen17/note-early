@@ -77,6 +77,7 @@ const InProgressModuleCard: React.FC<{ progress: StudentProgressSchema; moduleDa
             <Progress 
               value={calculateProgressPercentage(progress.highestParagraphIndexReached, moduleData.paragraphCount)} 
               className="h-2" 
+              variant="in-progress"
             />
           </div>
 

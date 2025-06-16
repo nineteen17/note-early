@@ -24,7 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,18 +78,18 @@ function StudentDetailDisplay({ profile, onEdit, onResetPin, onDelete }: Student
           <div className="flex flex-col sm:flex-row sm:items-start gap-6">
             <div className="flex-shrink-0">
               <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-white dark:border-gray-800 shadow-lg">
-                <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.fullName ?? 'Student'} />
+          <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.fullName ?? 'Student'} />
                 <AvatarFallback className="text-base sm:text-lg font-semibold bg-gradient-to-br from-primary/20 to-accent/20">
                   {getInitials(profile.fullName ?? 'S')}
                 </AvatarFallback>
-              </Avatar>
+        </Avatar>
             </div>
             
             <div className="flex-grow space-y-4 min-w-0">
               {/* Title Row */}
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="space-y-2 min-w-0 flex-grow">
-                  <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight truncate max-w-[200px] sm:max-w-[300px] md:max-w-[400px] cursor-pointer hover:text-primary transition-colors">
@@ -120,7 +120,7 @@ function StudentDetailDisplay({ profile, onEdit, onResetPin, onDelete }: Student
                     {profile?.profileId}
                   </span>
                   <Button
-                    type="button"
+                type="button"
                     variant="ghost"
                     size="sm"
                     onClick={handleCopyId}
@@ -161,20 +161,20 @@ function StudentDetailDisplay({ profile, onEdit, onResetPin, onDelete }: Student
                   <span className="font-semibold">
                     {profile.createdAt ? format(new Date(profile.createdAt), 'MMM yyyy') : 'N/A'}
                   </span>
-                </div>
-              </div>
+            </div>
+          </div>
 
               {/* Action Controls */}
               <div className="flex items-center gap-2 pt-4 border-t border-border/40">
                 <Button variant="outline" size="icon" onClick={onEdit} title="Edit Student"> 
-                  <Edit className="h-4 w-4" />
-                </Button>
+              <Edit className="h-4 w-4" />
+            </Button>
                 <Button variant="outline" size="icon" onClick={onResetPin} title="Reset PIN"> 
-                  <KeyRound className="h-4 w-4" />
-                </Button>
+              <KeyRound className="h-4 w-4" />
+            </Button>
                 <Button variant="destructive" size="icon" onClick={onDelete} title="Delete Student"> 
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <Trash2 className="h-4 w-4" />
+            </Button>
               </div>
             </div>
           </div>
@@ -289,11 +289,11 @@ export default function AdminStudentDetailPage() {
                     <Skeleton className="h-4 w-20" />
                     <Skeleton className="h-4 w-16" />
                     <Skeleton className="h-4 w-24" />
-                  </div>
+              </div>
                   <div className="flex gap-2">
-                    <Skeleton className="h-9 w-9" />
-                    <Skeleton className="h-9 w-9" />
-                    <Skeleton className="h-9 w-9" />
+              <Skeleton className="h-9 w-9" />
+              <Skeleton className="h-9 w-9" />
+              <Skeleton className="h-9 w-9" />
                   </div>
                 </div>
               </div>
@@ -313,17 +313,17 @@ export default function AdminStudentDetailPage() {
 
         {!isLoading && !isError && profile && (
           <StudentDetailDisplay 
-            profile={profile} 
-            onEdit={handleOpenEditModal} 
-            onResetPin={handleOpenResetPinDialog}
-            onDelete={handleOpenDeleteDialog}
+             profile={profile} 
+             onEdit={handleOpenEditModal} 
+             onResetPin={handleOpenResetPinDialog}
+             onDelete={handleOpenDeleteDialog}
           />
         )}
 
         {profileId && (
           <div className="mt-6">
-            <StudentProgressOverview studentId={profileId} />
-          </div>
+              <StudentProgressOverview studentId={profileId} />
+            </div>
         )}
 
         {profile && (
@@ -400,7 +400,7 @@ export default function AdminStudentDetailPage() {
                 onClick={confirmDelete} 
                 disabled={deleteMutation.isPending}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
+               >
                 {deleteMutation.isPending ? "Deleting..." : "Yes, delete student"}
               </AlertDialogAction>
             </AlertDialogFooter>

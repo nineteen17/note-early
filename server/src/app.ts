@@ -48,6 +48,47 @@ app.use(cookieParser());
 app.use(helmet());
 app.use(morgan('dev'));
 
+// --- Enhanced Request Logger for Debugging ---
+console.log(`[STARTUP] Enhanced logging enabled. NODE_ENV: ${env.NODE_ENV}`);
+
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // Log incoming request details
+  console.log(`[REQUEST] ${req.method} ${req.path}`, {
+    origin: req.get('Origin'),
+    userAgent: req.get('User-Agent') ? req.get('User-Agent')?.substring(0, 50) + '...' : 'Not provided',
+    authorization: req.get('Authorization') ? 'Present' : 'Missing',
+    contentType: req.get('Content-Type'),
+    contentLength: req.get('Content-Length'),
+    timestamp: new Date().toISOString(),
+    ip: req.ip
+  });
+
+  // Log request body for POST/PUT/PATCH requests (excluding highly sensitive routes)
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
+    const highlySensitiveRoutes = ['/auth/reset-password', '/auth/forgot-password', '/auth/update-password'];
+    const isHighlySensitiveRoute = highlySensitiveRoutes.some(route => req.path.includes(route));
+    
+    if (isHighlySensitiveRoute) {
+      console.log(`Received body for ${req.path}: [HIDDEN - Highly Sensitive Route]`);
+    } else {
+      console.log(`Received body for ${req.path}:`, req.body);
+    }
+  }
+
+  // Capture the original res.json to log response details
+  const originalJson = res.json;
+  res.json = function(body: any) {
+    console.log(`[RESPONSE] ${req.method} ${req.path} ${res.statusCode}`, {
+      statusCode: res.statusCode,
+      responseSize: JSON.stringify(body).length + ' characters',
+      timestamp: new Date().toISOString()
+    });
+    return originalJson.call(this, body);
+  };
+
+  next();
+});
+
 // --- Enhanced Rate Limiting with Error Handling ---
 const limiter = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
@@ -99,23 +140,12 @@ const corsOptions = {
       ...(env.NODE_ENV === 'development' ? ['http://192.168.1.7:3000', 'http://10.0.0.1:3000'] : [])
     ];
 
-    // Only log CORS checks in development or when there are issues
-    if (env.NODE_ENV === 'development') {
-      console.log(`[CORS CHECK] Origin: ${origin}, Allowed origins:`, allowedOrigins);
-    }
-
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) {
-      if (env.NODE_ENV === 'development') {
-        console.log('[CORS] Request with no origin - allowing');
-      }
       return callback(null, true);
     }
 
     if (allowedOrigins.includes(origin)) {
-      if (env.NODE_ENV === 'development') {
-        console.log(`[CORS] Origin ${origin} is allowed`);
-      }
       callback(null, true);
     } else {
       console.error(`[CORS BLOCKED] Origin ${origin} is not allowed. Allowed origins:`, allowedOrigins);
@@ -170,20 +200,6 @@ const corsErrorHandler = (err: any, req: express.Request, res: express.Response,
 };
 
 app.use(corsErrorHandler);
-
-// --- Request Logger for Debugging (Development Only) ---
-if (env.NODE_ENV === 'development') {
-  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.log(`[REQUEST] ${req.method} ${req.path}`, {
-      origin: req.get('Origin'),
-      userAgent: req.get('User-Agent'),
-      authorization: req.get('Authorization') ? 'Present' : 'Missing',
-      contentType: req.get('Content-Type'),
-      timestamp: new Date().toISOString()
-    });
-    next();
-  });
-}
 
 // Swagger documentation setup
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

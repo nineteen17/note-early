@@ -374,11 +374,14 @@ const updatePassword = async (data: UpdatePasswordInput): Promise<UpdatePassword
 
 // Resend verification email (uses signup endpoint)
 const resendVerificationEmail = async (email: string): Promise<{ message: string }> => {
-  // Since there's no dedicated resend endpoint, we can try to trigger verification
-  // by attempting signup again. Supabase typically handles this gracefully by 
-  // re-sending the verification email if the user already exists
   const response = await api.post<{ message: string }>('/auth/resend-verification', { email });
   return response;
+};
+
+// Invalidate all sessions
+const invalidateAllSessions = async (): Promise<{ message: string }> => {
+  const response = await api.post<{ status: string; message: string }>('/auth/invalidate-all-sessions');
+  return { message: response.message };
 };
 
 // Hook for Password Reset (logged-in users)
@@ -405,8 +408,12 @@ export const useForgotPasswordMutation = (
 export const useUpdatePasswordMutation = (
   options?: Omit<UseMutationOptions<UpdatePasswordResponse, Error, UpdatePasswordInput>, 'mutationFn'>
 ) => {
+  const router = useRouter();
   return useMutation<UpdatePasswordResponse, Error, UpdatePasswordInput>({
     mutationFn: updatePassword,
+    onSuccess: () => {
+      router.push('/admin/login?message=Password updated successfully');
+    },
     ...options,
   });
 };
@@ -419,6 +426,22 @@ export const useResendVerificationMutation = (
 ) => {
   return useMutation<{ message: string }, ApiError, string>({
     mutationFn: resendVerificationEmail,
+    ...options,
+  });
+};
+
+export const useInvalidateAllSessionsMutation = (
+  options?: Omit<UseMutationOptions<{ message: string }, ApiError, void>, 'mutationFn'>
+) => {
+  const queryClient = useQueryClient();
+  return useMutation<{ message: string }, ApiError, void>({
+    mutationFn: invalidateAllSessions,
+    onSuccess: (data) => {
+      // Clear all query cache since user will be logged out
+      queryClient.clear();
+      // The success callback can be handled by the component
+      options?.onSuccess?.(data, undefined, undefined);
+    },
     ...options,
   });
 };

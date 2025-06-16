@@ -28,6 +28,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-blue-accent: var(--blue-accent);
+  --color-beige-accent: var(--beige-accent);
   
   /* Typography Scale */
   --font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
@@ -121,6 +122,7 @@
     --success: #4BAE4F;
     --warning: #FEAC3E;
     --blue-accent: #2EBBE7;
+    --beige-accent: #FFF9F0;
     --chart-1: oklch(0.646 0.222 41.116);
     --chart-2: oklch(0.6 0.118 184.704);
     --chart-3: oklch(0.398 0.07 227.392);

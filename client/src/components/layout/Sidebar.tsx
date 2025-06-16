@@ -178,11 +178,11 @@ export function Sidebar({ userRole, isMobile = false }: SidebarProps) {
         ) : (
           <Button
             asChild
-            variant={isActive ? 'default' : 'ghost'}
+            variant="ghost"
             className={cn(
               "w-full justify-start",
               isActive 
-                ? "bg-accent/80 text-accent-foreground" 
+                ? "bg-accent text-accent-foreground hover:bg-accent/90" 
                 : "hover:bg-accent/20 hover:text-accent"
             )}
           >

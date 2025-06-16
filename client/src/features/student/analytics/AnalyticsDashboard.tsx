@@ -79,7 +79,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics 
             <span className="text-muted-foreground">Average Score</span>
             <span className="font-medium">{Math.round(metrics.averageScore)}%</span>
           </div>
-          <Progress value={metrics.averageScore} variant="default" className="h-3" />
+          <Progress value={metrics.averageScore} variant={metrics.averageScore >= 80 ? 'high-score' : metrics.averageScore >= 60 ? 'medium-score' : metrics.averageScore > 0 ? 'low-score' : 'default'} className="h-3" />
           <p className="text-xs text-muted-foreground text-center">
             {metrics.averageScore >= 80 ? 'Excellent!' : 
              metrics.averageScore >= 60 ? 'Good work!' : 

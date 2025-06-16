@@ -9,6 +9,7 @@ import { env } from '@/config/env';
 import ms from 'ms'; // Import ms for cookie expiry
 import { logger } from '@/utils/logger'; // Import logger for OAuth callback error logging
 
+
 // Validation schemas
 const adminSignupSchema = z.object({
   email: z.string().email().max(254, 'Email cannot exceed 254 characters'),
@@ -529,6 +530,67 @@ export class AuthController {
     }
   }
 
+  // Invalidate all sessions for the current user
+  invalidateAllSessions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return next(new AppError('User ID not found in request', 401));
+      }
+      
+      logger.info('Invalidate all sessions requested for user:', { userId });
+      
+      try {
+        await this.authService.invalidateAllSessions(userId);
+        
+        // Clear any refresh token cookies since we're invalidating all sessions
+        res.clearCookie('refresh-token', adminRefreshTokenCookieOptions);
+        
+        res.status(200).json({
+          status: 'success',
+          message: 'All sessions have been invalidated successfully',
+          data: {
+            userId,
+            invalidatedAt: new Date().toISOString()
+          }
+        });
+      } catch (serviceError) {
+        // If the service failed to invalidate sessions, we should still clear local cookies
+        // and return a meaningful response to the user
+        logger.warn('Session invalidation service failed, but clearing local cookies:', {
+          userId,
+          error: serviceError instanceof Error ? serviceError.message : String(serviceError)
+        });
+        
+        // Clear local cookies regardless of service failure
+        res.clearCookie('refresh-token', adminRefreshTokenCookieOptions);
+        
+        // Check if this is a configuration error vs a user-specific error
+        if (serviceError instanceof AppError && serviceError.statusCode === 500) {
+          // Configuration issues should be reported as errors
+          throw serviceError;
+        } else {
+          // For user-specific issues (like sessions already invalid), we can be more lenient
+          res.status(200).json({
+            status: 'success',
+            message: 'Session invalidation completed (sessions may have already been invalid)',
+            data: {
+              userId,
+              invalidatedAt: new Date().toISOString(),
+              note: 'Local session cleared, remote sessions may have already been invalid'
+            }
+          });
+        }
+      }
+    } catch (error) {
+      logger.error('Error in invalidateAllSessions controller:', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: req.user?.id
+      });
+      next(error);
+    }
+  }
+
   // Reset student PIN (Existing)
   resetStudentPin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -558,4 +620,6 @@ export class AuthController {
       }
     }
   }
+
+
 } 

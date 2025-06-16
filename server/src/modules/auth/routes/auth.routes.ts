@@ -378,6 +378,25 @@ authRouter.post('/reset-password', authenticateAdmin, authController.resetAdminP
 
 /**
  * @swagger
+ * /auth/invalidate-all-sessions:
+ *   post:
+ *     tags: [Auth - Admin]
+ *     summary: Invalidate all user sessions
+ *     description: Logs out the user from all devices and sessions. Useful for security purposes after password change.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All sessions invalidated successfully.
+ *       401:
+ *         description: Authentication required.
+ *       500:
+ *         description: Server error during session invalidation.
+ */
+authRouter.post('/invalidate-all-sessions', authenticateAdmin, authController.invalidateAllSessions);
+
+/**
+ * @swagger
  * /auth/admin/student:
  *   post:
  *     tags: [Auth - Admin]
@@ -450,6 +469,7 @@ authRouter.post('/admin/student', authenticateAdmin, authController.createStuden
  *         description: Server error during PIN reset.
  */
 authRouter.post('/admin/student/reset-pin', authenticateAdmin, authController.resetStudentPin); // Renamed route
+
 
 
 export default authRouter;

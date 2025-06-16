@@ -29,6 +29,13 @@ import {
     DialogTitle,
 
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { 
     Loader2, 
@@ -48,6 +55,7 @@ import {
     Globe,
     Tag,
     Image,
+    Info,
 
 } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -88,7 +96,11 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [paragraphToDelete, setParagraphToDelete] = useState<number | null>(null);
     const [showAddVocabDialog, setShowAddVocabDialog] = useState(false);
+    const [mobileTab, setMobileTab] = useState<'paragraph' | 'vocabulary'>('paragraph');
 
+    // Vocabulary deletion state
+    const [vocabToDelete, setVocabToDelete] = useState<{id: string, word: string} | null>(null);
+    const [showVocabDeleteDialog, setShowVocabDeleteDialog] = useState(false);
 
     // Check permissions
     const isSuperAdmin = profile?.role === 'SUPER_ADMIN';
@@ -133,6 +145,8 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
     // Get vocabulary for current paragraph - use the actual paragraph index, not array index
     const currentParagraphIndex = paragraphFields[currentStep]?.index || currentStep + 1;
     const { data: currentParagraphVocab = [], isLoading: isLoadingVocab } = useParagraphVocabularyQuery(moduleId, currentParagraphIndex);
+
+
 
 
 
@@ -203,8 +217,6 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
     };
 
     const onSubmit: SubmitHandler<UpdateModuleInput> = (data) => {
-        if (isViewMode) return;
-
         const changedData: Partial<UpdateModuleInput> = {};
         let hasChanges = false;
         
@@ -373,9 +385,6 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
         });
     };
 
-    const [vocabToDelete, setVocabToDelete] = useState<{id: string, word: string} | null>(null);
-    const [showVocabDeleteDialog, setShowVocabDeleteDialog] = useState(false);
-
     const handleDeleteVocabulary = (vocabId: string, word: string) => {
         setVocabToDelete({id: vocabId, word});
         setShowVocabDeleteDialog(true);
@@ -387,12 +396,11 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
             
             deleteVocabularyMutate(vocabToDelete.id, {
                 onSuccess: () => {
-                    toast.success("Vocabulary deleted successfully");
                     setShowVocabDeleteDialog(false);
                     setVocabToDelete(null);
                 },
-                onError: (error) => {
-                    toast.error(error.message || "Failed to delete vocabulary");
+                onError: () => {
+                    // Error toast is handled in the hook
                 }
             });
         }
@@ -549,151 +557,135 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
                 />
 
                 {/* Enhanced Header Card */}
-                <Card className="border-0 shadow-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-                    <CardHeader className="pb-6">
-                        <div className="flex flex-col space-y-4">
-                            {/* Title and Status Row */}
-                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <CardTitle className="text-2xl font-bold tracking-tight">
+                <Card className="border-0 shadow-sm">
+                    <CardHeader className="">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="space-y-2 min-w-0 flex-grow">
+                                <div className="flex items-center gap-3">
+                                    {/* Desktop: Show full title, Mobile: Show truncated with dropdown */}
+                                    <div className="min-w-0 flex-1">
+                                        {/* Desktop view - full title */}
+                                        <CardTitle className="hidden md:block text-lg sm:text-xl font-semibold tracking-tight">
                                             {moduleData.title}
                                         </CardTitle>
+                                        
+                                        {/* Mobile view - clickable dropdown */}
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <CardTitle className="md:hidden text-lg sm:text-xl font-semibold tracking-tight truncate max-w-[200px] sm:max-w-[300px] cursor-pointer hover:text-primary transition-colors">
+                                                    {moduleData.title}
+                                                </CardTitle>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="max-w-sm">
+                                                <DropdownMenuItem className="flex items-center gap-2 p-3">
+                                                    <span className="ml-auto">{moduleData.title}</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
-                                    {moduleData.description && (
-                                        <p className="text-muted-foreground max-w-2xl leading-relaxed">
+                                </div>
+                                {moduleData.description && (
+                                    <div className="min-w-0">
+                                        {/* Desktop: Show full description, Mobile: Show truncated with dropdown */}
+                                        <p className="hidden md:block text-sm text-muted-foreground max-w-2xl">
                                             {moduleData.description}
                                         </p>
-                                    )}
-                                </div>
-                                
-                                {/* Status Badge */}
-                                <div className="flex items-center gap-2">
-                                    <span className={cn(
-                                        "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium",
-                                        moduleData.isActive 
-                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                                    )}>
-                                        <div className={cn(
-                                            "w-1.5 h-1.5 rounded-full mr-2",
-                                            moduleData.isActive ? "bg-green-500" : "bg-red-500"
-                                        )} />
-                                        {moduleData.isActive ? 'Active' : 'Inactive'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Enhanced Meta Information */}
-                            <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-border/40">
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Tag className="h-4 w-4" />
-                                    <span className={cn(
-                                        "px-2 py-1 rounded-md text-xs font-medium",
-                                        isCuratedModule 
-                                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                            : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-                                    )}>
-                                        {getModuleTypeDisplayName(moduleData.type)}
-                                    </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Globe className="h-4 w-4" />
-                                    <span>Level {moduleData.level}</span>
-                                </div>
-                                
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <BookOpen className="h-4 w-4" />
-                                    <span>{moduleData.genre}</span>
-                                </div>
-                                
-                                {moduleData.estimatedReadingTime && (
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Clock className="h-4 w-4" />
-                                        <span>{moduleData.estimatedReadingTime} min read</span>
-                                    </div>
-                                )}
-                                
-                                {(moduleData.authorFirstName || moduleData.authorLastName) && (
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <User className="h-4 w-4" />
-                                        <span>
-                                            {[moduleData.authorFirstName, moduleData.authorLastName]
-                                                .filter(Boolean)
-                                                .join(' ')}
-                                        </span>
+                                        
+                                        {/* Mobile view - clickable dropdown */}
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <p className="md:hidden text-sm text-muted-foreground truncate max-w-[250px] sm:max-w-[350px] cursor-pointer hover:text-primary transition-colors">
+                                                    {moduleData.description}
+                                                </p>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="max-w-sm">
+                                                <DropdownMenuItem className="flex items-center gap-2 p-3">
+                                                    <span className="ml-auto text-sm">{moduleData.description}</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 )}
                             </div>
-
-                            {/* Action Controls */}
-                            <div className="flex items-center justify-between pt-4 border-t border-border/40">
-                                <div className="flex items-center gap-3">
-                                    <span className={cn(
-                                        "inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium",
-                                        !canEdit
-                                            ? "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
-                                            : isViewMode
-                                                ? "bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
-                                                : "bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800"
-                                    )}>
-                                        <div className={cn(
-                                            "w-2 h-2 rounded-full mr-2",
-                                            !canEdit ? "bg-red-500" : isViewMode ? "bg-green-500" : "bg-orange-500"
-                                        )} />
-                                        {!canEdit ? "Read Only" : "Editable"}
-                                    </span>
+                            
+                            {/* Compact Meta Information */}
+                            <div className="flex items-center gap-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-medium">{paragraphFields.length}</span>
                                 </div>
                                 
-                                <div className="flex items-center gap-2">
-                                    {/* Settings Button - Always visible */}
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            exitEditMode(); // Exit edit mode when opening settings
-                                            setIsModuleDialogOpen(true);
-                                        }}
-                                        className="border-dashed"
-                                    >
-                                        <Settings className="h-4 w-4 sm:mr-2" />
-                                        <span className="hidden sm:inline">Settings</span>
-                                    </Button>
-                                </div>
+                                <span className={cn(
+                                    "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium",
+                                    moduleData.isActive 
+                                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                )}>
+                                    {moduleData.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                                
+                                <span className={cn(
+                                    "text-xs px-2 py-1 rounded-md font-medium",
+                                    isCuratedModule 
+                                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                        : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                                )}>
+                                    {getModuleTypeDisplayName(moduleData.type)}
+                                </span>
+
+                                <span className={cn(
+                                    "text-xs px-2 py-1 rounded-md font-medium",
+                                    canEdit 
+                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                        : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                                )}>
+                                    {canEdit ? 'Editable' : 'Read Only'}
+                                </span>
+                                
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        exitEditMode();
+                                        setIsModuleDialogOpen(true);
+                                    }}
+                                >
+                                    <Info className="h-4 w-4" />
+                                </Button>
                             </div>
                         </div>
-            </CardHeader>
+                    </CardHeader>
                 </Card>
 
                 {/* Enhanced Module Settings Dialog */}
                 <Dialog open={isModuleDialogOpen} onOpenChange={setIsModuleDialogOpen}>
-                    <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
-                        <div className="p-6 sm:p-8">
+                    <DialogContent className="max-w-4xl w-[90vw] sm:w-[85vw] max-h-[85vh] sm:max-h-[90vh] overflow-y-auto p-0">
+                        <div className="p-4 sm:p-6 md:p-8">
             <form onSubmit={handleSubmit(onSubmit)}>
                             <DialogHeader className="pb-6 border-b">
                                 <DialogTitle className="flex items-center gap-2 text-xl">
-                                    <Settings className="h-5 w-5" />
-                                    Module Settings
+                                    <Info className="h-5 w-5" />
+                                    Module Information
+                                    {isSettingsReadOnly && (
+                                        <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 rounded-full">
+                                            Read Only
+                                        </span>
+                                    )}
                                 </DialogTitle>
                                 <DialogDescription>
-                                    Configure module metadata, properties, and content settings
+                                    Configure module metadata, properties, and content information
                                 </DialogDescription>
                             </DialogHeader>
                             
                             <div className="space-y-8 py-6">
                                 {/* Title & Description Section */}
                                 <div className="space-y-6">
-                                    <h4 className="text-lg font-semibold flex items-center gap-2">
-                                        <FileText className="h-5 w-5" />
-                                        Content Information
-                                    </h4>
+
                                     
                                     <div className="grid gap-6">
                     <div className="space-y-2">
                                             <Label htmlFor="title" className="text-sm font-medium flex items-center gap-2">
-                                                <BookOpen className="h-4 w-4" />
                                                 Module Title
                                             </Label>
                                             {isSettingsReadOnly ? (
@@ -746,10 +738,7 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
 
                                 {/* Content Properties Section */}
                                 <div className="space-y-6">
-                                    <h4 className="text-lg font-semibold flex items-center gap-2">
-                                        <Tag className="h-5 w-5" />
-                                        Content Properties
-                                    </h4>
+   
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-2">
@@ -840,10 +829,7 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
 
                                 {/* Author & Media Section */}
                                 <div className="space-y-6">
-                                    <h4 className="text-lg font-semibold flex items-center gap-2">
-                                        <User className="h-5 w-5" />
-                                        Author & Media
-                                    </h4>
+
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -954,9 +940,7 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
                     </div>
 
                                 {/* Status Section */}
-                                <div className="space-y-6">
-                                    <h4 className="text-lg font-semibold">Module Status</h4>
-                                    
+                                <div className="space-y-6">                                    
                                     <div className="space-y-2">
                                         <Label className="text-sm font-medium">Publication Status</Label>
                                         <div className="flex items-center h-11">
@@ -1011,7 +995,7 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
                                         reset();
                                     }}
                                 >
-                                    Close Settings
+                                    Close Information
                                 </Button>
                                 {!isSettingsReadOnly && canEdit && (
                                     <Button 
@@ -1051,390 +1035,514 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
                     )}
 
                     {/* Enhanced Content Editor */}
-                    {paragraphFields.length > 0 ? (
-                        <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
-                            <CardHeader className="pb-6 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-b-2 border-primary/10">
-                                <div className="space-y-4">
-                                    {/* Title and Action Buttons Row */}
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg">
-                                                <FileText className="h-6 w-6 text-popover-foreground" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-2xl font-bold text-foreground">
+                    {paragraphFields.length > 0 && (
+                        <div className="flex flex-col h-[calc(100vh-280px)]">
+                            {/* Desktop View - Side by Side Cards */}
+                            <div className="hidden lg:block flex-1 min-h-0">
+                                <div className="grid gap-6 lg:grid-cols-2 h-full">
+                                    {/* Paragraph Content */}
+                                    <Card className="shadow-md overflow-hidden flex flex-col h-full">
+                                        <CardHeader className="flex-shrink-0 pb-3 border-b">
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="flex items-center gap-2 text-lg">
+                                                    <div className="p-2 bg-primary/10 rounded-lg">
+                                                        <FileText className="h-4 w-4 text-primary" />
+                                                    </div>
                                                     Paragraph {currentStep + 1}
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground font-medium">
-                                                    Content Editor & Vocabulary Manager
-                                                </p>
-                        </div>
-                    </div>
-
-                                        {/* Action Buttons - Next to Title */}
-                                        {canEdit && (
-                                            <div className="flex items-center gap-2">
-                                                {/* Desktop: Full buttons */}
-                                                <div className="hidden sm:flex items-center gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={addNewParagraph}
-                                                        className="border-2 border-dashed border-primary/30 text-popover-foreground hover:bg-primary/10 hover:border-primary/50 shadow-md hover:shadow-lg transition-all duration-200"
-                                                    >
-                                                        <Plus className="h-4 w-4 mr-2" />
-                                                        Add Paragraph
-                                                    </Button>
+                                                </CardTitle>
+                                                
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-1">
+                                                        {paragraphFields.map((_, i) => (
+                                                            <button
+                                                                key={i}
+                                                                type="button"
+                                                                onClick={() => setCurrentStep(i)}
+                                                                className={cn(
+                                                                    "w-2.5 h-2.5 rounded-full transition-colors",
+                                                                    i === currentStep 
+                                                                        ? "bg-accent" 
+                                                                        : "bg-muted-foreground/30"
+                                                                )}
+                                                                title={`Paragraph ${i + 1}`}
+                                                            />
+                                                        ))}
+                                                    </div>
                                                     
-                                                    {paragraphFields.length > 1 && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={prevStep}
+                                                            disabled={currentStep === 0}
+                                                        >
+                                                            <ChevronLeft className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={nextStep}
+                                                            disabled={currentStep === paragraphFields.length - 1}
+                                                        >
+                                                            <ChevronRight className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-1 min-h-0 pb-4 flex flex-col">
+                                            {/* Content Area - Fixed Height */}
+                                            <div className="flex-1 min-h-0 mb-4">
+                                                {isViewMode ? (
+                                                    <Textarea
+                                                        value={currentParagraph.text || ''}
+                                                        className="h-full resize-none bg-muted/30 border"
+                                                        readOnly
+                                                        placeholder="No content provided for this paragraph"
+                                                    />
+                                                ) : (
+                                                    <Controller
+                                                        name={`structuredContent.${currentStep}.text`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Textarea
+                                                                {...field}
+                                                                placeholder="Enter paragraph content here..."
+                                                                className="h-full resize-none"
+                                                            />
+                                                        )}
+                                                    />
+                                                )}
+                                            </div>
+                                            
+                                            {/* Fixed Action Buttons */}
+                                            {canEdit && (
+                                                <div className="flex justify-between items-center pt-2 border-t flex-shrink-0">
+                                                    <div className="flex items-center gap-2">
                                                         <Button
                                                             type="button"
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={() => handleDeleteClick(currentStep)}
-                                                            className="border-2 text-destructive border-destructive/30 hover:bg-destructive hover:text-destructive-foreground shadow-md hover:shadow-lg transition-all duration-200"
+                                                            onClick={addNewParagraph}
+                                                            className="gap-2"
                                                         >
-                                                            <Trash2 className="h-4 w-4 mr-2" />
-                                                            Delete
+                                                            <Plus className="h-4 w-4" />
+                                                            Add
                                                         </Button>
-                                                    )}
+                                                        {paragraphFields.length > 1 && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleDeleteClick(currentStep)}
+                                                                className="gap-2 text-destructive"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                                Delete
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-2">
+                                                        {isViewMode ? (
+                                                            <Button
+                                                                type="button"
+                                                                variant="default"
+                                                                size="sm"
+                                                                onClick={toggleEditMode}
+                                                                className="gap-2"
+                                                            >
+                                                                <Edit3 className="h-4 w-4" />
+                                                                Edit
+                                                            </Button>
+                                                        ) : (
+                                                            <>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={exitEditMode}
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                                <Button
+                                                                    type="submit"
+                                                                    size="sm"
+                                                                    disabled={isUpdating}
+                                                                    className="gap-2"
+                                                                >
+                                                                    {isUpdating ? (
+                                                                        <>
+                                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                                            Saving...
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Save className="h-4 w-4" />
+                                                                            Save
+                                                                        </>
+                                                                    )}
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
 
-                                                {/* Mobile: Icon-only buttons */}
-                                                <div className="flex sm:hidden items-center gap-2">
+                                    {/* Vocabulary */}
+                                    <Card className="shadow-md overflow-hidden flex flex-col h-full">
+                                        <CardHeader className="flex-shrink-0 pb-3 border-b">
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="flex items-center gap-2 text-lg">
+                                                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                                                        <BookOpen className="h-4 w-4 text-blue-600" />
+                                                    </div>
+                                                    Vocabulary
+                                                    {currentParagraphVocab && currentParagraphVocab.length > 0 && (
+                                                        <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full">
+                                                            {currentParagraphVocab.length}
+                                                        </span>
+                                                    )}
+                                                </CardTitle>
+                                                
+                                                {canEdit && (
                                                     <Button
                                                         type="button"
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={addNewParagraph}
-                                                        className="border-2 border-dashed border-primary/30 text-popover-foreground hover:bg-primary/10 p-2 shadow-md"
+                                                        onClick={() => {
+                                                            exitEditMode();
+                                                            setShowAddVocabDialog(true);
+                                                        }}
+                                                        className="gap-2"
+                                                        disabled={currentParagraphIndex > (moduleData?.structuredContent?.length || 0)}
                                                     >
                                                         <Plus className="h-4 w-4" />
+                                                        Add
                                                     </Button>
-                                                    
-                                                    {paragraphFields.length > 1 && (
-                                                        <Button
+                                                )}
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-1 min-h-0 pb-4">
+                                            <div className="h-full overflow-auto">
+                                                {isLoadingVocab ? (
+                                                    <div className="space-y-4">
+                                                        {[...Array(2)].map((_, i) => (
+                                                            <div key={i} className="p-4 rounded-lg border">
+                                                                <Skeleton className="h-4 w-24 mb-2" />
+                                                                <Skeleton className="h-3 w-full" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : currentParagraphVocab && currentParagraphVocab.length > 0 ? (
+                                                    <div className="space-y-4">
+                                                        {currentParagraphVocab.map((entry, index) => (
+                                                            <div key={entry.id} className="p-4 rounded-lg border bg-muted/30">
+                                                                <div className="flex items-start justify-between gap-4">
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="flex items-center gap-2 mb-2">
+                                                                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full">
+                                                                                #{index + 1}
+                                                                            </span>
+                                                                            <h4 className="font-semibold">{entry.word}</h4>
+                                                                        </div>
+                                                                        <p className="text-sm text-muted-foreground">{entry.description}</p>
+                                                                    </div>
+                                                                    {canEdit && (
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            onClick={() => handleDeleteVocabulary(entry.id, entry.word)}
+                                                                            className="text-destructive hover:text-destructive"
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="h-full flex items-center justify-center text-muted-foreground">
+                                                        <div className="text-center">
+                                                            <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                                            <p className="text-sm italic">No vocabulary words yet</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
+
+                            {/* Mobile View - Tabbed Interface */}
+                            <div className="lg:hidden flex-1 min-h-0">
+                                <Tabs value={mobileTab} onValueChange={(value) => setMobileTab(value as 'paragraph' | 'vocabulary')} className="h-full flex flex-col">
+                                    <div className="flex-shrink-0 space-y-3">
+                                        <TabsList className="grid w-full grid-cols-2">
+                                            <TabsTrigger value="paragraph">Paragraph</TabsTrigger>
+                                            <TabsTrigger value="vocabulary">Vocabulary</TabsTrigger>
+                                        </TabsList>
+                                        
+                                        {/* Navigation Controls */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-medium">
+                                                    {currentStep + 1} of {paragraphFields.length}
+                                                </span>
+                                                <div className="flex items-center gap-1">
+                                                    {paragraphFields.map((_, i) => (
+                                                        <button
+                                                            key={i}
                                                             type="button"
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleDeleteClick(currentStep)}
-                                                            className="border-2 text-destructive border-destructive/30 hover:bg-destructive hover:text-destructive-foreground p-2 shadow-md"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
+                                                            onClick={() => setCurrentStep(i)}
+                                                            className={cn(
+                                                                "w-2.5 h-2.5 rounded-full transition-colors",
+                                                                i === currentStep 
+                                                                    ? "bg-accent" 
+                                                                    : "bg-muted-foreground/30"
+                                                            )}
+                                                            title={`Paragraph ${i + 1}`}
+                                                        />
+                                                    ))}
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Navigation Section - Under Title */}
-                                    <div className="pt-4 border-t-2 border-primary/10">
-                                        {/* Mobile Navigation */}
-                                        <div className="block sm:hidden">
-                                            <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
+                                            
+                                            <div className="flex items-center gap-1">
                                                 <Button
                                                     type="button"
-                                                    variant="outline"
                                                     size="sm"
+                                                    variant="outline"
                                                     onClick={prevStep}
                                                     disabled={currentStep === 0}
-                                                    className="p-2 border-2 shadow-sm hover:shadow-md transition-all duration-200"
                                                 >
                                                     <ChevronLeft className="h-4 w-4" />
                                                 </Button>
-                                                
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-xl font-bold text-primary-foreground bg-primary w-12 px-4 py-2 rounded-xl border-2 border-accent/80 shadow-sm">
-                                                        {currentStep + 1}
-                                                    </span>
-                                                    <span className="text-sm text-muted-foreground font-medium">
-                                                        of {paragraphFields.length}
-                                                    </span>
-                                                </div>
-                                                
                                                 <Button
                                                     type="button"
-                                                    variant="outline"
                                                     size="sm"
+                                                    variant="outline"
                                                     onClick={nextStep}
                                                     disabled={currentStep === paragraphFields.length - 1}
-                                                    className="p-2 border-2 shadow-sm hover:shadow-md transition-all duration-200"
                                                 >
                                                     <ChevronRight className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </div>
-
-                                        {/* Desktop Navigation */}
-                                        <div className="hidden sm:flex items-center justify-start">
-                                            <div className="flex items-center gap-3 bg-muted/30 p-3 rounded-xl border border-accent/50">
-                                                {paragraphFields.map((_, index) => (
-                                                    <button
-                                                        key={index}
-                                                        type="button"
-                                                        onClick={() => goToStep(index)}
-                                                        className={cn(
-                                                            "relative w-12 h-12 rounded-xl text-sm font-bold transition-all duration-300 border-2 shadow-md hover:shadow-lg",
-                                                            index === currentStep
-                                                                ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-primary/30 scale-110 shadow-lg"
-                                                                : "bg-card text-muted-foreground border-border/50 hover:bg-primary/5 hover:text-accent hover:border-primary/30 hover:scale-105"
-                                                        )}
-                                                    >
-                                                        {index + 1}
-                                                        {index === currentStep && (
-                                                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-card shadow-sm" />
-                                                        )}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
                                     </div>
-                                </div>
-                            </CardHeader>
-
-                            <CardContent className="space-y-8 p-8">
-                                {/* Content Editor */}
-                                <div className="space-y-4">
-                                    <Label className="text-base font-semibold flex items-center gap-3 text-foreground">
-                                        <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
-                                            <FileText className="h-5 w-5 text-popover-foreground" />
-                                        </div>
-                                        Content Editor
-                                    </Label>
-                                    {isViewMode ? (
-                                        <div className="relative prose dark:prose-invert max-w-none p-6 border-2 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/45 border-primary/20 shadow-inner min-h-[280px] flex items-start">
-                                            {currentParagraph.text ? (
-                                                <div className="text-sm leading-relaxed m-0 text-foreground whitespace-pre-wrap">{currentParagraph.text}</div>
-                                            ) : (
-                                                <div className="text-muted-foreground italic m-0 text-center py-4 w-full">No content provided for this paragraph</div>
-                                            )}
-                                            <div className="absolute bottom-4 right-4 text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
-                                                {currentParagraph.text?.length || 0} characters
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="relative">
-                                            <Controller
-                                                name={`structuredContent.${currentStep}.text`}
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Textarea
-                                                        {...field}
-                                                        placeholder="Enter paragraph content here..."
-                                                        rows={10}
-                                                        className="resize-none text-sm leading-relaxed border-2 border-primary/20 focus:border-primary/50 bg-gradient-to-br from-primary/5 to-primary/10 shadow-inner focus:shadow-lg transition-all duration-200 p-6 min-h-[280px]"
-                                                        autoFocus={false}
-                                                    />
-                                                )}
-                                            />
-                                            <div className="absolute bottom-4 right-4 text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
-                                                {currentParagraph.text?.length || 0} characters
-                                            </div>
-                                        </div>
-                                    )}
-                                    {errors.structuredContent?.[currentStep]?.text && (
-                                        <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
-                                            <AlertCircle className="h-4 w-4 text-destructive" />
-                                            <p className="text-sm text-destructive font-medium">
-                                                {errors.structuredContent[currentStep]?.text?.message}
-                                            </p>
-                                        </div>
-                                    )}
                                     
-                                                                        {/* Action Buttons - Under Editor */}
-                                    {canEdit && (
-                                        <div className="flex justify-end items-center pt-0">
-                                            {isViewMode ? (
-                                                /* Edit Button */
-                                                <Button
-                                                    type="button"
-                                                    variant="default"
-                                                    size="sm"
-                                                    onClick={toggleEditMode}
-                                                    disabled={isUpdating}
-                                                    className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 dark:hover:bg-green-900/40"
-                                                >
-                                                    <Edit3 className="h-4 w-4 sm:mr-2" />
-                                                    <span className="hidden sm:inline">Edit</span>
-                                                </Button>
-                                            ) : (
-                                                /* Save and Cancel Buttons */
-                                                <div className="flex items-center gap-3">
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        onClick={exitEditMode}
-                                                        disabled={isUpdating}
-                                                        className="min-w-[100px]"
-                                                    >
-                        Cancel
-                    </Button>
-                                                    <Button
-                                                        type="submit"
-                                                        disabled={isUpdating}
-                                                        className="min-w-[140px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all duration-200"
-                                                    >
-                                                        {isUpdating ? (
-                                                            <>
-                                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                                Saving...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Save className="h-4 w-4 mr-2" />
-                        Save Changes
-                                                            </>
-                                                        )}
-                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Enhanced Vocabulary Section */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <Label className="text-base font-semibold flex items-center gap-3 text-foreground">
-                                            <div className="p-2 bg-accent/10 rounded-lg border border-accent/20">
-                                                <BookOpen className="h-5 w-5 text-popover-foreground" />
-                                            </div>
-                                            <span className="hidden sm:inline">Vocabulary Words</span>
-                                            <span className="sm:hidden">Vocabulary</span>
-                                            {currentParagraphVocab && currentParagraphVocab.length > 0 && (
-                                                <span className="text-sm px-3 py-1 bg-accent/20 text-accent rounded-full font-bold border border-accent/30">
-                                                    <span className="hidden sm:inline">{currentParagraphVocab.length} words</span>
-                                                    <span className="sm:hidden">{currentParagraphVocab.length}</span>
-                                                </span>
-                                            )}
-                                        </Label>
-                                        {canEdit && (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    exitEditMode(); // Exit edit mode when adding vocabulary
-                                                    setShowAddVocabDialog(true);
-                                                }}
-                                                className="border-2 border-dashed border-accent/40 text-accent hover:bg-accent/10 shadow-md hover:shadow-lg transition-all duration-200"
-                                                disabled={currentParagraphIndex > (moduleData?.structuredContent?.length || 0)}
-                                                title={currentParagraphIndex > (moduleData?.structuredContent?.length || 0) ? "Save the module first to add vocabulary to new paragraphs" : "Add vocabulary word"}
-                                            >
-                                                <Plus className="h-4 w-4 sm:mr-2" />
-                                                <span className="hidden sm:inline">Add Word</span>
-                                            </Button>
-                                        )}
-                                    </div>
-
-                                    {/* Existing Vocabulary */}
-                                    {isLoadingVocab ? (
-                                        <div className="grid gap-4">
-                                            {[...Array(2)].map((_, i) => (
-                                                <div key={i} className="p-6 rounded-xl border-2 border-accent/20">
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="min-w-0 flex-1 space-y-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <Skeleton className="h-5 w-8 rounded-full" />
-                                                                <Skeleton className="h-6 w-24" />
-                                                            </div>
-                                                            <Skeleton className="h-4 w-full" />
-                                                            <Skeleton className="h-4 w-3/4" />
-                                                        </div>
-                                                        <Skeleton className="h-8 w-8" />
+                                    <TabsContent value="paragraph" className="flex-1 min-h-0 mt-4">
+                                        <Card className="shadow-md overflow-hidden h-full flex flex-col">
+                                            <CardHeader className="flex-shrink-0 pb-3 border-b">
+                                                <CardTitle className="flex items-center gap-2 text-lg">
+                                                    <div className="p-2 bg-primary/10 rounded-lg">
+                                                        <FileText className="h-4 w-4 text-primary" />
                                                     </div>
+                                                    Paragraph {currentStep + 1}
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="flex-1 min-h-0 pb-4 flex flex-col">
+                                                {/* Content Area - Fixed Height */}
+                                                <div className="flex-1 min-h-0 mb-4">
+                                                    {isViewMode ? (
+                                                        <Textarea
+                                                            value={currentParagraph.text || ''}
+                                                            className="h-full resize-none bg-muted/30 border"
+                                                            readOnly
+                                                            placeholder="No content provided for this paragraph"
+                                                        />
+                                                    ) : (
+                                                        <Controller
+                                                            name={`structuredContent.${currentStep}.text`}
+                                                            control={control}
+                                                            render={({ field }) => (
+                                                                <Textarea
+                                                                    {...field}
+                                                                    placeholder="Enter paragraph content here..."
+                                                                    className="h-full resize-none"
+                                                                />
+                                                            )}
+                                                        />
+                                                    )}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : currentParagraphVocab && currentParagraphVocab.length > 0 ? (
-                                        <div className="grid gap-4">
-                                            {currentParagraphVocab.map((entry, index) => (
-                                                <div 
-                                                    key={entry.id} 
-                                                    className="group p-6 rounded-xl border-2 border-accent/20 bg-gradient-to-br from-card via-card to-card/90 hover:shadow-xl hover:border-accent/40 transition-all duration-300 hover:scale-[1.02]"
-                                                >
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="min-w-0 flex-1 space-y-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-xs px-3 py-1 bg-accent/20 text-accent rounded-full font-bold border border-accent/30">
-                                                                    #{index + 1}
-                                                                </span>
-                                                                <h4 className="font-bold text-lg text-foreground">
-                                                                    {entry.word}
-                                                                </h4>
-                                                            </div>
-                                                            <p className="text-base text-muted-foreground leading-relaxed pl-1">
-                                                                {entry.description}
-                                                            </p>
-                                                        </div>
-                                                        {canEdit && (
+                                                
+                                                {/* Fixed Action Buttons */}
+                                                {canEdit && (
+                                                    <div className="flex justify-between items-center pt-2 border-t flex-shrink-0">
+                                                        <div className="flex items-center gap-2">
                                                             <Button
                                                                 type="button"
-                                                                variant="ghost"
+                                                                variant="outline"
                                                                 size="sm"
-                                                                onClick={() => handleDeleteVocabulary(entry.id, entry.word)}
-                                                                className="opacity-0 group-hover:opacity-100 transition-all duration-200 text-destructive hover:text-destructive hover:bg-destructive/10 border-2 border-transparent hover:border-destructive/30 shadow-sm hover:shadow-md"
+                                                                onClick={addNewParagraph}
+                                                                className="gap-2"
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
+                                                                <Plus className="h-4 w-4" />
+                                                                Add
                                                             </Button>
-                                                        )}
+                                                            {paragraphFields.length > 1 && (
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleDeleteClick(currentStep)}
+                                                                    className="gap-2 text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                    Delete
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center gap-2">
+                                                            {isViewMode ? (
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="default"
+                                                                    size="sm"
+                                                                    onClick={toggleEditMode}
+                                                                    className="gap-2"
+                                                                >
+                                                                    <Edit3 className="h-4 w-4" />
+                                                                    Edit
+                                                                </Button>
+                                                            ) : (
+                                                                <>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={exitEditMode}
+                                                                    >
+                                                                        Cancel
+                                                                    </Button>
+                                                                    <Button
+                                                                        type="submit"
+                                                                        size="sm"
+                                                                        disabled={isUpdating}
+                                                                        className="gap-2"
+                                                                    >
+                                                                        {isUpdating ? (
+                                                                            <>
+                                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                                Saving...
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <Save className="h-4 w-4" />
+                                                                                Save
+                                                                            </>
+                                                                        )}
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+                                    
+                                    <TabsContent value="vocabulary" className="flex-1 min-h-0 mt-4">
+                                        <Card className="shadow-md overflow-hidden h-full flex flex-col">
+                                            <CardHeader className="flex-shrink-0 pb-3 border-b">
+                                                <div className="flex items-center justify-between">
+                                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                                                            <BookOpen className="h-4 w-4 text-blue-600" />
+                                                        </div>
+                                                        Vocabulary
+                                                        {currentParagraphVocab && currentParagraphVocab.length > 0 && (
+                                                            <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full">
+                                                                {currentParagraphVocab.length}
+                                                            </span>
+                                                        )}
+                                                    </CardTitle>
+                                                    
+                                                    {canEdit && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                exitEditMode();
+                                                                setShowAddVocabDialog(true);
+                                                            }}
+                                                            className="gap-2"
+                                                            disabled={currentParagraphIndex > (moduleData?.structuredContent?.length || 0)}
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                            Add
+                                                        </Button>
+                                                    )}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center p-2 border-2 border-dashed border-accent/30 rounded-xl bg-gradient-to-br from-accent/5 to-transparent">
-                                            <div className=" bg-accent/10 rounded-full w-fit mx-auto mb-2 border border-accent/20">
-                                                <BookOpen className="h-10 w-10 text-popover-foreground" />
-                                            </div>
-                                            <h4 className="text-sm font-semibold text-foreground mb-1">
-                                                No vocabulary words yet
-                                            </h4>
-                                            <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                                                Add vocabulary words to help students understand difficult terms and concepts in this paragraph.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                </CardContent>
-        </Card>
-                    ) : (
-                        /* Empty State */
-                        <Card className="shadow-lg">
-                            <CardContent className="py-16">
-                                <div className="text-center space-y-6">
-                                    <div className="w-20 h-20 mx-auto bg-muted/50 rounded-2xl flex items-center justify-center">
-                                        <FileText className="h-10 w-10 text-popover-foreground" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-semibold text-foreground">
-                                            No Content Found
-                                        </h3>
-                                        <p className="text-muted-foreground max-w-md mx-auto">
-                                            This module doesn't have any paragraphs yet. Add your first paragraph to begin building the reading content.
-                                        </p>
-                                    </div>
-                                    {!isViewMode && canEdit && (
-                                        <Button
-                                            type="button"
-                                            onClick={addNewParagraph}
-                                            size="lg"
-                                            className="mt-6"
-                                        >
-                                            <Plus className="h-5 w-5 mr-2" />
-                                            Create First Paragraph
-                                        </Button>
-                                    )}
-                                </div>
-                </CardContent>
-                        </Card>
-                                        )}
+                                            </CardHeader>
+                                            <CardContent className="flex-1 min-h-0 pb-4">
+                                                <div className="h-full overflow-auto">
+                                                    {isLoadingVocab ? (
+                                                        <div className="space-y-4">
+                                                            {[...Array(2)].map((_, i) => (
+                                                                <div key={i} className="p-4 rounded-lg border">
+                                                                    <Skeleton className="h-4 w-24 mb-2" />
+                                                                    <Skeleton className="h-3 w-full" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : currentParagraphVocab && currentParagraphVocab.length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            {currentParagraphVocab.map((entry, index) => (
+                                                                <div key={entry.id} className="p-4 rounded-lg border bg-muted/30">
+                                                                    <div className="flex items-start justify-between gap-4">
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <div className="flex items-center gap-2 mb-2">
+                                                                                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full">
+                                                                                    #{index + 1}
+                                                                                </span>
+                                                                                <h4 className="font-semibold">{entry.word}</h4>
+                                                                            </div>
+                                                                            <p className="text-sm text-muted-foreground">{entry.description}</p>
+                                                                        </div>
+                                                                        {canEdit && (
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                onClick={() => handleDeleteVocabulary(entry.id, entry.word)}
+                                                                                className="text-destructive hover:text-destructive"
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                                                            <div className="text-center">
+                                                                <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                                                <p className="text-sm italic">No vocabulary words yet</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+                                </Tabs>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Delete Dialogs */}
                     <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                        <DialogContent>
+                        <DialogContent className="w-[90vw] sm:w-full max-w-md">
                             <DialogHeader>
                                 <DialogTitle>Delete Paragraph</DialogTitle>
                                 <DialogDescription>
@@ -1453,7 +1561,7 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
                     </Dialog>
 
                     <Dialog open={showVocabDeleteDialog} onOpenChange={setShowVocabDeleteDialog}>
-                        <DialogContent>
+                        <DialogContent className="w-[90vw] sm:w-full max-w-md">
                             <DialogHeader>
                                 <DialogTitle>Delete Vocabulary Word</DialogTitle>
                                 <DialogDescription>
@@ -1473,7 +1581,7 @@ export function AdminEditModuleFeature({ moduleId }: AdminEditModuleFeatureProps
 
                     {/* Add Vocabulary Dialog */}
                     <Dialog open={showAddVocabDialog} onOpenChange={setShowAddVocabDialog}>
-                        <DialogContent className="max-w-md">
+                        <DialogContent className="max-w-md w-[90vw] sm:w-full">
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
                                     <Plus className="h-5 w-5 text-popover-foreground" />

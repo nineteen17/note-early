@@ -146,7 +146,7 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
       <div key={item.href}>
         <Button
           asChild={!hasChildren}
-          variant={isActive ? 'default' : 'ghost'}
+          variant="ghost"
           className={cn(
             "w-full justify-start",
             hasChildren ? (

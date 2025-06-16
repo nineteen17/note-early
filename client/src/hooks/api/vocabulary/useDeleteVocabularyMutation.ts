@@ -8,7 +8,7 @@ import { api, ApiError } from '@/lib/apiClient';
 // The API returns 204 No Content, so the expected return type is void
 const deleteVocabularyEntry = async (vocabularyId: string): Promise<void> => {
     try {
-        await api.delete<void>(`/vocabulary/${vocabularyId}`);
+        await api.delete<void>(`/reading-modules/vocabulary/${vocabularyId}`);
     } catch (error) {
         console.error('Error deleting vocabulary entry:', error);
         throw error; // Re-throw ApiError from interceptor

@@ -11,14 +11,13 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageContainer } from '@/components/layout/PageContainer';
 
-// Define tabs configuration
+// Define tabs configuration - only subscription and security
 const settingsTabs = [
-  { value: "profile", label: "Profile" },
   { value: "subscription", label: "Subscription" },
-  { value: "students", label: "Students" },
   { value: "security", label: "Security" },
-  { value: "preferences", label: "Preferences" },
 ];
 
 export default function AdminSettingsLayout({ 
@@ -39,10 +38,11 @@ export default function AdminSettingsLayout({
   };
 
   return (
-    <div className="w-full space-y-6 p-12 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
-      </div>
+    <PageContainer className="w-full space-y-6 p-12 md:p-8 pt-6">
+      <PageHeader 
+        title="Account Settings" 
+        description="Manage your account settings and preferences"
+      />
 
       {/* Use Tabs purely for visual grouping and value state based on URL */}
       <Tabs value={activeTab} className="w-full space-y-4">
@@ -76,11 +76,11 @@ export default function AdminSettingsLayout({
         </div>
 
         {/* Render the active tab's page content */}
-        <div className="mt-6"> {/* Add some margin top */} 
+        <div className="mt-0"> {/* Add some margin top */} 
            {children}
         </div>
 
       </Tabs>
-    </div>
+    </PageContainer>
   );
 } 

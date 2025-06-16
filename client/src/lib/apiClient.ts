@@ -249,6 +249,11 @@ const isNonStandardEndpoint = (endpoint: string): boolean => {
 
 // Extract data from response based on endpoint type
 const extractResponseData = <T>(endpoint: string, response: any): T => {
+  // Handle 204 No Content responses (common for DELETE operations)
+  if (response.status === 204) {
+    return undefined as T; // Return undefined for void responses
+  }
+  
   if (isNonStandardEndpoint(endpoint)) {
     return response.data as T;
   }
