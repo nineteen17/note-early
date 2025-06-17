@@ -77,7 +77,7 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
       return false;
     }
     
-    // Handle nested routes
+    // Handle nested routes for both student and admin paths
     if (href === '/student/modules' && pathname.startsWith('/student/modules')) {
       return true;
     }
@@ -87,6 +87,13 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
     if (href === '/student/settings' && pathname.startsWith('/student/settings')) {
       return true;
     }
+    // Admin nested routes
+    if (href === '/admin/home' && pathname.startsWith('/admin/home')) {
+      return true;
+    }
+    if (href === '/admin/students' && pathname.startsWith('/admin/students')) {
+      return true;
+    }
     if (href === '/admin/modules' && pathname.startsWith('/admin/modules') && !pathname.includes('/create')) {
       return true;
     }
@@ -94,6 +101,13 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
       return true;
     }
     if (href === '/admin/settings' && pathname.startsWith('/admin/settings')) {
+      return true;
+    }
+    // Super admin nested routes
+    if (href === '/superadmin/analytics' && pathname.startsWith('/superadmin/analytics')) {
+      return true;
+    }
+    if (href === '/superadmin/curated-modules' && pathname.startsWith('/superadmin/curated-modules')) {
       return true;
     }
     // Exact match for other routes
@@ -163,18 +177,18 @@ export function SidebarNav({ userRole, isMobile = false }: SidebarNavProps) {
         >
           {hasChildren ? (
             <div className="flex items-center w-full">
-              <item.icon className="mr-2 h-4 w-4" />
-              {item.label}
+              <item.icon className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span className="flex-1 text-left">{item.label}</span>
               {isExpanded ? (
-                <ChevronDown className="ml-auto h-4 w-4" />
+                <ChevronDown className="h-4 w-4 flex-shrink-0" />
               ) : (
-                <ChevronRight className="ml-auto h-4 w-4" />
+                <ChevronRight className="h-4 w-4 flex-shrink-0" />
               )}
             </div>
           ) : (
-            <Link href={item.href}>
-              <item.icon className="mr-2 h-4 w-4" />
-              {item.label}
+            <Link href={item.href} className="flex items-center w-full">
+              <item.icon className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span className="flex-1 text-left">{item.label}</span>
             </Link>
           )}
         </Button>

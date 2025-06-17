@@ -1,46 +1,80 @@
-"use client"
-
-import * as React from "react"
-import * as TooltipPrimitive from "@radix-ui/react-tooltip"
-import { HelpCircle } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-
-const TooltipProvider = TooltipPrimitive.Provider
-const Tooltip = TooltipPrimitive.Root
-const TooltipTrigger = TooltipPrimitive.Trigger
-const TooltipContent = React.forwardRef<
-  React.ElementRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
-  <TooltipPrimitive.Content
-    ref={ref}
-    sideOffset={sideOffset}
-    className={cn(
-      "z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-      className
-    )}
-    {...props}
-  />
-))
-TooltipContent.displayName = TooltipPrimitive.Content.displayName
+import React, { useState } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle } from 'lucide-react';
+import { useHelpStore } from '@/store/helpStore';
+import { cn } from '@/lib/utils';
 
 interface HelpTooltipProps {
-  content: React.ReactNode;
+  content: string | React.ReactNode;
+  children?: React.ReactNode;
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  align?: 'start' | 'center' | 'end';
+  sideOffset?: number;
   className?: string;
+  iconClassName?: string;
+  showIcon?: boolean;
 }
 
-export function HelpTooltip({ content, className }: HelpTooltipProps) {
+export function HelpTooltip({
+  content,
+  children,
+  side = 'top',
+  align = 'center',
+  sideOffset = 4,
+  className,
+  iconClassName,
+  showIcon = true
+}: HelpTooltipProps) {
+  const isHelpEnabled = useHelpStore((state) => state.isHelpEnabled);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // If help is disabled, don't show the tooltip
+  if (!isHelpEnabled) {
+    return <>{children}</>;
+  }
+
+  const trigger = children || (
+    showIcon && (
+      <HelpCircle 
+        className={cn(
+          "h-4 w-4 text-muted-foreground/60 hover:text-muted-foreground cursor-pointer transition-colors",
+          iconClassName
+        )} 
+      />
+    )
+  );
+
   return (
     <TooltipProvider>
-      <Tooltip>
+      <Tooltip open={isOpen} onOpenChange={setIsOpen}>
         <TooltipTrigger asChild>
-          <HelpCircle className={cn("h-4 w-4 text-muted-foreground hover:text-foreground", className)} />
+          <span 
+            className={cn("inline-flex items-center cursor-pointer", className)}
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {trigger}
+          </span>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side={side} align={align} sideOffset={sideOffset}>
           {content}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
+}
+
+// Wrapper component for inline help icons
+export function HelpIcon({
+  content,
+  className,
+  ...props
+}: Omit<HelpTooltipProps, 'children' | 'showIcon'>) {
+  return (
+    <HelpTooltip
+      content={content}
+      showIcon={true}
+      className={cn("ml-1", className)}
+      {...props}
+    />
+  );
 } 

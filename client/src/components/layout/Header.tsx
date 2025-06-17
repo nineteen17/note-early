@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescri
 import { Menu } from 'lucide-react';
 import { UserNav } from './UserNav';
 import { ThemeToggle } from './ThemeToggle';
+import { HelpToggleIcon } from '@/components/ui/help-toggle';
 import { SidebarNav } from './SidebarNav';
 import { NoteEarlyLogo } from '@/components/NoteEarlyLogo';
 import type { ProfileDTO } from '@/types/api';
@@ -65,7 +66,8 @@ export function Header({ profile }: HeaderProps) {
       </div>
        
        {/* Right side items */}
-       <div className="ml-auto flex items-center gap-4"> 
+       <div className="ml-auto flex items-center gap-2"> 
+          <HelpToggleIcon />
           <ThemeToggle />
           <UserNav profile={profile || null} />
        </div>

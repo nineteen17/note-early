@@ -1,6 +1,6 @@
 'use client'; // Ensure this is a Client Component
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { useProfileQuery } from '@/hooks/api/profile/useProfileQuery'; // Import useProfileQuery
 import { Header } from '@/components/layout/Header'; // Re-use Header, adjust if needed
@@ -24,6 +24,15 @@ export default function StudentLayout({
     isError: isProfileError,
     error: profileError
   } = useProfileQuery(); // <<< Fetch profile here
+
+  // --- Role Check with useEffect to prevent render issues ---
+  useEffect(() => {
+    if (!isProfileLoading && profile && profile.role !== 'STUDENT') {
+      console.error(`StudentLayout: Incorrect role (${profile?.role}). Redirecting.`);
+      clearAuth();
+      router.push('/login');
+    }
+  }, [profile, isProfileLoading, clearAuth, router]);
 
   // --- Loading State ---
   if (isProfileLoading) {
@@ -74,12 +83,8 @@ export default function StudentLayout({
     );
   }
 
-  // --- Role Check ---
-  // Ensure the user is a STUDENT for this layout
+  // --- Early return for wrong role (handled in useEffect) ---
   if (!profile || profile.role !== 'STUDENT') {
-    console.error(`StudentLayout: Incorrect role (${profile?.role}). Redirecting.`);
-    clearAuth();
-    router.push('/student/login'); // Redirect to STUDENT login page
     return null;
   }
 

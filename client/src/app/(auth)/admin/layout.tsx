@@ -1,6 +1,6 @@
 'use client'; // Ensure this is a Client Component
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { useProfileQuery } from '@/hooks/api/profile/useProfileQuery'; // Import useProfileQuery
 import { Header } from '@/components/layout/Header';
@@ -24,6 +24,15 @@ export default function AdminLayout({
     isError: isProfileError, 
     error: profileError 
   } = useProfileQuery(); // <<< Fetch profile here
+
+  // --- Role Check with useEffect to prevent render issues ---
+  useEffect(() => {
+    if (!isProfileLoading && profile && profile.role !== 'ADMIN' && profile.role !== 'SUPER_ADMIN') {
+      console.error(`AdminLayout: Incorrect role (${profile?.role}). Redirecting.`);
+      clearAuth();
+      router.push('/login');
+    }
+  }, [profile, isProfileLoading, clearAuth, router]);
 
   // --- Loading State --- 
   if (isProfileLoading) {
@@ -74,11 +83,8 @@ export default function AdminLayout({
     );
   }
 
-  // --- Role Check --- 
+  // --- Early return for wrong role (handled in useEffect) ---
   if (!profile || (profile.role !== 'ADMIN' && profile.role !== 'SUPER_ADMIN')) {
-    console.error(`AdminLayout: Incorrect role (${profile?.role}). Redirecting.`);
-    clearAuth();
-    router.push('/admin/login'); // Redirect to ADMIN login page
     return null;
   }
   
