@@ -461,18 +461,18 @@ export function SecurityFeature() {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-destructive" />
-                            Invalidate Refresh Tokens
+                            Log out of all devices
                         </DialogTitle>
                         <DialogDescription>
                             <div className="space-y-3">
-                                <p>This action will:</p>
+                                <p className="text-sm text-muted-foreground">This action will:</p>
                                 <ul className="text-sm space-y-1 ml-4 list-disc">
                                     <li>Log you out immediately</li>
-                                    <li>Invalidate refresh tokens on all devices</li>
-                                    <li>Prevent devices from staying logged in long-term</li>
+                                    <li>Invalidate all active sessions</li>
+                                    <li>Require re-authentication on all devices</li>
                                 </ul>
                                 <p className="text-sm text-muted-foreground">
-                                    <strong>Note:</strong> Existing access tokens remain valid for up to 15 minutes. For immediate security, change your password instead.
+                                    Other devices will be logged out within 15 minutes.
                                 </p>
                             </div>
                         </DialogDescription>
