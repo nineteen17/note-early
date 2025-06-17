@@ -87,83 +87,82 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
 
         {/* Main Module Card */}
         <Card className="w-full">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-start justify-between gap-4">
-                  <CardTitle className="text-2xl font-bold">{module.title}</CardTitle>
-                  
-                  {/* Progress Badge - Moved inside the title container */}
-                  <div className="flex-shrink-0">
-                    {progress && (
-                      <Badge className={progress.completed ? "bg-success text-white" : "bg-secondary text-secondary-foreground"}>
-                        {progress.completed ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                        {progress.completed ? 'Completed' : 'In Progress'}
-                      </Badge>
-                    )}
-                    {!progress && (
-                      <Badge variant="outline">Not Started</Badge>
-                    )}
-                  </div>
+          <CardHeader className="pb-4">
+            <div className="space-y-4">
+              {/* Title and Progress Badge */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <CardTitle className="text-2xl font-bold leading-tight pr-2 sm:pr-0">
+                  {module.title}
+                </CardTitle>
+                <div className="flex-shrink-0">
+                  {progress && (
+                    <Badge className={progress.completed ? "bg-success text-white" : "bg-secondary text-secondary-foreground"}>
+                      {progress.completed ? <CheckCircle className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
+                      {progress.completed ? 'Completed' : 'In Progress'}
+                    </Badge>
+                  )}
+                  {!progress && (
+                    <Badge variant="outline">Not Started</Badge>
+                  )}
                 </div>
-                
-                {/* Module Metadata Badges */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    <BookOpen className="h-3 w-3 mr-1" />
-                    Level {module.level}
-                  </Badge>
-                  
-                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                    🎯 {module.genre}
-                  </Badge>
-                  
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <AlignLeft className="h-3 w-3 mr-1" />
-                    {module.paragraphCount} paragraphs
-                  </Badge>
-                  
-                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {module.estimatedReadingTime || module.paragraphCount * 2} min
-                  </Badge>
-                  
-                  <Badge variant="outline" className="bg-cyan-50 text-cyan-700 border-cyan-200">
-                    🌍 {module.language === 'UK' ? 'British English' : 'American English'}
-                  </Badge>
-                  
-                  {/* Module Type Badge - Show for both curated and custom */}
-                  <Badge variant="outline" className={
-                    module.type === 'curated' 
-                      ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                      : "bg-pink-50 text-pink-700 border-pink-200"
-                  }>
-                    {module.type === 'curated' ? '⭐ ' : '✨ '}{getModuleTypeDisplayName(module.type)}
-                  </Badge>
-                </div>
-
-                {/* Author Information with proper empty state handling */}
-                {authorName ? (
-                  <CardDescription className="flex items-center gap-2 text-sm mt-3">
-                    <User className="h-4 w-4" />
-                    by {authorName}
-                  </CardDescription>
-                ) : (
-                  <CardDescription className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
-                    <User className="h-4 w-4" />
-                    Author information not available
-                  </CardDescription>
-                )}
               </div>
+                              
+              {/* Module Metadata Badges */}
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800">
+                  <BookOpen className="h-3 w-3 mr-1" />
+                  Level {module.level}
+                </Badge>
+                
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800">
+                  🎯 {module.genre}
+                </Badge>
+                
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-300 dark:border-green-800">
+                  <AlignLeft className="h-3 w-3 mr-1" />
+                  {module.paragraphCount} paragraphs
+                </Badge>
+                
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-300 dark:border-orange-800">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {module.estimatedReadingTime || module.paragraphCount * 2} min
+                </Badge>
+                
+                <Badge variant="outline" className="bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/30 dark:text-cyan-300 dark:border-cyan-800">
+                  🌍 {module.language === 'UK' ? 'British English' : 'American English'}
+                </Badge>
+                
+                {/* Module Type Badge - Show for both curated and custom */}
+                <Badge variant="outline" className={
+                  module.type === 'curated' 
+                    ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-300 dark:border-yellow-800"
+                    : "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/30 dark:text-pink-300 dark:border-pink-800"
+                }>
+                  {module.type === 'curated' ? '⭐ ' : '✨ '}{getModuleTypeDisplayName(module.type)}
+                </Badge>
+              </div>
+
+              {/* Author Information with proper empty state handling */}
+              {authorName ? (
+                <CardDescription className="flex items-center gap-2 text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  by {authorName}
+                </CardDescription>
+              ) : (
+                <CardDescription className="flex items-center gap-2 text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  Author information not available
+                </CardDescription>
+              )}
             </div>
           </CardHeader>
           
           <CardContent>
             <div className="space-y-6">
               {/* Module Description */}
-              <div className="prose dark:prose-invert max-w-none">
+              <div className="max-w-none">
                 {module.description ? (
-                  <p className="text-lg leading-relaxed">{module.description}</p>
+                  <p className="text-base leading-relaxed text-muted-foreground">{module.description}</p>
                 ) : (
                   <div className="text-center py-4">
                     <p className="text-muted-foreground italic">No description available for this module.</p>
@@ -175,20 +174,20 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
               {module.structuredContent && module.structuredContent.length > 0 ? (
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
                       <BookOpen className="h-4 w-4" />
                       Module Preview
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <blockquote className="text-sm leading-relaxed italic text-foreground/90 border-l-4 border-accent bg-[rgba(254,172,62,0.1)] pl-4 py-3 rounded-r-lg mb-4">
+                  <CardContent className="space-y-4">
+                    <blockquote className="text-sm leading-relaxed italic text-muted-foreground border-l-4 border-accent bg-accent/10 pl-4 py-3 rounded-r-lg">
                       &ldquo;{module.structuredContent[0].text.substring(0, 200)}
                       {module.structuredContent[0].text.length > 200 ? '...' : ''}&rdquo;
                     </blockquote>
                     
                     {/* Vocabulary Preview - Clean and Simple */}
                     {!isVocabularyLoading && displayVocabulary && displayVocabulary.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-border/50">
+                      <div className="pt-4 border-t border-border/50">
                         <h4 className="text-sm font-medium text-foreground mb-3">
                           Key Vocabulary
                         </h4>
@@ -303,14 +302,14 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
                 </Card>
               )}
 
-              {/* Progress Information - More compact */}
+              {/* Progress Information */}
               {progress && (
                 <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Your Progress</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-medium">Your Progress</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="grid grid-cols-2 gap-4">
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-muted-foreground font-medium mb-1">Started</p>
                         <p className="text-sm font-semibold text-foreground">
@@ -333,13 +332,13 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
                 </Card>
               )}
               
-              {/* Action Button - Proper placement at bottom */}
-              <div className="flex justify-end pt-2">
+              {/* Action Button */}
+              <div className="flex justify-center sm:justify-end pt-4">
                 {progress ? (
                   <Button 
                     onClick={() => router.push(`/student/progress/${moduleId}/reading`)}
                     size="lg"
-                    className="w-full sm:w-auto min-w-[200px]"
+                    className="w-full sm:w-auto min-w-[180px]"
                   >
                     {progress.completed ? 'Review Module' : 'Continue Reading'}
                   </Button>
@@ -348,7 +347,7 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
                     onClick={handleStartModule}
                     disabled={startModuleMutation.isPending}
                     size="lg"
-                    className="w-full sm:w-auto min-w-[200px]"
+                    className="w-full sm:w-auto min-w-[180px]"
                   >
                     {startModuleMutation.isPending ? 'Starting...' : 'Start Module'}
                   </Button>

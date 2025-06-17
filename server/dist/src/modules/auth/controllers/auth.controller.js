@@ -456,7 +456,7 @@ export class AuthController {
                 next(new AppError('Logout failed', 500));
             }
         };
-        // Logout Admin (Existing, ensure it uses admin cookie)
+        // Logout Admin (single session only - use invalidateAllSessions for all devices)
         this.logout = async (req, res, next) => {
             try {
                 await this.authService.logout();
@@ -494,6 +494,66 @@ export class AuthController {
                 else {
                     next(error); // Handles AppErrors from service (like 403 for wrong password)
                 }
+            }
+        };
+        // Invalidate all sessions for the current user
+        this.invalidateAllSessions = async (req, res, next) => {
+            try {
+                const userId = req.user?.id;
+                if (!userId) {
+                    return next(new AppError('User ID not found in request', 401));
+                }
+                // Extract the user token from the Authorization header
+                const authHeader = req.headers.authorization;
+                const userToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+                logger.info('Invalidate all sessions requested for user:', { userId });
+                try {
+                    await this.authService.invalidateAllSessions(userId, userToken);
+                    // Clear any refresh token cookies since we're invalidating all sessions
+                    res.clearCookie('refresh-token', adminRefreshTokenCookieOptions);
+                    res.status(200).json({
+                        status: 'success',
+                        message: 'All sessions have been invalidated successfully',
+                        data: {
+                            userId,
+                            invalidatedAt: new Date().toISOString()
+                        }
+                    });
+                }
+                catch (serviceError) {
+                    // If the service failed to invalidate sessions, we should still clear local cookies
+                    // and return a meaningful response to the user
+                    logger.warn('Session invalidation service failed, but clearing local cookies:', {
+                        userId,
+                        error: serviceError instanceof Error ? serviceError.message : String(serviceError)
+                    });
+                    // Clear local cookies regardless of service failure
+                    res.clearCookie('refresh-token', adminRefreshTokenCookieOptions);
+                    // Check if this is a configuration error vs a user-specific error
+                    if (serviceError instanceof AppError && serviceError.statusCode === 500) {
+                        // Configuration issues should be reported as errors
+                        throw serviceError;
+                    }
+                    else {
+                        // For user-specific issues (like sessions already invalid), we can be more lenient
+                        res.status(200).json({
+                            status: 'success',
+                            message: 'Session invalidation completed (sessions may have already been invalid)',
+                            data: {
+                                userId,
+                                invalidatedAt: new Date().toISOString(),
+                                note: 'Local session cleared, remote sessions may have already been invalid'
+                            }
+                        });
+                    }
+                }
+            }
+            catch (error) {
+                logger.error('Error in invalidateAllSessions controller:', {
+                    error: error instanceof Error ? error.message : String(error),
+                    userId: req.user?.id
+                });
+                next(error);
             }
         };
         // Reset student PIN (Existing)

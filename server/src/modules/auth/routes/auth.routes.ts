@@ -324,8 +324,8 @@ authRouter.post('/refresh', authController.refreshToken);
  * /auth/logout:
  *   post:
  *     tags: [Auth - Admin]
- *     summary: Log out an Admin/SuperAdmin user
- *     description: Logs out the currently authenticated Admin or SuperAdmin user by invalidating their session/token.
+ *     summary: Log out an Admin/SuperAdmin user from current session
+ *     description: Logs out the currently authenticated Admin or SuperAdmin user from the current session only. Other sessions on different devices remain active. Use /auth/invalidate-all-sessions to log out from all devices.
  *     security:
  *       - bearerAuth: [] # Or cookieAuth, depending on setup
  *     responses:
@@ -469,7 +469,5 @@ authRouter.post('/admin/student', authenticateAdmin, authController.createStuden
  *         description: Server error during PIN reset.
  */
 authRouter.post('/admin/student/reset-pin', authenticateAdmin, authController.resetStudentPin); // Renamed route
-
-
 
 export default authRouter;

@@ -45,9 +45,9 @@ function TabsTrigger({
         // Base styles
         "inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg text-base font-medium whitespace-nowrap transition-all duration-200",
         // Inactive state
-        "text-muted-foreground hover:bg-accent/10 hover:text-accent",
+        "text-muted-foreground/60 hover:bg-accent/10 hover:text-accent",
         // Active state - primary in light mode, accent in dark mode
-        "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-primary/90",
+        "data-[state=active]:bg-accent data-[state=active]:text-primary-foreground data-[state=active]:hover:bg-accent/90",
         "dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground dark:data-[state=active]:hover:bg-accent/90",
         // Focus states
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",

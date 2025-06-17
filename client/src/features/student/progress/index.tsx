@@ -18,6 +18,7 @@ import type { StudentProgressSchema, ReadingModuleDTO } from '@/types/api';
 import { ProgressFilters as ProgressFiltersComponent, type ProgressFilters as ProgressFiltersType, type SortOption } from './ProgressFilters';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 
 // Helper function to calculate progress percentage
@@ -32,47 +33,56 @@ const InProgressModuleCard: React.FC<{ progress: StudentProgressSchema; moduleDa
   const router = useRouter();
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="space-y-1 flex-1">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{moduleData.title}</h3>
-              <Badge variant="secondary">
-                <Clock className="w-3 h-3" />
-                <span className="hidden sm:inline">In Progress</span>
-              </Badge>
-            </div>
-            <CardDescription className="line-clamp-2">
-              {moduleData.description}
-            </CardDescription>
-          </div>
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="cursor-pointer flex-1">
+                <h3 className="text-lg font-semibold leading-tight line-clamp-2">{moduleData.title}</h3>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="text-sm">{moduleData.title}</p>
+            </TooltipContent>
+          </Tooltip>
+          <Badge variant="secondary" className="flex-shrink-0">
+            <Clock className="w-3 h-3" />
+            <span className="hidden sm:inline ml-1">In Progress</span>
+          </Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-4">
-              <span className="hidden sm:inline">
-                {progress.highestParagraphIndexReached || 0} of {moduleData.paragraphCount} paragraphs
-              </span>
-              {progress.timeSpentMinutes ? (
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span className="hidden sm:inline">{progress.timeSpentMinutes} minutes</span>
-                  <span className="sm:hidden">{progress.timeSpentMinutes}m</span>
-                </span>
-              ) : null}
+      <CardContent className="flex-1 flex flex-col">
+        <div className="space-y-4 flex-1">
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Progress</span>
+              <div className="font-medium">
+                {progress.highestParagraphIndexReached || 0} of {moduleData.paragraphCount}
+              </div>
             </div>
-            <span className="text-xs sm:text-sm">
-              Last accessed: {formatDistanceToNow(new Date(progress.startedAt || progress.createdAt), { addSuffix: true })}
-            </span>
+            {progress.timeSpentMinutes ? (
+              <div className="space-y-1">
+                <span className="text-muted-foreground">Time Spent</span>
+                <div className="font-medium flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {progress.timeSpentMinutes}m
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <span className="text-muted-foreground">Level</span>
+                <div className="font-medium">Level {moduleData.level}</div>
+              </div>
+            )}
           </div>
 
+          {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Progress</span>
-              <span>{calculateProgressPercentage(progress.highestParagraphIndexReached, moduleData.paragraphCount)}%</span>
+              <span className="text-muted-foreground">Completion</span>
+              <span className="font-medium">{calculateProgressPercentage(progress.highestParagraphIndexReached, moduleData.paragraphCount)}%</span>
             </div>
             <Progress 
               value={calculateProgressPercentage(progress.highestParagraphIndexReached, moduleData.paragraphCount)} 
@@ -81,26 +91,30 @@ const InProgressModuleCard: React.FC<{ progress: StudentProgressSchema; moduleDa
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button 
-              variant="outline"
-              size="sm"
-              className="flex-1" 
-              onClick={() => router.push(`/student/modules/${progress.moduleId}`)}
-            >
-              <span className="hidden sm:inline">View Details</span>
-              <span className="sm:hidden">Details</span>
-            </Button>
-            <Button 
-              variant="default"
-              size="sm"
-              className="flex-1" 
-              onClick={() => router.push(`/student/progress/${progress.moduleId}/reading`)}
-            >
-              <span className="hidden sm:inline">Continue Learning</span>
-              <span className="sm:hidden">Continue</span>
-            </Button>
+          {/* Last Accessed */}
+          <div className="text-xs text-muted-foreground">
+            Last accessed {formatDistanceToNow(new Date(progress.startedAt || progress.createdAt), { addSuffix: true })}
           </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 mt-4">
+          <Button 
+            variant="outline"
+            size="sm"
+            className="flex-1" 
+            onClick={() => router.push(`/student/modules/${progress.moduleId}`)}
+          >
+            Details
+          </Button>
+          <Button 
+            variant="default"
+            size="sm"
+            className="flex-1" 
+            onClick={() => router.push(`/student/progress/${progress.moduleId}/reading`)}
+          >
+            Continue
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -186,12 +200,28 @@ export const StudentProgressList: React.FC<{ showCompleted?: boolean; sortBy: So
 
   if (isLoadingProgress || isLoadingModules) {
     return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {[...Array(4)].map((_, i) => (
           <Card key={i}>
-            <CardContent className="p-6">
-              <Skeleton className="h-6 w-48 mb-4" />
-              <Skeleton className="h-4 w-72" />
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <Skeleton className="h-6 w-48 flex-1" />
+                <Skeleton className="h-6 w-16 flex-shrink-0" />
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col">
+              <div className="space-y-4 flex-1">
+                <div className="grid grid-cols-2 gap-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+                <Skeleton className="h-2 w-full" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Skeleton className="h-8 flex-1" />
+                <Skeleton className="h-8 flex-1" />
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -240,20 +270,22 @@ export const StudentProgressList: React.FC<{ showCompleted?: boolean; sortBy: So
   }
 
   return (
-    <div className="space-y-4">
-      {sorted.map((progress) => {
-        const moduleData = moduleDataMap.get(progress.moduleId);
-        if (!moduleData) return null;
+    <TooltipProvider>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {sorted.map((progress) => {
+          const moduleData = moduleDataMap.get(progress.moduleId);
+          if (!moduleData) return null;
 
-        return (
-          <InProgressModuleCard 
-            key={progress.id} 
-            progress={progress} 
-            moduleData={moduleData}
-          />
-        );
-      })}
-    </div>
+          return (
+            <InProgressModuleCard 
+              key={progress.id} 
+              progress={progress} 
+              moduleData={moduleData}
+            />
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 };
 

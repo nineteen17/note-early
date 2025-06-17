@@ -533,30 +533,41 @@ export class ReadingModuleService {
      */
     async updateVocabularyEntry(vocabularyId, userId, updates) {
         try {
-            // 1. Fetch the existing entry and its module
+            // 1. Fetch the existing vocabulary entry
             const existingEntry = await this.db.query.vocabulary.findFirst({
                 where: eq(schema.vocabulary.id, vocabularyId),
-                with: {
-                    module: { columns: { id: true, adminId: true, type: true } }
-                }
             });
-            if (!existingEntry || !existingEntry.module) {
-                throw new AppError('Vocabulary entry or associated module not found', 404);
+            if (!existingEntry) {
+                throw new AppError('Vocabulary entry not found', 404);
             }
-            // 2. Verify Ownership/Permissions
-            if (existingEntry.module.type === ModuleType.CUSTOM && existingEntry.module.adminId !== userId) {
-                const userProfile = await this.db.query.profiles.findFirst({ columns: { role: true }, where: eq(schema.profiles.id, userId) });
+            // 2. Fetch the module separately to check permissions
+            const module = await this.db.query.readingModules.findFirst({
+                where: eq(schema.readingModules.id, existingEntry.moduleId),
+                columns: { id: true, adminId: true, type: true }
+            });
+            if (!module) {
+                throw new AppError('Associated module not found', 404);
+            }
+            // 3. Verify Ownership/Permissions
+            if (module.type === ModuleType.CUSTOM && module.adminId !== userId) {
+                const userProfile = await this.db.query.profiles.findFirst({
+                    columns: { role: true },
+                    where: eq(schema.profiles.id, userId)
+                });
                 if (userProfile?.role !== UserRole.SUPER_ADMIN) {
                     throw new AppError('Unauthorized to update this vocabulary entry', 403);
                 }
             }
-            else if (existingEntry.module.type === ModuleType.CURATED) {
-                const userProfile = await this.db.query.profiles.findFirst({ columns: { role: true }, where: eq(schema.profiles.id, userId) });
+            else if (module.type === ModuleType.CURATED) {
+                const userProfile = await this.db.query.profiles.findFirst({
+                    columns: { role: true },
+                    where: eq(schema.profiles.id, userId)
+                });
                 if (userProfile?.role !== UserRole.SUPER_ADMIN) {
                     throw new AppError('Only Super Admins can update vocabulary for curated modules', 403);
                 }
             }
-            // 3. Perform the update
+            // 4. Perform the update
             const [updatedEntry] = await this.db
                 .update(schema.vocabulary)
                 .set({ ...updates, updatedAt: new Date() })
@@ -581,35 +592,45 @@ export class ReadingModuleService {
      */
     async deleteVocabularyEntry(vocabularyId, userId) {
         try {
-            // 1. Fetch the existing entry and its module for permission check
+            // 1. Fetch the existing vocabulary entry
             const existingEntry = await this.db.query.vocabulary.findFirst({
                 where: eq(schema.vocabulary.id, vocabularyId),
-                with: {
-                    module: { columns: { id: true, adminId: true, type: true } }
-                }
             });
-            if (!existingEntry || !existingEntry.module) {
+            if (!existingEntry) {
                 // If not found, arguably deletion is successful (idempotent)
-                logger.warn('Attempted to delete non-existent vocabulary entry or entry with missing module', { vocabularyId });
+                logger.warn('Attempted to delete non-existent vocabulary entry', { vocabularyId });
                 return;
             }
-            // 2. Verify Ownership/Permissions
-            if (existingEntry.module.type === ModuleType.CUSTOM && existingEntry.module.adminId !== userId) {
-                const userProfile = await this.db.query.profiles.findFirst({ columns: { role: true }, where: eq(schema.profiles.id, userId) });
+            // 2. Fetch the module separately to check permissions
+            const module = await this.db.query.readingModules.findFirst({
+                where: eq(schema.readingModules.id, existingEntry.moduleId),
+                columns: { id: true, adminId: true, type: true }
+            });
+            if (!module) {
+                logger.warn('Vocabulary entry found but associated module not found', { vocabularyId, moduleId: existingEntry.moduleId });
+                return;
+            }
+            // 3. Verify Ownership/Permissions
+            if (module.type === ModuleType.CUSTOM && module.adminId !== userId) {
+                const userProfile = await this.db.query.profiles.findFirst({
+                    columns: { role: true },
+                    where: eq(schema.profiles.id, userId)
+                });
                 if (userProfile?.role !== UserRole.SUPER_ADMIN) {
                     throw new AppError('Unauthorized to delete this vocabulary entry', 403);
                 }
             }
-            else if (existingEntry.module.type === ModuleType.CURATED) {
-                const userProfile = await this.db.query.profiles.findFirst({ columns: { role: true }, where: eq(schema.profiles.id, userId) });
+            else if (module.type === ModuleType.CURATED) {
+                const userProfile = await this.db.query.profiles.findFirst({
+                    columns: { role: true },
+                    where: eq(schema.profiles.id, userId)
+                });
                 if (userProfile?.role !== UserRole.SUPER_ADMIN) {
                     throw new AppError('Only Super Admins can delete vocabulary for curated modules', 403);
                 }
             }
-            // 3. Perform the deletion
-            const result = await this.db.delete(schema.vocabulary).where(eq(schema.vocabulary.id, vocabularyId));
-            // Check if deletion occurred (optional, delete is usually void)
-            // if (result.rowCount === 0) { ... }
+            // 4. Perform the deletion
+            await this.db.delete(schema.vocabulary).where(eq(schema.vocabulary.id, vocabularyId));
             logger.info('Vocabulary entry deleted', { vocabularyId, deletedBy: userId });
         }
         catch (error) {

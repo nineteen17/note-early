@@ -151,8 +151,8 @@ const useProgressMetrics = (progress: any[]) => {
     const inProgressCount = progress.filter(p => !p.completed).length;
     
     return {
-      averageScore: progress.length 
-        ? progress.reduce((acc, curr) => acc + (curr.score || 0), 0) / progress.length 
+      averageScore: completedProgress.length 
+        ? completedProgress.reduce((acc, curr) => acc + (curr.score || 0), 0) / completedProgress.length 
         : 0,
       totalTimeSpent: progress.reduce((acc, curr) => acc + (curr.timeSpentMinutes || 0), 0),
       completedCount: completedProgress.length,
@@ -178,6 +178,12 @@ const useProgressMetrics = (progress: any[]) => {
 const calculateProgressPercentage = (current: number, total: number) => {
   if (!current || !total) return 0;
   return Math.round((current / total) * 100);
+};
+
+const getScoreVariant = (score: number): "low-score" | "medium-score" | "high-score" => {
+  if (score >= 80) return "high-score";
+  if (score >= 60) return "medium-score";
+  return "low-score";
 };
 
 const useCalendarStats = (calendarData: CalendarDay[]) => {
@@ -341,7 +347,11 @@ const ProgressCard: React.FC<{ metrics: ReturnType<typeof useProgressMetrics> }>
             <span>Average Score</span>
             <span className="font-medium">{Math.round(metrics.averageScore)}%</span>
           </div>
-          <Progress value={metrics.averageScore} variant="default" className="h-2" />
+          <Progress 
+            value={metrics.averageScore} 
+            variant={getScoreVariant(metrics.averageScore)} 
+            className="h-2" 
+          />
         </div>
         
         {/* Statistics Grid */}

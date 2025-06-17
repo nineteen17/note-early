@@ -7,10 +7,21 @@ import { useParagraphVocabularyQuery } from '@/hooks/api/reading-modules';
 import { useStudentProgressDetailsQuery } from '@/hooks/api/student/progress/useStudentProgressDetailsQuery';
 import { useSubmitSummaryMutation } from '@/hooks/api/student/progress/useSubmitSummaryMutation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { StudentSkeleton } from '@/components/skeletons/StudentSkeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  FileText, 
+  BookOpen, 
+  Edit, 
+  Eye,
+  CheckCircle,
+  Clock,
+  User,
+  Lock
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { use } from 'react';
 import type { VocabularyEntryDTO } from '@/types/api';
@@ -20,6 +31,16 @@ import { HelpTooltip } from '@/components/ui/help-tooltip';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ReadTextArea } from "@/components/ui/read-text-area";
 
 interface ModuleDetailsPageProps {
   params: Promise<{
@@ -33,6 +54,7 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
   const [currentParagraphIndex, setCurrentParagraphIndex] = useState(1);
   const [paragraphSummary, setParagraphSummary] = useState('');
   const [cumulativeSummary, setCumulativeSummary] = useState('');
+  const [mobileTab, setMobileTab] = useState<'paragraph' | 'submission'>('paragraph');
   
   const { data: module, isLoading: isModuleLoading, error: moduleError } = useModuleQuery(moduleId);
   const { data: paragraph, isLoading: isParagraphLoading, error: paragraphError } = useParagraphQuery(moduleId, currentParagraphIndex);
@@ -72,7 +94,12 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
   };
 
   const handleNext = () => {
-    if (currentParagraphIndex < module.paragraphCount) {
+    // Only allow navigation to next paragraph if current paragraph is submitted (unless module is completed)
+    const currentSubmission = progressDetails?.submissions?.find(
+      sub => sub.paragraphIndex === currentParagraphIndex
+    );
+    
+    if (currentParagraphIndex < module.paragraphCount && (currentSubmission || isCompleted)) {
       setCurrentParagraphIndex(prev => prev + 1);
     }
   };
@@ -117,209 +144,548 @@ export default function ModuleDetailsPage({ params }: ModuleDetailsPageProps) {
   const isCompleted = progressDetails?.progress?.completed;
 
   return (
-    <PageContainer>
-      <div className="space-y-4">
-        <Breadcrumb 
-          items={[
-            { label: 'Progress', href: '/student/progress' },
-            isCompleted ? { label: 'Completed', href: '/student/progress/completed' } : { label: 'In Progress', href: '/student/progress' },
-            { label: module.title, href: isCompleted ? `/student/progress/${moduleId}/report` : `/student/progress/${moduleId}/reading` },
-            { label: `Paragraph ${currentParagraphIndex}` }
-          ]} 
-        />
-        <Card className="w-full">
-          <CardHeader>
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <CardTitle className="text-xl sm:text-2xl font-bold break-words">{module.title}</CardTitle>
-                
-                {/* Optimized Progress Information */}
-                <div className="mt-4 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
-                      <span>Paragraph {currentParagraphIndex} of {module.paragraphCount}</span>
-                      <span className="hidden sm:inline text-xs">•</span>
-                      <span>{progressDetails?.submissions?.length || 0} submitted</span>
-                    </div>
-                    <div className="flex items-center gap-2 self-start sm:self-auto">
-                      {isCompleted && (
-                        <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-2 py-1 rounded-full">
-                          ✓ Complete
-                        </span>
-                      )}
-                      <span className={`text-sm font-medium ${isCompleted ? 'text-green-600 dark:text-green-400' : 'text-purple-600 dark:text-purple-400'}`}>
-                        {Math.round(((progressDetails?.submissions?.length || 0) / module.paragraphCount) * 100)}%
-                      </span>
-                    </div>
+    <TooltipProvider>
+      <PageContainer>
+        <div className="space-y-6">
+          <Breadcrumb 
+            items={[
+              { label: 'Progress', href: '/student/progress' },
+              isCompleted ? { label: 'Completed', href: '/student/progress/completed' } : { label: 'In Progress', href: '/student/progress' },
+              { label: module.title, href: isCompleted ? `/student/progress/${moduleId}/report` : `/student/progress/${moduleId}/reading` },
+              { label: `Paragraph ${currentParagraphIndex}` }
+            ]} 
+          />
+
+          {/* Enhanced Header Card */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="space-y-2 min-w-0 flex-grow">
+                  <div className="flex items-center gap-3">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="cursor-pointer">
+                          <CardTitle className="text-lg sm:text-xl font-semibold tracking-tight truncate max-w-[300px] sm:max-w-[500px] md:max-w-[600px]">
+                            {module.title}
+                          </CardTitle>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-sm">{module.title}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                  <Progress 
-                    value={((progressDetails?.submissions?.length || 0) / module.paragraphCount) * 100} 
-                    className={`h-2 transition-colors ${
+                  <CardDescription className="text-sm">
+                    Reading Progress • Paragraph {currentParagraphIndex} of {module.paragraphCount}
+                  </CardDescription>
+                </div>
+                
+                {/* Compact Meta Information */}
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{progressDetails?.submissions?.length || 0}/{module.paragraphCount}</span>
+                  </div>
+                  
+                  <Badge 
+                    variant={isCompleted ? "default" : "secondary"}
+                    className={cn(
+                      "text-xs",
                       isCompleted 
-                        ? 'bg-green-100 dark:bg-green-950/20' 
-                        : 'bg-purple-100 dark:bg-purple-950/20'
-                    }`}
-                    style={{
-                      '--progress-foreground': isCompleted 
-                        ? 'hsl(142, 76%, 36%)' 
-                        : 'hsl(262, 83%, 58%)'
-                    } as React.CSSProperties}
-                  />
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                        : "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                    )}
+                  >
+                    {isCompleted ? "Complete" : `${Math.round(((progressDetails?.submissions?.length || 0) / module.paragraphCount) * 100)}%`}
+                  </Badge>
+                  
+                  {isCompleted && (
+                    <Button size="sm" onClick={() => router.push(`/student/progress/${moduleId}/report`)} className="gap-2">
+                      <FileText className="h-4 w-4" />
+                      Report
+                    </Button>
+                  )}
                 </div>
               </div>
-              {isCompleted && (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/student/progress/${moduleId}/report`)}
-                  className="gap-2 shrink-0 w-full sm:w-auto hover:text-foreground/80"
-                >
-                  <FileText className="h-4 w-4" />
-                  View Report
-                </Button>
-              )}
+            </CardHeader>
+          </Card>
+
+          <div className="flex flex-col h-[calc(100vh-280px)]">
+            {/* Desktop View - Side by Side Cards */}
+            <div className="hidden lg:block flex-1 min-h-0">
+              <div className="grid gap-6 lg:grid-cols-2 h-full">
+                {/* Original Paragraph Content */}
+                <Card className="shadow-md overflow-hidden flex flex-col h-full">
+                 <CardHeader className="flex-shrink-0 pb-3 border-b">
+                   <div className="flex items-center justify-between">
+                     <CardTitle className="flex items-center gap-2 text-lg">
+                       <div className="p-2 bg-primary/10 rounded-lg">
+                         <BookOpen className="h-4 w-4 text-primary" />
+                       </div>
+                       Paragraph {currentParagraphIndex}
+                     </CardTitle>
+                     
+                     {/* Navigation Controls */}
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                         <span className="text-sm font-medium">
+                           {currentParagraphIndex} of {module.paragraphCount}
+                         </span>
+                         <div className="flex items-center gap-1">
+                           {Array.from({ length: module.paragraphCount || 0 }, (_, i) => {
+                             const paragraphSubmission = progressDetails?.submissions?.find(s => s.paragraphIndex === i + 1);
+                             const canNavigate = i + 1 <= currentParagraphIndex || paragraphSubmission || isCompleted;
+                             
+                             return (
+                               <button
+                                 key={i}
+                                 onClick={() => canNavigate && setCurrentParagraphIndex(i + 1)}
+                                 disabled={!canNavigate}
+                                 className={cn(
+                                   "w-2.5 h-2.5 rounded-full transition-colors",
+                                   !canNavigate && "cursor-not-allowed opacity-50",
+                                   i + 1 === currentParagraphIndex 
+                                     ? "bg-accent" 
+                                     : paragraphSubmission
+                                     ? "bg-green-500"
+                                     : "bg-muted-foreground/30"
+                                 )}
+                                 title={`Paragraph ${i + 1}${paragraphSubmission ? ' (submitted)' : canNavigate ? '' : ' (locked - complete previous paragraphs first)'}`}
+                               />
+                             );
+                           })}
+                         </div>
+                       </div>
+                       
+                       <div className="flex items-center gap-1 pl-4">
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={handlePrevious}
+                               disabled={currentParagraphIndex === 1}
+                             >
+                               <ChevronLeft className="h-4 w-4" />
+                             </Button>
+                           </TooltipTrigger>
+                           <TooltipContent>
+                             {currentParagraphIndex === 1 ? "Already at first paragraph" : "Previous paragraph"}
+                           </TooltipContent>
+                         </Tooltip>
+                         
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={handleNext}
+                               disabled={
+                                 currentParagraphIndex === module.paragraphCount || 
+                                 (!currentSubmission && !isCompleted)
+                               }
+                               className={
+                                 (currentParagraphIndex === module.paragraphCount || (!currentSubmission && !isCompleted))
+                                   ? "cursor-not-allowed"
+                                   : ""
+                               }
+                             >
+                               {(currentParagraphIndex < module.paragraphCount && !currentSubmission && !isCompleted) ? (
+                                 <Lock className="h-4 w-4" />
+                               ) : (
+                                 <ChevronRight className="h-4 w-4" />
+                               )}
+                             </Button>
+                           </TooltipTrigger>
+                           <TooltipContent>
+                             {currentParagraphIndex === module.paragraphCount 
+                               ? "Already at last paragraph" 
+                               : (!currentSubmission && !isCompleted)
+                               ? "Complete current paragraph to continue"
+                               : "Next paragraph"
+                             }
+                           </TooltipContent>
+                         </Tooltip>
+                       </div>
+                     </div>
+                   </div>
+                 </CardHeader>
+                   <CardContent className="flex-1 min-h-0 pb-4">
+                     {(!currentSubmission || isCompleted) ? (
+                       <div className="h-full">
+                         {isCompleted && currentSubmission && (
+                           <div className="mb-4 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                             <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                               📚 Review Mode - Original content now visible for review
+                             </p>
+                           </div>
+                         )}
+                         <ReadTextArea text={paragraph?.text || ''} vocabulary={vocabulary || []} />
+                       </div>
+                     ) : (
+                       <div className="h-full flex items-center justify-center">
+                         <div className="text-center text-muted-foreground py-8">
+                           <p className="text-sm">
+                             🔒 Original paragraph hidden until module completion. Complete all paragraphs to unlock review mode.
+                           </p>
+                         </div>
+                       </div>
+                     )}
+                   </CardContent>
+               </Card>
+
+               {/* Student Work Section */}
+               <Card className="shadow-md overflow-hidden flex flex-col h-full">
+                 <CardHeader className="flex-shrink-0 pb-3 border-b">
+                   <CardTitle className="flex items-center gap-2 text-lg">
+                     <div className="p-2 bg-blue-500/10 rounded-lg">
+                       {currentSubmission ? <Eye className="h-4 w-4 text-blue-600" /> : <Edit className="h-4 w-4 text-blue-600" />}
+                     </div>
+                     {currentSubmission ? "Your Summary" : "Write Summary"}
+                     {currentSubmission && (
+                       <Badge variant="secondary" className="ml-auto text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                         Submitted
+                       </Badge>
+                     )}
+                   </CardTitle>
+                 </CardHeader>
+                 <CardContent className="flex-1 min-h-0 pb-4">
+                   <div className="h-full overflow-auto">
+                     {currentSubmission ? (
+                       <div className="space-y-4">
+                         <div>
+                           <h4 className="font-medium text-sm mb-2">Paragraph Summary:</h4>
+                           <div className="bg-muted/30 rounded-lg p-3">
+                             <Textarea
+                               value={currentSubmission.paragraphSummary || ''}
+                               className="min-h-[150px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0"
+                               readOnly
+                             />
+                           </div>
+                         </div>
+                         {currentParagraphIndex > 1 && (
+                           <div>
+                             <h4 className="font-medium text-sm mb-2">Cumulative Summary:</h4>
+                             <div className="bg-muted/30 rounded-lg p-3">
+                               <Textarea
+                                 value={currentSubmission.cumulativeSummary || 'No cumulative summary provided.'}
+                                 className="min-h-[150px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0"
+                                 readOnly
+                               />
+                             </div>
+                           </div>
+                         )}
+                         <div className="text-xs text-muted-foreground">
+                           Submitted on {new Date(currentSubmission.submittedAt).toLocaleDateString()}
+                         </div>
+                       </div>
+                     ) : (
+                       <div className="space-y-4 h-full">
+                         <div className="space-y-2">
+                           <Label htmlFor="paragraphSummary">Paragraph Summary</Label>
+                           <Textarea
+                             id="paragraphSummary"
+                             placeholder="Summarize this paragraph..."
+                             value={paragraphSummary}
+                             onChange={(e) => setParagraphSummary(e.target.value)}
+                             className="min-h-[150px]"
+                             autoFocus={false}
+                           />
+                         </div>
+                         {currentParagraphIndex > 1 && (
+                           <div className="space-y-2">
+                             <div className="flex items-center gap-2">
+                               <Label htmlFor="cumulativeSummary">Cumulative Summary</Label>
+                               <HelpTooltip content={
+                                 <div className="max-w-xs space-y-2">
+                                   <p className="font-medium">What is a Cumulative Summary?</p>
+                                   <p className="text-sm">
+                                     A cumulative summary combines your understanding of all paragraphs read so far.
+                                     It helps you track the overall story and how each new paragraph connects to what you&apos;ve already read.
+                                   </p>
+                                   <p className="text-sm">
+                                     For example, if you&apos;re reading a story about a journey, your cumulative summary would include:
+                                   </p>
+                                   <ul className="text-sm list-disc pl-4">
+                                     <li>Key events from previous paragraphs</li>
+                                     <li>How new information connects to earlier parts</li>
+                                     <li>The overall story progression</li>
+                                   </ul>
+                                 </div>
+                               } />
+                             </div>
+                             <Textarea
+                               id="cumulativeSummary"
+                               placeholder="Summarize the story so far..."
+                               value={cumulativeSummary}
+                               onChange={(e) => setCumulativeSummary(e.target.value)}
+                               className="min-h-[150px]"
+                               autoFocus={false}
+                             />
+                           </div>
+                         )}
+                         <div className="flex justify-end pt-4">
+                           <Button
+                             onClick={handleSubmitSummary}
+                             disabled={!paragraphSummary || (currentParagraphIndex > 1 && !cumulativeSummary) || submitSummaryMutation.isPending}
+                           >
+                             {submitSummaryMutation.isPending ? 'Submitting...' : 
+                               currentParagraphIndex === module.paragraphCount ? 'Complete Module' : 'Submit Summary'}
+                           </Button>
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                 </CardContent>
+               </Card>
+             </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {/* Show paragraph text if: 1) Not yet submitted OR 2) Module is completed */}
-              {(!currentSubmission || isCompleted) && (
-                <div className="prose dark:prose-invert max-w-none">
-                  {isCompleted && currentSubmission && (
-                    <div className="mb-4 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-                      <p className="text-sm text-green-700 dark:text-green-300 font-medium">
-                        📚 Review Mode - Original content now visible for review
-                      </p>
-                    </div>
-                  )}
-                  <p className="text-lg leading-relaxed">{paragraph.text}</p>
-                </div>
-              )}
-              
-              {/* Show placeholder when paragraph is hidden (submitted but module not complete) */}
-              {currentSubmission && !isCompleted && (
-                <div className="p-4 rounded-lg bg-muted/50 border-2 border-dashed border-muted-foreground/20">
-                  <div className="text-center text-muted-foreground py-8">
-                    <p className="text-sm">
-                      🔒 Original paragraph hidden until module completion. Complete all paragraphs to unlock review mode.
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Vocabulary section - only show if paragraph is visible OR if submission exists (vocabulary can still be helpful) */}
-              {vocabulary && vocabulary.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Vocabulary</h3>
-                  <div className="grid gap-4">
-                    {vocabulary.map((entry: VocabularyEntryDTO) => (
-                      <div key={entry.id} className="p-4 rounded-lg bg-muted">
-                        <p className="font-medium">{entry.word}</p>
-                        <p className="text-sm text-muted-foreground">{entry.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {!currentSubmission && (
-                <div className="mt-8 space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="paragraphSummary">Paragraph Summary</Label>
-                    <Textarea
-                      id="paragraphSummary"
-                      placeholder="Summarize this paragraph..."
-                      value={paragraphSummary}
-                      onChange={(e) => setParagraphSummary(e.target.value)}
-                      className="min-h-[100px]"
-                      autoFocus={false}
-                    />
-                  </div>
-                  {currentParagraphIndex > 1 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="cumulativeSummary">Cumulative Summary</Label>
-                        <HelpTooltip content={
-                          <div className="max-w-xs space-y-2">
-                            <p className="font-medium">What is a Cumulative Summary?</p>
-                            <p className="text-sm">
-                              A cumulative summary combines your understanding of all paragraphs read so far.
-                              It helps you track the overall story and how each new paragraph connects to what you&apos;ve already read.
-                            </p>
-                            <p className="text-sm">
-                              For example, if you&apos;re reading a story about a journey, your cumulative summary would include:
-                            </p>
-                            <ul className="text-sm list-disc pl-4">
-                              <li>Key events from previous paragraphs</li>
-                              <li>How new information connects to earlier parts</li>
-                              <li>The overall story progression</li>
-                            </ul>
-                          </div>
-                        } />
+            {/* Mobile View - Tabbed Interface */}
+            <div className="lg:hidden flex-1 min-h-0">
+              <Tabs value={mobileTab} onValueChange={(value) => setMobileTab(value as 'paragraph' | 'submission')} className="h-full flex flex-col">
+                <div className="flex-shrink-0 space-y-3">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="paragraph">Reading</TabsTrigger>
+                    <TabsTrigger value="submission">{currentSubmission ? "Your Work" : "Write Summary"}</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Navigation Controls */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium">
+                        {currentParagraphIndex} of {module.paragraphCount}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: module.paragraphCount || 0 }, (_, i) => {
+                          const paragraphSubmission = progressDetails?.submissions?.find(s => s.paragraphIndex === i + 1);
+                          const canNavigate = i + 1 <= currentParagraphIndex || paragraphSubmission || isCompleted;
+                          
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => canNavigate && setCurrentParagraphIndex(i + 1)}
+                              disabled={!canNavigate}
+                              className={cn(
+                                "w-2.5 h-2.5 rounded-full transition-colors",
+                                !canNavigate && "cursor-not-allowed opacity-50",
+                                i + 1 === currentParagraphIndex 
+                                  ? "bg-accent" 
+                                  : paragraphSubmission
+                                  ? "bg-green-500"
+                                  : "bg-muted-foreground/30"
+                              )}
+                              title={`Paragraph ${i + 1}${paragraphSubmission ? ' (submitted)' : canNavigate ? '' : ' (locked - complete previous paragraphs first)'}`}
+                            />
+                          );
+                        })}
                       </div>
-                      <Textarea
-                        id="cumulativeSummary"
-                        placeholder="Summarize the story so far..."
-                        value={cumulativeSummary}
-                        onChange={(e) => setCumulativeSummary(e.target.value)}
-                        className="min-h-[100px]"
-                        autoFocus={false}
-                      />
                     </div>
-                  )}
+                    
+                    <div className="flex items-center gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handlePrevious}
+                            disabled={currentParagraphIndex === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {currentParagraphIndex === 1 ? "Already at first paragraph" : "Previous paragraph"}
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleNext}
+                            disabled={
+                              currentParagraphIndex === module.paragraphCount || 
+                              (!currentSubmission && !isCompleted)
+                            }
+                            className={
+                              (currentParagraphIndex === module.paragraphCount || (!currentSubmission && !isCompleted))
+                                ? "cursor-not-allowed"
+                                : ""
+                            }
+                          >
+                                                         {(currentParagraphIndex < module.paragraphCount && !currentSubmission && !isCompleted) ? (
+                              <Lock className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {currentParagraphIndex === module.paragraphCount 
+                            ? "Already at last paragraph" 
+                            : (!currentSubmission && !isCompleted)
+                            ? "Complete current paragraph to continue"
+                            : "Next paragraph"
+                          }
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
                 </div>
-              )}
+                
+                <TabsContent value="paragraph" className="flex-1 min-h-0 mt-4">
+                  <Card className="shadow-md overflow-hidden h-full flex flex-col">
+                   <CardHeader className="flex-shrink-0 pb-3 border-b">
+                     <div className="flex items-center justify-between">
+                       <CardTitle className="flex items-center gap-2 text-lg">
+                         <div className="p-2 bg-primary/10 rounded-lg">
+                           <BookOpen className="h-4 w-4 text-primary" />
+                         </div>
+                         Paragraph {currentParagraphIndex}
+                       </CardTitle>
+                     </div>
+                   </CardHeader>
+                     <CardContent className="flex-1 min-h-0 pb-4">
+                       {(!currentSubmission || isCompleted) ? (
+                         <div className="h-full">
+                           {isCompleted && currentSubmission && (
+                             <div className="mb-4 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                               <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                                 📚 Review Mode - Original content now visible for review
+                               </p>
+                             </div>
+                           )}
+                           <ReadTextArea text={paragraph?.text || ''} vocabulary={vocabulary || []} />
+                         </div>
+                       ) : (
+                         <div className="h-full flex items-center justify-center">
+                           <div className="text-center text-muted-foreground py-8">
+                             <p className="text-sm">
+                               🔒 Original paragraph hidden until module completion. Complete all paragraphs to unlock review mode.
+                             </p>
+                           </div>
+                         </div>
+                       )}
+                     </CardContent>
+                 </Card>
 
-              {currentSubmission && (
-                <div className="mt-8 space-y-4">
-                  <div className="p-4 rounded-lg bg-muted">
-                    <h3 className="text-lg font-semibold mb-2">Your Summary</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Submitted on {new Date(currentSubmission.submittedAt).toLocaleDateString()}</p>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium mb-1">Paragraph Summary</h4>
-                        <p className="text-sm">{currentSubmission.paragraphSummary}</p>
-                      </div>
-                      {currentParagraphIndex > 1 && (
-                        <div>
-                          <h4 className="font-medium mb-1">Cumulative Summary</h4>
-                          <p className="text-sm">{currentSubmission.cumulativeSummary}</p>
+
+                </TabsContent>
+                
+                <TabsContent value="submission" className="flex-1 min-h-0 mt-4">
+                  <Card className="shadow-md overflow-hidden h-full flex flex-col">
+                    <CardHeader className="flex-shrink-0 pb-3">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                          {currentSubmission ? <Eye className="h-4 w-4 text-blue-600" /> : <Edit className="h-4 w-4 text-blue-600" />}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+                        {currentSubmission ? "Your Summary" : "Write Summary"}
+                        {currentSubmission && (
+                          <Badge variant="secondary" className="ml-auto text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                            Submitted
+                          </Badge>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1 min-h-0 pb-4">
+                      <div className="h-full overflow-auto">
+                        {currentSubmission ? (
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium text-sm mb-2">Paragraph Summary:</h4>
+                              <div className="bg-muted/30 rounded-lg p-3">
+                                <Textarea
+                                  value={currentSubmission.paragraphSummary || ''}
+                                  className="min-h-[120px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0"
+                                  readOnly
+                                />
+                              </div>
+                            </div>
+                            {currentParagraphIndex > 1 && (
+                              <div>
+                                <h4 className="font-medium text-sm mb-2">Cumulative Summary:</h4>
+                                <div className="bg-muted/30 rounded-lg p-3">
+                                  <Textarea
+                                    value={currentSubmission.cumulativeSummary || 'No cumulative summary provided.'}
+                                    className="min-h-[120px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0"
+                                    readOnly
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            <div className="text-xs text-muted-foreground">
+                              Submitted on {new Date(currentSubmission.submittedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-4 h-full">
+                            <div className="space-y-2">
+                              <Label htmlFor="paragraphSummary">Paragraph Summary</Label>
+                              <Textarea
+                                id="paragraphSummary"
+                                placeholder="Summarize this paragraph..."
+                                value={paragraphSummary}
+                                onChange={(e) => setParagraphSummary(e.target.value)}
+                                className="min-h-[120px]"
+                                autoFocus={false}
+                              />
+                            </div>
+                            {currentParagraphIndex > 1 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Label htmlFor="cumulativeSummary">Cumulative Summary</Label>
+                                  <HelpTooltip content={
+                                    <div className="max-w-xs space-y-2">
+                                      <p className="font-medium">What is a Cumulative Summary?</p>
+                                      <p className="text-sm">
+                                        A cumulative summary combines your understanding of all paragraphs read so far.
+                                        It helps you track the overall story and how each new paragraph connects to what you&apos;ve already read.
+                                      </p>
+                                      <p className="text-sm">
+                                        For example, if you&apos;re reading a story about a journey, your cumulative summary would include:
+                                      </p>
+                                      <ul className="text-sm list-disc pl-4">
+                                        <li>Key events from previous paragraphs</li>
+                                        <li>How new information connects to earlier parts</li>
+                                        <li>The overall story progression</li>
+                                      </ul>
+                                    </div>
+                                  } />
+                                </div>
+                                <Textarea
+                                  id="cumulativeSummary"
+                                  placeholder="Summarize the story so far..."
+                                  value={cumulativeSummary}
+                                  onChange={(e) => setCumulativeSummary(e.target.value)}
+                                  className="min-h-[120px]"
+                                  autoFocus={false}
+                                />
+                              </div>
+                            )}
+                            <div className="flex justify-end pt-4">
+                              <Button
+                                onClick={handleSubmitSummary}
+                                disabled={!paragraphSummary || (currentParagraphIndex > 1 && !cumulativeSummary) || submitSummaryMutation.isPending}
+                              >
+                                {submitSummaryMutation.isPending ? 'Submitting...' : 
+                                  currentParagraphIndex === module.paragraphCount ? 'Complete Module' : 'Submit Summary'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentParagraphIndex === 1}
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Previous
-            </Button>
-            {!currentSubmission ? (
-              <Button
-                onClick={handleSubmitSummary}
-                disabled={!paragraphSummary || (currentParagraphIndex > 1 && !cumulativeSummary) || submitSummaryMutation.isPending}
-              >
-                {submitSummaryMutation.isPending ? 'Submitting...' : 
-                  currentParagraphIndex === module.paragraphCount ? 'Complete Module' : 'Submit Summary'}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleNext}
-                disabled={currentParagraphIndex === module.paragraphCount}
-              >
-                Next
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-      </div>
-    </PageContainer>
+          </div>
+
+
+        </div>
+      </PageContainer>
+    </TooltipProvider>
   );
 } 

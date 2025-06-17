@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
@@ -43,27 +44,71 @@ export default function ModuleReportPage({ params }: ModuleReportPageProps) {
     return (
       <PageContainer>
         <div className="space-y-6">
-          <Skeleton className="h-8 w-3/4" />
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-1/2" />
-                <Skeleton className="h-4 w-3/4" />
+          {/* Breadcrumb skeleton */}
+          <Skeleton className="h-5 w-64" />
+          
+          {/* Header card skeleton */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <Skeleton className="h-8 w-3/4" />
+                  <Skeleton className="h-6 w-24" />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Cards skeleton */}
+          <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card className="shadow-md">
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-2 w-full" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-5 w-12" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-5 w-20" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-md">
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-6 w-20" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center space-y-3">
+                    <Skeleton className="h-12 w-20 mx-auto" />
+                    <Skeleton className="h-2 w-full" />
+                    <Skeleton className="h-4 w-32 mx-auto" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <Card className="shadow-md">
+              <CardHeader className="pb-3">
+                <Skeleton className="h-6 w-32" />
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-2/3" />
+              <CardContent>
+                <Skeleton className="h-20 w-full" />
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-1/2" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
-            </Card>
+            <div className="flex justify-center sm:justify-end pt-4">
+              <Skeleton className="h-10 w-48" />
+            </div>
           </div>
         </div>
       </PageContainer>
@@ -96,9 +141,9 @@ export default function ModuleReportPage({ params }: ModuleReportPageProps) {
   const timeSpent = progress.timeSpentMinutes || 0;
 
   return (
-    <PageContainer>
-      <div className="space-y-4">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    <TooltipProvider>
+      <PageContainer>
+        <div className="space-y-6">
           <Breadcrumb
             items={[
               { label: 'Progress', href: '/student/progress' },
@@ -106,146 +151,165 @@ export default function ModuleReportPage({ params }: ModuleReportPageProps) {
               { label: module.title, href: '#' },
               { label: 'Report', href: '#' },
             ]}
-            className="flex-wrap"
           />
-        </div>
 
-        <Card className="w-full">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl font-bold">{module.title}</CardTitle>
-                <CardDescription className="mt-2">
-                  <div className="flex flex-wrap items-center gap-4 text-sm">
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="h-4 w-4" />
-                      Level {module.level}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <AlignLeft className="h-4 w-4" />
-                      {module.paragraphCount} paragraphs
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {module.paragraphCount * 2} minutes
-                    </span>
-                  </div>
-                </CardDescription>
+          {/* Header Card */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-pointer flex-1">
+                        <CardTitle className="text-2xl font-bold leading-tight line-clamp-2 pr-2 sm:pr-0">
+                          {module.title} - Report
+                        </CardTitle>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-sm">{module.title}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Badge className="bg-success text-white flex-shrink-0">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Completed
+                  </Badge>
+                </div>
+                
+                {/* Module Metadata Badges */}
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800">
+                    <BookOpen className="h-3 w-3 mr-1" />
+                    Level {module.level}
+                  </Badge>
+                  
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-300 dark:border-green-800">
+                    <AlignLeft className="h-3 w-3 mr-1" />
+                    {module.paragraphCount} paragraphs
+                  </Badge>
+                  
+                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-300 dark:border-orange-800">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {timeSpent || module.paragraphCount * 2} min
+                  </Badge>
+                </div>
               </div>
-              <Badge className="bg-[#4BAE4F] text-white">
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Completed
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Progress Overview Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    Progress Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Completion</span>
-                      <span className="font-medium">100%</span>
-                    </div>
-                    <Progress value={100} variant="completed" className="h-2" />
-                  </div>
+            </CardHeader>
+          </Card>
 
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>Time Spent</span>
+          {/* Cards Grid */}
+          <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+                {/* Progress Overview Card */}
+                <Card className="shadow-md">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <BookOpen className="h-4 w-4 text-primary" />
                       </div>
-                      <p className="text-lg font-medium">{timeSpent} minutes</p>
+                      Progress Overview
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Progress value={100} variant="completed" className="h-2" />
+                      <p className="text-xs text-muted-foreground text-center">Module completed successfully</p>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>Completed</span>
-                      </div>
-                      <p className="text-lg font-medium">
-                        {completionDate ? format(completionDate, 'MMM d, yyyy') : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Score Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="h-5 w-5" />
-                    Score
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center space-y-2">
-                    {progress.score !== null && progress.score !== undefined ? (
-                      <>
-                        <p className="text-4xl font-bold text-primary">{progress.score}%</p>
-                        <div className="space-y-1">
-                          <Progress value={progress.score} variant="completed" className="h-3" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground text-sm">Time Spent</span>
+                        <div className="font-medium flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {timeSpent}m
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground text-sm">Completed</span>
+                        <div className="font-medium text-sm">
+                          {completionDate ? format(completionDate, 'MMM d, yyyy') : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Score Card */}
+                <Card className="shadow-md">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <div className="p-2 bg-yellow-500/10 rounded-lg">
+                        <Star className="h-4 w-4 text-yellow-600" />
+                      </div>
+                      Score
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center space-y-3">
+                      {progress.score !== null && progress.score !== undefined ? (
+                        <>
+                          <p className="text-3xl font-bold text-success">{progress.score}%</p>
+                          <Progress value={progress.score} variant="completed" className="h-2" />
                           <p className="text-sm text-muted-foreground">
                             {progress.score >= 80 ? 'Excellent work!' : 
                              progress.score >= 60 ? 'Good job!' : 
                              'Keep practicing!'}
                           </p>
+                        </>
+                      ) : (
+                        <div className="py-4">
+                          <p className="text-xl font-medium text-muted-foreground">Awaiting Score</p>
+                          <p className="text-sm text-muted-foreground mt-1">Your score will be available soon</p>
                         </div>
-                      </>
-                    ) : (
-                      <div className="py-4">
-                        <p className="text-2xl font-medium text-muted-foreground">Awaiting Score</p>
-                        <p className="text-sm text-muted-foreground mt-1">Your score will be available soon</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Feedback Card */}
+              <Card className="shadow-md">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                    </div>
+                    Teacher Feedback
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {progress.teacherFeedback ? (
+                    <div className="space-y-3">
+                      <div className="bg-muted/30 rounded-lg p-3">
+                        <p className="text-sm leading-relaxed">{progress.teacherFeedback}</p>
                       </div>
-                    )}
-                  </div>
+                      {progress.teacherFeedbackAt && (
+                        <p className="text-xs text-muted-foreground">
+                          Feedback provided {formatDistanceToNow(new Date(progress.teacherFeedbackAt), { addSuffix: true })}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground italic">No feedback provided yet</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Feedback Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Feedback
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {progress.teacherFeedback ? (
-                  <div className="space-y-2">
-                    <p className="text-sm">{progress.teacherFeedback}</p>
-                    {progress.teacherFeedbackAt && (
-                      <p className="text-xs text-muted-foreground">
-                        Feedback provided {formatDistanceToNow(new Date(progress.teacherFeedbackAt), { addSuffix: true })}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">No feedback provided yet</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-2">
-              <Button asChild>
-                <a href={`/student/progress/${moduleId}/reading`}>
-                  Review Module & Submissions
-                </a>
+            {/* Action Button */}
+            <div className="flex justify-center sm:justify-end pt-4">
+              <Button 
+                onClick={() => router.push(`/student/progress/${moduleId}/reading`)}
+                size="lg"
+                className="w-full sm:w-auto min-w-[200px]"
+              >
+                Review Module & Submissions
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </PageContainer>
+          </div>
+        </div>
+      </PageContainer>
+    </TooltipProvider>
   );
 } 

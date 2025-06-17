@@ -307,8 +307,8 @@ authRouter.post('/refresh', authController.refreshToken);
  * /auth/logout:
  *   post:
  *     tags: [Auth - Admin]
- *     summary: Log out an Admin/SuperAdmin user
- *     description: Logs out the currently authenticated Admin or SuperAdmin user by invalidating their session/token.
+ *     summary: Log out an Admin/SuperAdmin user from current session
+ *     description: Logs out the currently authenticated Admin or SuperAdmin user from the current session only. Other sessions on different devices remain active. Use /auth/invalidate-all-sessions to log out from all devices.
  *     security:
  *       - bearerAuth: [] # Or cookieAuth, depending on setup
  *     responses:
@@ -357,6 +357,24 @@ authRouter.post('/logout', authenticateAdmin, authController.logout); // Added m
  *         description: Server error during password reset.
  */
 authRouter.post('/reset-password', authenticateAdmin, authController.resetAdminPassword); // Renamed route
+/**
+ * @swagger
+ * /auth/invalidate-all-sessions:
+ *   post:
+ *     tags: [Auth - Admin]
+ *     summary: Invalidate all user sessions
+ *     description: Logs out the user from all devices and sessions. Useful for security purposes after password change.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All sessions invalidated successfully.
+ *       401:
+ *         description: Authentication required.
+ *       500:
+ *         description: Server error during session invalidation.
+ */
+authRouter.post('/invalidate-all-sessions', authenticateAdmin, authController.invalidateAllSessions);
 /**
  * @swagger
  * /auth/admin/student:

@@ -199,19 +199,16 @@ export const useLogoutMutation = (
   const queryClient = useQueryClient();
   const router = useRouter();
   
-  
   return useMutation<void, ApiError, void>({
     mutationFn: logoutUser,
     onSuccess: (data, variables, context) => {
-      // Let clearAuth handle localStorage removal
+      // For single session logout, only clear local state - don't force global logout
       useAuthStore.getState().clearAuth();
       
-      // Clear the query cache
+      // Clear the query cache for this session
       queryClient.clear();
-      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
       
-
-      // Add a small delay to ensure storage clearing completes before navigation
+      // Navigate to login
       setTimeout(() => {
         router.push('/login');
       }, 50);
@@ -219,6 +216,7 @@ export const useLogoutMutation = (
       options?.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
+      // Even on error, clear local state and redirect
       useAuthStore.getState().clearAuth();
       queryClient.clear();
       
@@ -434,13 +432,36 @@ export const useInvalidateAllSessionsMutation = (
   options?: Omit<UseMutationOptions<{ message: string }, ApiError, void>, 'mutationFn'>
 ) => {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  
   return useMutation<{ message: string }, ApiError, void>({
     mutationFn: invalidateAllSessions,
     onSuccess: (data) => {
+      // Clear auth state since we're invalidating all sessions (user will be logged out)
+      useAuthStore.getState().clearAuth();
+      
       // Clear all query cache since user will be logged out
       queryClient.clear();
+      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      
+      // Navigate to login after a small delay
+      setTimeout(() => {
+        router.push('/login');
+      }, 50);
+      
       // The success callback can be handled by the component
       options?.onSuccess?.(data, undefined, undefined);
+    },
+    onError: (error, variables, context) => {
+      // Also clear auth on error since sessions might have been invalidated
+      useAuthStore.getState().clearAuth();
+      queryClient.clear();
+      
+      setTimeout(() => {
+        router.push('/login');
+      }, 50);
+      
+      options?.onError?.(error, variables, context);
     },
     ...options,
   });

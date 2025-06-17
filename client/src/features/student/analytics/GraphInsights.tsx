@@ -37,7 +37,7 @@ interface GenreStats {
 interface TimeStats {
   timeOfDay: string;
   activeModules: number;
-  completedParagraphs: number;
+  timeSpent: number;
   completed: number;
 }
 
@@ -104,25 +104,29 @@ const GraphInsights: React.FC = () => {
     if (!activityData?.progressByDay?.length) return [];
 
     const timeSlots = {
-      'Morning (6AM-12PM)': { activeModules: 0, completedParagraphs: 0, completed: 0 },
-      'Afternoon (12PM-6PM)': { activeModules: 0, completedParagraphs: 0, completed: 0 },
-      'Evening (6PM-12AM)': { activeModules: 0, completedParagraphs: 0, completed: 0 },
-      'Night (12AM-6AM)': { activeModules: 0, completedParagraphs: 0, completed: 0 }
+      'Morning (6AM-12PM)': { activeModules: 0, timeSpent: 0, completed: 0 },
+      'Afternoon (12PM-6PM)': { activeModules: 0, timeSpent: 0, completed: 0 },
+      'Evening (6PM-12AM)': { activeModules: 0, timeSpent: 0, completed: 0 },
+      'Night (12AM-6AM)': { activeModules: 0, timeSpent: 0, completed: 0 }
     };
 
     activityData.progressByDay.forEach((day) => {
-      if (day.date) {
-        const hour = new Date(day.date).getHours();
-        let timeSlot: keyof typeof timeSlots;
-        
-        if (hour >= 6 && hour < 12) timeSlot = 'Morning (6AM-12PM)';
-        else if (hour >= 12 && hour < 18) timeSlot = 'Afternoon (12PM-6PM)';
-        else if (hour >= 18 && hour < 24) timeSlot = 'Evening (6PM-12AM)';
-        else timeSlot = 'Night (12AM-6AM)';
+      // Use lastActivity timestamp to get the actual time of activity
+      if (day.lastActivity) {
+        const activityTime = new Date(day.lastActivity);
+        if (!isNaN(activityTime.getTime())) {
+          const hour = activityTime.getHours();
+          let timeSlot: keyof typeof timeSlots;
+          
+          if (hour >= 6 && hour < 12) timeSlot = 'Morning (6AM-12PM)';
+          else if (hour >= 12 && hour < 18) timeSlot = 'Afternoon (12PM-6PM)';
+          else if (hour >= 18 && hour < 24) timeSlot = 'Evening (6PM-12AM)';
+          else timeSlot = 'Night (12AM-6AM)';
 
-        timeSlots[timeSlot].activeModules += day.modulesActive || 0;
-        timeSlots[timeSlot].completedParagraphs += day.modulesActive || 0;
-        timeSlots[timeSlot].completed += day.modulesCompleted || 0;
+          timeSlots[timeSlot].activeModules += day.modulesActive || 0;
+          timeSlots[timeSlot].timeSpent += day.timeSpent || 0;
+          timeSlots[timeSlot].completed += day.modulesCompleted || 0;
+        }
       }
     });
 
@@ -135,30 +139,37 @@ const GraphInsights: React.FC = () => {
   const analyzeProgressOverTime = React.useMemo((): ProgressData[] => {
     if (!progress?.length) return [];
 
-    // Create array with all months
-    const allMonths = Array.from({ length: 12 }, (_, i) => {
-      const date = new Date();
-      date.setMonth(i);
-      return {
-        date: date.toLocaleDateString('en-US', { month: 'short' }),
-        score: 0
-      };
+    // Group progress by month and calculate average scores
+    const monthlyScores = new Map<string, { total: number; count: number }>();
+    
+    progress.forEach((curr) => {
+      if (curr.updatedAt && curr.score !== undefined && curr.score !== null) {
+        const date = new Date(curr.updatedAt);
+        if (!isNaN(date.getTime())) {
+          const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          const existing = monthlyScores.get(monthKey) || { total: 0, count: 0 };
+          monthlyScores.set(monthKey, {
+            total: existing.total + curr.score,
+            count: existing.count + 1
+          });
+        }
+      }
     });
 
-    // Map progress data to months
-    const progressByMonth = progress.reduce((acc, curr) => {
-      const month = new Date(curr.updatedAt).toLocaleDateString('en-US', { month: 'short' });
-      const monthIndex = allMonths.findIndex(m => m.date === month);
-      if (monthIndex !== -1) {
-        acc[monthIndex] = {
-          date: month,
-          score: curr.score || 0
-        };
-      }
-      return acc;
-    }, allMonths);
+    // Convert to array and calculate averages
+    const progressData = Array.from(monthlyScores.entries())
+      .map(([monthKey, { total, count }]) => ({
+        date: monthKey.split(' ')[0], // Just the month abbreviation
+        score: Math.round(total / count)
+      }))
+      .sort((a, b) => {
+        const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return monthOrder.indexOf(a.date) - monthOrder.indexOf(b.date);
+      });
 
-    return progressByMonth;
+    // If no data, return empty array to show empty chart
+    return progressData.length > 0 ? progressData : [];
   }, [progress]);
 
   if (isLoading) {
@@ -204,8 +215,8 @@ const GraphInsights: React.FC = () => {
       label: "Active Modules",
       color: "#B19CD9",
     },
-    completedParagraphs: {
-      label: "Completed Paragraphs",
+    timeSpent: {
+      label: "Time Spent (minutes)",
       color: "#2EBBE7",
     },
     completed: {
@@ -308,21 +319,19 @@ const GraphInsights: React.FC = () => {
           <TabsContent value="time" className="w-full mt-4">
             <div className="w-full h-[300px] sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
               <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                <BarChart data={timePatterns} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
+                <BarChart data={timePatterns} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
                   <CartesianGrid vertical={false} stroke="#F5F5F5" />
                   <XAxis
                     dataKey="timeOfDay"
                     tickLine={false}
-                    tickMargin={10}
+                    tickMargin={8}
                     axisLine={false}
-                    tick={{ fill: "#666666", fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
+                    tick={{ fill: "#666666", fontSize: 10 }}
+                    interval={0}
                   />
                   <YAxis 
-                    tick={{ fill: "#666666", fontSize: 11 }} 
-                    width={40}
+                    tick={{ fill: "#666666", fontSize: 10 }} 
+                    width={35}
                   />
                   <Tooltip
                     contentStyle={{
@@ -341,20 +350,25 @@ const GraphInsights: React.FC = () => {
                     }}
                     itemStyle={{
                       color: "#666666",
-                      padding: "4px 0",
+                      padding: "2px 0",
                       fontSize: "11px"
+                    }}
+                    formatter={(value, name) => {
+                      if (name === 'Reading Time') return [`${value} min`, name];
+                      return [value, name];
                     }}
                   />
                   <Legend 
                     wrapperStyle={{ 
                       color: "#666666", 
-                      paddingTop: "60px",
-                      fontSize: "11px"
-                    }} 
+                      fontSize: "10px",
+                      paddingTop: "8px"
+                    }}
+                    iconSize={10}
                   />
-                  <Bar dataKey="completed" stackId="a" fill="#4BAE4F" radius={0} />
-                  <Bar dataKey="completedParagraphs" stackId="a" fill="#2EBBE7" radius={0} />
-                  <Bar dataKey="activeModules" stackId="a" fill="#B19CD9" radius={0} />
+                  <Bar dataKey="completed" fill="#4BAE4F" radius={2} name="Completed" />
+                  <Bar dataKey="activeModules" fill="#B19CD9" radius={2} name="Active" />
+                  <Bar dataKey="timeSpent" fill="#2EBBE7" radius={2} name="Reading Time" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

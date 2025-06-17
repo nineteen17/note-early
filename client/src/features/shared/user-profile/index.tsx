@@ -110,10 +110,10 @@ export function UserProfile() {
                     <div className="space-y-8">
                         {/* Student Notice */}
                         {isStudent && (
-                            <Alert className="bg-primary/50 border-primary/20">
+                            <Alert className="bg-primary/10 border-primary/30 dark:bg-muted/50 dark:border-primary/40">
                                 <Info className="h-5 w-5 text-primary" />
-                                <AlertTitle className="text-accent font-semibold">Student Profile</AlertTitle>
-                                <AlertDescription className="text-muted-foreground mt-1">
+                                <AlertTitle className="text-accent font-semibold drop-shadow-sm">Student Profile</AlertTitle>
+                                <AlertDescription className="text-foreground/80 mt-1">
                                     Your profile information is managed by your administrator. Please contact them if you need to make any changes.
                                 </AlertDescription>
                             </Alert>

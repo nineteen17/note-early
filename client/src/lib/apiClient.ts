@@ -49,6 +49,7 @@ const NON_STANDARD_ENDPOINTS = [
   '/auth/student/logout',
   '/auth/forgot-password',
   '/auth/update-password',
+  '/auth/invalidate-all-sessions',
   // Add other non-standard endpoints here
 ];
 
