@@ -35,7 +35,8 @@ jobs:
         tags: |
           type=ref,event=branch
           type=ref,event=pr
-          type=sha,prefix={{branch}}-
+          type=sha,prefix=main-,enable=${{ github.ref == 'refs/heads/main' }}
+          type=sha,prefix=dev-,enable=${{ github.ref == 'refs/heads/dev' }}
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Backend
@@ -73,7 +74,8 @@ jobs:
         tags: |
           type=ref,event=branch
           type=ref,event=pr
-          type=sha,prefix={{branch}}-
+          type=sha,prefix=main-,enable=${{ github.ref == 'refs/heads/main' }}
+          type=sha,prefix=dev-,enable=${{ github.ref == 'refs/heads/dev' }}
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Frontend
