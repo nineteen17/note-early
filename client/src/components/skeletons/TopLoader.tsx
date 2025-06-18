@@ -5,7 +5,6 @@ import NextTopLoader from 'nextjs-toploader';
 export function TopLoader() {
   // Configure the top loader bar
   // See https://github.com/ThePrimeagen/nextjs-toploader for options
-  console.log("TopLoader has rendered")
 
   return (
     <NextTopLoader

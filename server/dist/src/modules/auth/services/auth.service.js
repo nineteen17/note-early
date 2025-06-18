@@ -8,8 +8,6 @@ import { logger } from '@/utils/logger';
 import { AppError } from '@/utils/errors';
 import { SubscriptionService } from '@/modules/subscription/services/subscription.service';
 import { generateStudentAuthTokens, verifyStudentRefreshToken } from '@/utils/jwt'; // Import the new utility function
-import { env } from '@/config/env';
-import { createClient } from '@supabase/supabase-js';
 export class AuthService {
     // <<< Modify constructor to accept db instance
     constructor(dbInstance) {
@@ -525,49 +523,21 @@ export class AuthService {
         }
     }
     // Invalidate all Supabase sessions for the current user (global logout)
-    async invalidateAllSessions(userId, userToken) {
+    async invalidateAllSessions(userId) {
         try {
             // Validate userId input
             if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
                 throw new AppError('Invalid user ID provided', 400);
             }
-            logger.info('Invalidating all sessions for user (with session context):', { userId });
-            if (userToken) {
-                // Create a client with the user's session context
-                const userClient = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
-                    auth: {
-                        autoRefreshToken: false,
-                        persistSession: false,
-                    },
-                    global: {
-                        headers: {
-                            Authorization: `Bearer ${userToken}`
-                        }
-                    }
-                });
-                // Now signOut() will work because this client has the user's session context
-                // Default signOut() uses global scope which invalidates all sessions
-                const { error } = await userClient.auth.signOut();
-                if (error) {
-                    logger.error('Supabase global signout error with user context:', error);
-                    throw new AppError(`Failed to invalidate all sessions: ${error.message}`, 500);
-                }
-                logger.info('Successfully invalidated all sessions with user context:', { userId });
+            logger.info('Invalidating all sessions for user (global signOut):', { userId });
+            // Simple approach: Use signOut() which defaults to global scope
+            // This will invalidate all sessions for the current user
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                logger.error('Supabase global signout error:', error);
+                throw new AppError(`Failed to invalidate all sessions: ${error.message}`, 500);
             }
-            else {
-                // Fallback: Use admin approach if no token provided
-                logger.warn('No user token provided, using admin fallback approach');
-                const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-                    user_metadata: {
-                        sessions_invalidated_at: new Date().toISOString()
-                    }
-                });
-                if (error) {
-                    logger.error('Admin fallback session invalidation failed:', error);
-                    throw new AppError(`Failed to invalidate sessions: ${error.message}`, 500);
-                }
-                logger.info('Successfully invalidated sessions via admin fallback:', { userId });
-            }
+            logger.info('Successfully invalidated all sessions globally for user:', { userId });
         }
         catch (error) {
             if (error instanceof AppError) {
