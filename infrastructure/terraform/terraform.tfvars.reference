@@ -1,0 +1,32 @@
+# This is a REFERENCE file - copy to terraform.tfvars.secret and fill in real values
+# This file is safe for AI to read and doesn't contain sensitive data
+
+# Required variables (you MUST set these)
+do_token = "dop_v1_YOUR_DIGITALOCEAN_TOKEN_HERE"
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2E... your-public-key-here"
+
+# Optional variables (can be changed)
+project_name = "noteearly"
+region = "syd1"  # Sydney, Australia
+droplet_size = "s-1vcpu-1gb"  # $6/month - cheapest option
+domain_name = "noteearly.com"
+
+# Cost control features (disabled by default to save money)
+enable_load_balancer = false  # Set to true to add +$12/month
+enable_backups = false        # Set to true to add +20% of droplet cost
+
+# Environment
+environment = "production"
+
+# ========================
+# COST REFERENCE TABLE
+# ========================
+# s-1vcpu-1gb   = $6/month   (1 vCPU, 1GB RAM)  - Starting size
+# s-1vcpu-2gb   = $12/month  (1 vCPU, 2GB RAM)
+# s-2vcpu-2gb   = $18/month  (2 vCPU, 2GB RAM)
+# s-2vcpu-4gb   = $24/month  (2 vCPU, 4GB RAM)
+# s-4vcpu-8gb   = $48/month  (4 vCPU, 8GB RAM)
+# s-8vcpu-16gb  = $96/month  (8 vCPU, 16GB RAM)
+#
+# Load Balancer = +$12/month
+# Backups = +20% of droplet cost 

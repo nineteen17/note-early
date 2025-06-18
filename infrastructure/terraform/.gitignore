@@ -1,0 +1,19 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.reference
+terraform.tfvars.secret
+tfplan
+.terraform/
+.terraform.lock.hcl
+
+# IDE
+.DS_Store
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log 
