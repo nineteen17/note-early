@@ -17,9 +17,9 @@ const nextConfig: NextConfig = {
   },
   
   // Production optimizations
-  experimental: {
-    optimizeCss: true,
-  },
+  // experimental: {
+  //   optimizeCss: true, // Temporarily disabled - requires 'critters' package
+  // },
   
   // Security headers
   async headers() {
