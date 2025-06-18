@@ -1,11 +1,9 @@
 version: "3.8"
 
 services:
-  # Backend API Service
+  # Backend API Service - Using pre-built image from Docker Hub
   backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
+    image: nineteen17dh/noteearly-backend:main
     container_name: noteearly-backend
     ports:
       - "${PORT:-4000}:${PORT:-4000}"
@@ -49,13 +47,9 @@ services:
     networks:
       - noteearly-network
 
-  # Frontend Next.js Service
+  # Frontend Next.js Service - Using pre-built image from Docker Hub
   frontend:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+    image: nineteen17dh/noteearly-frontend:main
     container_name: noteearly-frontend
     ports:
       - "3000:3000"
