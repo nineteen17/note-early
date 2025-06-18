@@ -1,0 +1,91 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+packages:
+  - curl
+  - wget
+  - git
+  - htop
+  - ufw
+  - fail2ban
+
+# Configure firewall
+runcmd:
+  # Basic firewall setup
+  - ufw --force enable
+  - ufw allow ssh
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw allow 8080/tcp
+  
+  # Install Docker
+  - curl -fsSL https://get.docker.com -o get-docker.sh
+  - sh get-docker.sh
+  - usermod -aG docker root
+  
+  # Install Docker Compose
+  - curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  - chmod +x /usr/local/bin/docker-compose
+  
+  # Install Coolify
+  - curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
+  
+  # Create application directories
+  - mkdir -p /opt/noteearly/{frontend,backend}
+  - chown -R root:root /opt/noteearly
+  
+  # Configure fail2ban for SSH protection
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+
+# Write configuration files
+write_files:
+  - path: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime = 3600
+      findtime = 600
+      maxretry = 3
+
+      [sshd]
+      enabled = true
+      port = ssh
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 3
+      bantime = 3600
+
+  - path: /opt/noteearly/README.md
+    content: |
+      # NoteEarly Production Server
+      
+      This server is configured with:
+      - Docker & Docker Compose
+      - Coolify (accessible at http://server-ip:8080)
+      - UFW Firewall
+      - Fail2ban for SSH protection
+      
+      ## Quick Start
+      1. Access Coolify: http://your-server-ip:8080
+      2. Configure your applications
+      3. Deploy from your Git repositories
+      
+      ## Directories
+      - /opt/noteearly/frontend - Frontend application
+      - /opt/noteearly/backend - Backend application
+
+final_message: |
+  NoteEarly server setup complete!
+  
+  Next steps:
+  1. Access Coolify at http://your-server-ip:8080
+  2. Configure your applications
+  3. Deploy your code
+  
+  The system will reboot in 60 seconds to ensure all changes take effect.
+
+power_state:
+  delay: 60
+  mode: reboot
+  message: "Rebooting to complete setup" 

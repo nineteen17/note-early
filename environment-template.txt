@@ -1,0 +1,57 @@
+# =============================================================================
+# NoteEarly Production Environment Variables Template
+# =============================================================================
+# Copy these to your Coolify environment configuration
+# Replace placeholder values with your actual production values
+
+# ===== FRONTEND ENVIRONMENT VARIABLES =====
+# Set these in your Frontend application in Coolify
+NEXT_PUBLIC_API_BASE_URL=https://api.noteearly.com
+
+# ===== BACKEND ENVIRONMENT VARIABLES =====
+# Set these in your Backend application in Coolify
+
+# App Configuration
+NODE_ENV=production
+PORT=4000
+
+# Database (Supabase)
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres
+
+# Supabase Auth
+SUPABASE_URL=https://[YOUR-PROJECT-REF].supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_JWT_SECRET=your-jwt-secret-from-supabase
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-min-32-chars
+JWT_EXPIRES_IN=1h
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-min-32-chars
+JWT_REFRESH_TOKEN_EXPIRY_SECONDS=604800
+
+# Frontend URLs
+FRONTEND_REDIRECT_URL=https://noteearly.com/callback
+CLIENT_URL=https://noteearly.com
+FRONTEND_URL=https://noteearly.com
+APP_URL=https://noteearly.com
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Storage Configuration
+STORAGE_BUCKET=your-supabase-storage-bucket-name
+
+# =============================================================================
+# COOLIFY DEPLOYMENT NOTES:
+# =============================================================================
+# 1. Deploy Backend first - this gives you the API URL
+# 2. Update NEXT_PUBLIC_API_BASE_URL with your backend URL
+# 3. Deploy Frontend with the correct API URL
+# 4. Configure your domain DNS to point to your server IP: 134.199.170.210
+# ============================================================================= 
