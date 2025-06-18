@@ -31,7 +31,6 @@ services:
 
       # Frontend URLs
       - FRONTEND_REDIRECT_URL=${FRONTEND_REDIRECT_URL}
-      - CLIENT_URL=${CLIENT_URL}
       - FRONTEND_URL=${FRONTEND_URL}
       - APP_URL=${APP_URL}
 
