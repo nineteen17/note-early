@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "baseUrl": "./src",
+    "rootDir": "./src",              // ← add this
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -18,6 +19,6 @@
       "@utils/*": ["utils/*"]
     }
   },
-  "include": ["src/**/*", "*.ts"],
+  "include": ["src/**/*"],           // ← remove the "*.ts" entry
   "exclude": ["node_modules", "dist"]
 }
