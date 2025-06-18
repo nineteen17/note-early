@@ -24,7 +24,7 @@ variable "region" {
 variable "droplet_size" {
   description = "Size of the droplet"
   type        = string
-  default     = "s-1vcpu-1gb"
+  default     = "s-1vcpu-2gb"
   validation {
     condition = contains([
       "s-1vcpu-1gb",
