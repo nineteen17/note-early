@@ -1,11 +1,12 @@
 # =============================================================================
-# NoteEarly Production Environment Variables Template
+# NoteEarly Production Environment Variables Template for Coolify
 # =============================================================================
-# Copy these to your Coolify environment configuration
-# Replace placeholder values with your actual production values
+# Set ALL these variables in Coolify environment configuration
+# No values are hardcoded in docker-compose.yaml
 
 # ===== FRONTEND ENVIRONMENT VARIABLES =====
 # Set these in your Frontend application in Coolify
+NODE_ENV=production
 NEXT_PUBLIC_API_BASE_URL=https://api.noteearly.com
 
 # ===== BACKEND ENVIRONMENT VARIABLES =====
@@ -48,10 +49,14 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 STORAGE_BUCKET=your-supabase-storage-bucket-name
 
 # =============================================================================
-# COOLIFY DEPLOYMENT NOTES:
+# COOLIFY DEPLOYMENT CHECKLIST:
 # =============================================================================
-# 1. Deploy Backend first - this gives you the API URL
-# 2. Update NEXT_PUBLIC_API_BASE_URL with your backend URL
-# 3. Deploy Frontend with the correct API URL
-# 4. Configure your domain DNS to point to your server IP: 134.199.170.210
+# ✅ File renamed: docker-compose.yml → docker-compose.yaml
+# ✅ All hardcoded values removed from docker-compose.yaml
+# ✅ All values now configurable via environment variables
+# 
+# DEPLOYMENT STEPS:
+# 1. Deploy Backend first with ALL backend environment variables above
+# 2. Deploy Frontend with NODE_ENV and NEXT_PUBLIC_API_BASE_URL
+# 3. Configure domain DNS to point to: 134.199.170.210
 # ============================================================================= 

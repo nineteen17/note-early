@@ -8,11 +8,11 @@ services:
       dockerfile: Dockerfile
     container_name: noteearly-backend
     ports:
-      - "4000:4000"
+      - "${PORT:-4000}:${PORT:-4000}"
     environment:
       # App Configuration
-      - NODE_ENV=production
-      - PORT=4000
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
 
       # Database (Supabase)
       - DATABASE_URL=${DATABASE_URL}
@@ -25,9 +25,9 @@ services:
 
       # JWT Configuration
       - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=1h
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - JWT_REFRESH_TOKEN_EXPIRY_SECONDS=604800
+      - JWT_REFRESH_TOKEN_EXPIRY_SECONDS=${JWT_REFRESH_TOKEN_EXPIRY_SECONDS}
 
       # Frontend URLs
       - FRONTEND_REDIRECT_URL=${FRONTEND_REDIRECT_URL}
@@ -37,7 +37,7 @@ services:
 
       # Rate Limiting
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
-      - RATE_LIMIT_MAX_REQUESTS=100
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
 
       # Stripe Configuration
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
@@ -60,17 +60,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV}
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
     restart: unless-stopped
     networks:
       - noteearly-network
     depends_on:
       - backend
-
-volumes:
-  postgres_data:
-  redis_data:
 
 networks:
   noteearly-network:
