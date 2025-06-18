@@ -1,0 +1,81 @@
+name: Auto Create Pull Request
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types: [completed]
+    branches: [dev]
+
+jobs:
+  create-pr:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Check if PR already exists
+        id: check-pr
+        run: |
+          # Check if there's already an open PR from dev to main
+          existing_pr=$(gh pr list --head dev --base main --state open --json number --jq '.[0].number')
+          if [ "$existing_pr" != "null" ] && [ "$existing_pr" != "" ]; then
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$existing_pr" >> $GITHUB_OUTPUT
+          else
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        if: steps.check-pr.outputs.pr_exists == 'false'
+        run: |
+          # Get the latest commit message for the PR title
+          latest_commit_msg=$(git log -1 --pretty=format:"%s" origin/dev)
+          
+          # Create PR body with build status
+          pr_body="## 🚀 Auto-generated PR from dev to main
+
+          ### ✅ Build Status
+          - Docker build completed successfully
+          - Both backend and frontend images built and pushed
+          - Ready for deployment to production
+
+          ### 📝 Changes
+          Latest commit: \`$latest_commit_msg\`
+
+          ### 🔗 Docker Images
+          - \`nineteen17dh/noteearly-backend:dev\`
+          - \`nineteen17dh/noteearly-frontend:dev\`
+
+          ---
+          *This PR was automatically created after successful CI/CD build.*"
+
+          gh pr create \
+            --title "🚀 Deploy to Production: $latest_commit_msg" \
+            --body "$pr_body" \
+            --head dev \
+            --base main \
+            --label "auto-generated,deployment"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update existing PR
+        if: steps.check-pr.outputs.pr_exists == 'true'
+        run: |
+          echo "✅ PR #${{ steps.check-pr.outputs.pr_number }} already exists and will be updated with latest changes"
+          
+          # Add a comment to the existing PR
+          gh pr comment ${{ steps.check-pr.outputs.pr_number }} \
+            --body "✅ **New successful build completed!**
+          
+          Latest commit: \`$(git log -1 --pretty=format:"%s" origin/dev)\`
+          Build completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          
+          Docker images updated and ready for deployment."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
