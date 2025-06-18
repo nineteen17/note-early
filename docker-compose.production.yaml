@@ -3,7 +3,7 @@ version: "3.8"
 services:
   # Backend API Service - Using pre-built image
   backend:
-    image: nineteen17/noteearly-backend:dev
+    image: nineteen17dh/noteearly-backend:dev
     container_name: noteearly-backend
     ports:
       - "${PORT:-4000}:${PORT:-4000}"
@@ -49,7 +49,7 @@ services:
 
   # Frontend Next.js Service - Using pre-built image
   frontend:
-    image: nineteen17/noteearly-frontend:dev
+    image: nineteen17dh/noteearly-frontend:dev
     container_name: noteearly-frontend
     ports:
       - "3000:3000"

@@ -8,8 +8,8 @@ on:
 
 env:
   DOCKER_REGISTRY: docker.io
-  BACKEND_IMAGE_NAME: nineteen17/noteearly-backend
-  FRONTEND_IMAGE_NAME: nineteen17/noteearly-frontend
+  BACKEND_IMAGE_NAME: nineteen17dh/noteearly-backend
+  FRONTEND_IMAGE_NAME: nineteen17dh/noteearly-frontend
 
 jobs:
   build-backend:
