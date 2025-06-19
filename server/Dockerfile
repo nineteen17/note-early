@@ -10,7 +10,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (this compiles TypeScript to JavaScript)
 RUN npm run build
 
 # Production stage
@@ -25,7 +25,7 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
 
-# Copy built application
+# Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
@@ -41,4 +41,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/server.js"] 
+CMD ["node", "dist/server.js"]
