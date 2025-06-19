@@ -3,10 +3,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db as actualDb } from '@/db';
 import * as schema from '@/db/schema';
-import { stripeService as actualStripeService } from '../stripe.service';
+import { stripeService as actualStripeService } from '../stripe.service.js';
 import { logger as actualLogger } from '@/utils/logger';
 import { AppError } from '@/utils/errors';
-import { SubscriptionService } from '../subscription.service';
+import { SubscriptionService } from '../subscription.service.js';
 // Mock dependencies using manual vi.fn()
 vi.mock('@/db', () => ({
     db: {

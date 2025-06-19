@@ -1,4 +1,4 @@
-import { AnalyticsService } from '../services/analytics.service';
+import { AnalyticsService } from '../services/analytics.service.js';
 import { AppError } from '@/utils/errors';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';

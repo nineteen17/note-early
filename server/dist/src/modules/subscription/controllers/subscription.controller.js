@@ -1,4 +1,4 @@
-import { SubscriptionService } from '../services/subscription.service';
+import { SubscriptionService } from '../services/subscription.service.js';
 import { AppError } from '@/utils/errors';
 import { logger } from '@/utils/logger';
 import { z } from 'zod';

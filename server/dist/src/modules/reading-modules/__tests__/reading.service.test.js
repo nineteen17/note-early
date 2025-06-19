@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { drizzle } from 'drizzle-orm/node-postgres'; // Assuming node-postgres driver
 import * as schema from '@/db/schema'; // Import schemas for types and mocking
-import { ReadingModuleService } from '../services/reading.service'; // Added NewVocabularyInput
+import { ReadingModuleService } from '../services/reading.service.js'; // Added NewVocabularyInput
 import { ReadingLevel, ModuleType, UserRole, Language } from '@shared/types'; // Correctly import UserRole enum and Genre, Paragraph, Language
 import { AppError } from '@/utils/errors'; // Import AppError for error handling
 import { eq, and, or, desc, asc } from 'drizzle-orm'; // Import eq for mocking where clauses

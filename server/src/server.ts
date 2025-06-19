@@ -1,7 +1,10 @@
-import './config/zod'; // Import this FIRST to run the Zod extension
+import 'module-alias/register';
 
-import app from './app';
-import { env } from './config/env';
+
+import './config/zod.js'; // Import this FIRST to run the Zod extension
+
+import app from './app.js';
+import { env } from './config/env.js';
 
 const startServer = () => {
   try {

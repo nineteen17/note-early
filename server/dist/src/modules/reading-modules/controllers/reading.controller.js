@@ -1,4 +1,4 @@
-import { ReadingModuleService } from '../services/reading.service';
+import { ReadingModuleService } from '../services/reading.service.js';
 import { db } from '@/db'; // Import db instance to inject into the service
 import { AppError } from '@/utils/errors';
 import { z } from 'zod';

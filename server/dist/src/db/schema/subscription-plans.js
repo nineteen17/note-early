@@ -1,5 +1,5 @@
 import { boolean, integer, numeric, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
-import { SubscriptionPlan } from './profiles';
+import { SubscriptionPlan } from './profiles.js';
 export const subscriptionPlans = pgTable('subscription_plans', {
     id: text('id').primaryKey(), // Matches Stripe price ID
     name: text('name').notNull(),

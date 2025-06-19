@@ -5,17 +5,17 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import cookieParser from 'cookie-parser';
-import swaggerSpec from './config/swagger.zod';
-import { env } from './config/env';
+import swaggerSpec from './config/swagger.zod.js';
+import { env } from './config/env.js';
 // Import routes
-import authRoutes from './modules/auth/routes/auth.routes';
-import readingRoutes from './modules/reading-modules/routes/reading.routes';
-import profileRoutes from './modules/profiles/routes/profile.routes';
-import progressRoutes from './modules/progress/routes/progress.routes';
-import subscriptionRoutes from './modules/subscription/routes/subscription.routes';
-import analyticsRoutes from './modules/analytics/routes/analytics.routes';
+import authRoutes from './modules/auth/routes/auth.routes.js';
+import readingRoutes from './modules/reading-modules/routes/reading.routes.js';
+import profileRoutes from './modules/profiles/routes/profile.routes.js';
+import progressRoutes from './modules/progress/routes/progress.routes.js';
+import subscriptionRoutes from './modules/subscription/routes/subscription.routes.js';
+import analyticsRoutes from './modules/analytics/routes/analytics.routes.js';
 // Import controller needed for direct route definition
-import { SubscriptionController } from './modules/subscription/controllers/subscription.controller';
+import { SubscriptionController } from './modules/subscription/controllers/subscription.controller.js';
 // Initialize express app
 const app = express();
 // --- Utility to handle async route handlers (needed for direct controller use) ---

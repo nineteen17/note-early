@@ -1,6 +1,6 @@
 import { pgTable, uuid, integer, varchar, text, timestamp, uniqueIndex, } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
-import { readingModules } from "./reading-modules";
+import { readingModules } from "./reading-modules.js";
 export const vocabulary = pgTable("vocabulary", {
     id: uuid("id")
         .primaryKey()

@@ -1,7 +1,7 @@
 // src/modules/users/services/__tests__/profile.service.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db } from '@/db';
-import { ProfileService } from '../profile.service';
+import { ProfileService } from '../profile.service.js';
 import { AppError } from '@/utils/errors';
 import { ReadingLevel, UserRole } from '@shared/types';
 // Ensure the real implementation of AppError is used (if you previously mocked it, unmock it)

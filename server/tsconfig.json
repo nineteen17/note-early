@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "baseUrl": "./src",
-    "rootDir": "./src",              // ← add this
+    "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
@@ -19,6 +20,15 @@
       "@utils/*": ["utils/*"]
     }
   },
-  "include": ["src/**/*"],           // ← remove the "*.ts" entry
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules", 
+    "dist",
+    "drizzle.config.ts",
+    "drizzle/**/*",
+    "scripts/**/*",
+    "vite.config.ts",
+    "**/*.test.ts",
+    "**/__tests__/**/*"
+  ]
 }

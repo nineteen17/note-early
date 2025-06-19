@@ -1,9 +1,9 @@
-import { ProgressService } from '../services/progress.service';
+import { ProgressService } from '../services/progress.service.js';
 import { db } from '@/db';
 import { z } from 'zod';
 import { AppError } from '@/utils/errors';
 import { logger } from '@/utils/logger';
-import { submitSummarySchema, startModuleSchema, moduleIdParamSchema, progressIdParamSchema, AdminUpdateProgressInputSchema, studentIdParamSchema } from '../schemas/progress.schema';
+import { submitSummarySchema, startModuleSchema, moduleIdParamSchema, progressIdParamSchema, AdminUpdateProgressInputSchema, studentIdParamSchema } from '../schemas/progress.schema.js';
 // Instantiate the service
 const progressService = new ProgressService(db);
 // --- Zod Schemas ---

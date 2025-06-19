@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, text, varchar, timestamp, pgEnum, uuid } from 'drizzle-orm/pg-core';
-import { readingModules } from './reading-modules';
-import { studentProgress } from './student-progress';
+import { readingModules } from './reading-modules.js';
+import { studentProgress } from './student-progress.js';
 import { integer } from 'drizzle-orm/pg-core';
 // Define Enums based on Plan (and existing UserRole)
 export const UserRole = pgEnum('user_role', ['ADMIN', 'STUDENT', 'SUPER_ADMIN']);

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateAdmin, authenticateUser } from '@/middleware/auth.middleware';
-import { SubscriptionController } from '../controllers/subscription.controller';
+import { SubscriptionController } from '../controllers/subscription.controller.js';
 const subscriptionController = new SubscriptionController();
 const router = Router();
 // Utility to handle async route handlers

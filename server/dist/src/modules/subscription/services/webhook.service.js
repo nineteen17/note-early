@@ -5,7 +5,7 @@ import { customerSubscriptions } from '@/db/schema/customer-subscriptions';
 import { paymentHistory } from '@/db/schema/payment-history';
 import { and, eq } from 'drizzle-orm';
 import { subscriptionPlans } from '@/db/schema/subscription-plans';
-import { stripeService } from './stripe.service';
+import { stripeService } from './stripe.service.js';
 // --- ADDED: Helper to map Stripe status to our DB enum --- //
 function mapStripeStatusToDbStatus(stripeStatus) {
     const validDbStatuses = SubscriptionStatus.enumValues;

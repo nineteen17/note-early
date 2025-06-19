@@ -45,7 +45,7 @@ vi.mock('@/utils/logger');
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from '@/db';
 import { profiles } from '@/db/schema';
-import { AuthService } from '../auth.service';
+import { AuthService } from '../auth.service.js';
 import { supabase } from '@/config/supabase';
 import bcrypt from 'bcrypt';
 import { AuthError } from '@supabase/supabase-js';

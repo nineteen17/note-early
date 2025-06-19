@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ReadingLevel } from '@shared/types'; // Import ReadingLevel enum
+import { ReadingLevel } from '@shared/types/index.js'; // Import ReadingLevel enum
 
 // Admin signup validation
 export const adminSignupSchema = z.object({

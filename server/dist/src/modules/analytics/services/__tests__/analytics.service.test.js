@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AnalyticsService } from '../analytics.service';
+import { AnalyticsService } from '../analytics.service.js';
 import { AppError } from '@/utils/errors';
 // Mock the database and logger
 vi.mock('@/db', () => {

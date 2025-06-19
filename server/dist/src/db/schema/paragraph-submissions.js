@@ -1,6 +1,6 @@
 import { pgTable, uuid, integer, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
-import { studentProgress } from './student-progress';
+import { studentProgress } from './student-progress.js';
 export const paragraphSubmissions = pgTable('paragraph_submissions', {
     id: uuid('id').primaryKey().default(sql `gen_random_uuid()`),
     studentProgressId: uuid('student_progress_id')

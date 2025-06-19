@@ -1,7 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, text, integer, boolean, pgEnum, jsonb } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
-import { profiles } from './profiles';
-import { studentProgress } from './student-progress';
+import { profiles } from './profiles.js';
+import { studentProgress } from './student-progress.js';
 // Reading module type enum
 export const moduleTypeEnum = pgEnum('module_type', ['curated', 'custom']);
 // --- NEW: Genre Enum ---

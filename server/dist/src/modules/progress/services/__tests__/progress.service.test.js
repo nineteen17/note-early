@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { db as dbInstance } from '@/db'; // Import the actual db instance for typing
 import * as schema from '@/db/schema'; // Import schemas for types and mocking
-import { ProgressService } from '../progress.service'; // Import the service
+import { ProgressService } from '../progress.service.js'; // Import the service
 import { AppError } from '@/utils/errors'; // Import AppError for error handling
 import { eq, and, asc } from 'drizzle-orm'; // Import eq and asc for mocking where clauses
 import { logger } from '@/utils/logger';

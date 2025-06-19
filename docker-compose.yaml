@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # Backend API Service - Using pre-built image from Docker Hub
   backend:
@@ -11,36 +9,29 @@ services:
       # App Configuration
       - NODE_ENV=${NODE_ENV}
       - PORT=${PORT}
-
       # Database (Supabase)
       - DATABASE_URL=${DATABASE_URL}
-
       # Supabase Auth
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
-
       # JWT Configuration
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JWT_REFRESH_TOKEN_EXPIRY_SECONDS=${JWT_REFRESH_TOKEN_EXPIRY_SECONDS}
-
       # Frontend URLs
       - FRONTEND_REDIRECT_URL=${FRONTEND_REDIRECT_URL}
       - CLIENT_URL=${CLIENT_URL}
       - FRONTEND_URL=${FRONTEND_URL}
       - APP_URL=${APP_URL}
-
       # Rate Limiting
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
       - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
-
       # Stripe Configuration
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-
       # Storage Configuration
       - STORAGE_BUCKET=${STORAGE_BUCKET}
     restart: unless-stopped

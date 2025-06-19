@@ -1,6 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { env } from './env';
 import { OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod'; // Import Zod itself
@@ -123,9 +122,6 @@ registry.register('AdminUpdateStudentRequest', ProfileSchema.AdminUpdateStudentR
 // --- ADD REGISTRATION for the main ProfileDTO schema ---
 registry.register('ProfileDTO', ProfileSchema.ProfileSchema);
 
-// --- Calculate __dirname equivalent for ES Modules ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 // --- End Calculation ---
 
 // --- Generate Components --- (Generator used here)

@@ -1,6 +1,6 @@
 import { boolean, pgTable, text, timestamp, uuid, integer } from 'drizzle-orm/pg-core';
-import { profiles } from './profiles';
-import { subscriptionPlans } from './subscription-plans';
+import { profiles } from './profiles.js';
+import { subscriptionPlans } from './subscription-plans.js';
 export const customerSubscriptions = pgTable('customer_subscriptions', {
     id: text('id').primaryKey(), // Subscription ID from Stripe
     userId: uuid('user_id')

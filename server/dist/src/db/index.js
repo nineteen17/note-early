@@ -1,8 +1,8 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg'; // Import the default export
 const { Pool } = pg; // Destructure Pool from the default export
-import { env } from '../config/env';
-import * as schema from './schema'; // Import all exports from the schema index
+import { env } from '../config/env.js';
+import * as schema from './schema.js'; // Import all exports from the schema index
 // Create PostgreSQL connection pool
 const pool = new Pool({
     connectionString: env.DATABASE_URL,
@@ -14,7 +14,7 @@ const pool = new Pool({
 export const db = drizzle(pool, { schema });
 // No longer need to export individual schemas from here,
 // they are accessible via the imported 'schema' object or db.query
-// export * from './schema/profiles'; 
+// export * from './schema/profiles.js'; 
 // Helper function to test database connection
 export const testConnection = async () => {
     try {

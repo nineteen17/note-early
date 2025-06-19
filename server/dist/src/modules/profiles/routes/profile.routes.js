@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ProfileController } from '../controllers/profile.controller';
+import { ProfileController } from '../controllers/profile.controller.js';
 import { authenticateUser, authenticateAdmin } from '@/middleware/auth.middleware';
 /**
  * NOTE: TypeScript is showing errors for router handlers related to return types.

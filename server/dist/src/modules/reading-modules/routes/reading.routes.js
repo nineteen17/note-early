@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ReadingModuleController } from '../controllers/reading.controller';
+import { ReadingModuleController } from '../controllers/reading.controller.js';
 import { authenticateAdmin, authenticateSuperAdmin, authenticateUser } from '@/middleware/auth.middleware';
 // Utility to handle async route handlers and catch errors
 const asyncHandler = (fn) => {

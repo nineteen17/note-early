@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { subscriptionPlans, customerSubscriptions, profiles, } from '@/db/schema';
-import { stripeService } from './stripe.service';
+import { stripeService } from './stripe.service.js';
 import { logger } from '@/utils/logger';
 import { eq } from 'drizzle-orm';
 import { AppError } from '@/utils/errors';

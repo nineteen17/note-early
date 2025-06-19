@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateUser, authenticateAdmin } from '@/middleware/auth.middleware';
-import { startProgress, submitParagraphSummary, getStudentProgressDetails, updateProgressByAdmin, getAllStudentProgress, getAllModuleProgress, getStudentProgressForAdmin, getDetailedStudentModuleProgressForAdmin } from '../controllers/progress.controller';
+import { startProgress, submitParagraphSummary, getStudentProgressDetails, updateProgressByAdmin, getAllStudentProgress, getAllModuleProgress, getStudentProgressForAdmin, getDetailedStudentModuleProgressForAdmin } from '../controllers/progress.controller.js';
 /**
  * NOTE: TypeScript is showing errors for router handlers related to return types.
  * This is a known issue with Express typings and how they handle async route handlers.

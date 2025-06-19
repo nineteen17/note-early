@@ -1,6 +1,6 @@
 import { numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { profiles } from './profiles';
-import { customerSubscriptions } from './customer-subscriptions';
+import { profiles } from './profiles.js';
+import { customerSubscriptions } from './customer-subscriptions.js';
 export const paymentHistory = pgTable('payment_history', {
     id: text('id').primaryKey(), // Payment intent ID from Stripe
     userId: uuid('user_id')

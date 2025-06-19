@@ -1,7 +1,7 @@
-import { ProfileService } from '../services/profile.service';
+import { ProfileService } from '../services/profile.service.js';
 import { AppError } from '@/utils/errors';
 import { z } from 'zod';
-import { ProfileUpdateRequestSchema, AdminUpdateStudentRequestSchema, profileIdParamSchema } from '../schemas/profile.schema';
+import { ProfileUpdateRequestSchema, AdminUpdateStudentRequestSchema, profileIdParamSchema } from '../schemas/profile.schema.js';
 import { UserRole } from '@shared/types';
 /**
  * Controller for profile-related operations

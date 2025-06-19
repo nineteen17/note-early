@@ -3,7 +3,7 @@ import { profiles, customerSubscriptions, subscriptionPlans, // Import the Drizz
 studentProgress // <<< Import studentProgress schema
  } from '@/db/schema';
 import { eq, inArray, and, count } from 'drizzle-orm';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/logger.js';
 import { AppError } from '@/utils/errors';
 import { UserRole } from '@shared/types';
 // Helper function to map DB result to ProfileDTO

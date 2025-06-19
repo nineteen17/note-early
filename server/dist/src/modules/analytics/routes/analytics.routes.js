@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { AnalyticsController } from '../controllers/analytics.controller';
+import { AnalyticsController } from '../controllers/analytics.controller.js';
 import { authenticateSuperAdmin, authenticateUser } from '@/middleware/auth.middleware';
 /**
  * @swagger

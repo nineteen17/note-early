@@ -1,0 +1,53 @@
+services:
+  # Backend API Service
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      no_cache: true
+    container_name: noteearly-backend
+
+    # Force AMD64 variant on M1/M2 Macs
+    platform: linux/amd64
+
+    ports:
+      - "4000:4000"
+
+    # Load variables from .env for interpolation
+    env_file:
+      - ./server/.env
+
+    restart: unless-stopped
+    networks:
+      - noteearly-network
+
+  # Frontend Next.js Service
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: noteearly-frontend
+
+    # Typically ARM-compatible, but add if needed:
+    platform: linux/amd64
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - ./client/.env
+
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api/v1
+      - PORT=3000
+
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - noteearly-network
+
+networks:
+  noteearly-network:
+    driver: bridge

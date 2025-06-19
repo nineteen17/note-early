@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WebhookService } from '../webhook.service';
+import { WebhookService } from '../webhook.service.js';
 import { db } from '@/db';
 // Create mocks for all db functions and chainable methods
 const mockExecute = vi.fn().mockResolvedValue([]);

@@ -1,18 +1,18 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { env } from './env';
+import { env } from './env.js';
 import { OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod'; // Import Zod itself
 // --- Import your Zod Schemas ---
 // NOTE: Adjust paths if schemas are moved or located elsewhere
-import * as AuthSchema from '../modules/auth/schemas/auth.schema';
+import * as AuthSchema from '../modules/auth/schemas/auth.schema.js';
 // Assuming Reading schemas are exported from controller for now:
-import { CreateModuleSchema, UpdateModuleSchema, CreateCuratedModuleSchema, IdParamSchema } from '../modules/reading-modules/controllers/reading.controller';
+import { CreateModuleSchema, UpdateModuleSchema, CreateCuratedModuleSchema, IdParamSchema } from '../modules/reading-modules/controllers/reading.controller.js';
 // Import Progress schemas
-import * as ProgressSchema from '../modules/progress/schemas/progress.schema';
+import * as ProgressSchema from '../modules/progress/schemas/progress.schema.js';
 // Update User schemas import path and alias
-import * as ProfileSchema from '../modules/profiles/schemas/profile.schema';
+import * as ProfileSchema from '../modules/profiles/schemas/profile.schema.js';
 // TODO: Import Subscription modules
 // --- Define other non-Zod derived Schemas (like DTOs, if needed) ---
 // You might still need manual definitions for response DTOs if they don't have corresponding Zod schemas
