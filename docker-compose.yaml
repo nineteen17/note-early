@@ -34,9 +34,6 @@ services:
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       # Storage Configuration
       - STORAGE_BUCKET=${STORAGE_BUCKET}
-    labels:
-      - "caddy=api.noteearly.com"
-      - "caddy.reverse_proxy={{upstreams 4000}}"
     restart: unless-stopped
     networks:
       - noteearly-network
@@ -51,9 +48,6 @@ services:
       - NODE_ENV=${NODE_ENV}
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
       - PORT=3000
-    labels:
-      - "caddy=noteearly.com"
-      - "caddy.reverse_proxy={{upstreams 3000}}"
     restart: unless-stopped
     networks:
       - noteearly-network
