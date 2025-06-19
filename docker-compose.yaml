@@ -37,7 +37,6 @@ services:
     labels:
       - "caddy=api.noteearly.com"
       - "caddy.reverse_proxy={{upstreams 4000}}"
-      - "caddy.tls.cert_manager=letsencrypt"
     restart: unless-stopped
     networks:
       - noteearly-network
@@ -55,7 +54,6 @@ services:
     labels:
       - "caddy=noteearly.com"
       - "caddy.reverse_proxy={{upstreams 3000}}"
-      - "caddy.tls.cert_manager=letsencrypt"
     restart: unless-stopped
     networks:
       - noteearly-network
