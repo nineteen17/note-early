@@ -1,10 +1,32 @@
 services:
+  # Traefik Reverse Proxy for SSL and routing
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=your-email@example.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - noteearly-network
+
   # Backend API Service - Using pre-built image from Docker Hub
   backend:
     image: nineteen17dh/noteearly-backend:main
     container_name: noteearly-backend
-    ports:
-      - "4000:4000"
     environment:
       # App Configuration
       - NODE_ENV=${NODE_ENV}
@@ -34,6 +56,11 @@ services:
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       # Storage Configuration
       - STORAGE_BUCKET=${STORAGE_BUCKET}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.noteearly.com`)"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=4000"
     restart: unless-stopped
     networks:
       - noteearly-network
@@ -42,12 +69,15 @@ services:
   frontend:
     image: nineteen17dh/noteearly-frontend:main
     container_name: noteearly-frontend
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=${NODE_ENV}
-      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+      - NEXT_PUBLIC_API_BASE_URL=https://api.noteearly.com
       - PORT=3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`noteearly.com`)"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     restart: unless-stopped
     networks:
       - noteearly-network

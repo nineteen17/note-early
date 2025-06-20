@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build and Deploy
 
 on:
   push:
@@ -90,4 +90,36 @@ jobs:
         cache-to: type=gha,mode=max
         platforms: linux/amd64
         build-args: |
-          NEXT_PUBLIC_API_BASE_URL=https://api.noteearly.com/api/v1 
+          NEXT_PUBLIC_API_BASE_URL=https://api.noteearly.com
+
+  # Deploy to production server
+  deploy:
+    needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to production server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "🚀 Starting deployment..."
+            cd /opt/noteearly
+            
+            # Pull latest images
+            docker-compose pull
+            
+            # Stop and restart containers
+            docker-compose down
+            docker-compose up -d
+            
+            # Clean up old images
+            docker image prune -f
+            
+            # Show status
+            docker-compose ps
+            
+            echo "✅ Deployment complete!"
