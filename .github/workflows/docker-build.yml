@@ -90,7 +90,7 @@ jobs:
         cache-to: type=gha,mode=max
         platforms: linux/amd64
         build-args: |
-          NEXT_PUBLIC_API_BASE_URL=https://api.noteearly.com
+          NEXT_PUBLIC_API_BASE_URL=https://api.noteearly.com/api/v1
 
   # Deploy to production server
   deploy:
