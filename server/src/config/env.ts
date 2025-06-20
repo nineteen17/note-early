@@ -48,7 +48,7 @@ const envSchema = z.object({
 
   // Frontend URLs
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
-  FRONTEND_REDIRECT_URL: z.string().url('Frontend Redirect URL is required for OAuth'),
+  // FRONTEND_REDIRECT_URL: z.string().url('Frontend Redirect URL is required for OAuth'),
 });
 
 let parsedEnv:
