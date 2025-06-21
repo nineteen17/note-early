@@ -5,7 +5,7 @@ import { Trophy } from 'lucide-react';
 import type { StudentProgressSchema } from '@/types/api';
 
 // Progress metrics hook
-export const useProgressMetrics = (progress: StudentProgressSchema[]) => {
+export const useProgressMetrics = (progress: StudentProgressSchema[], profileReadingLevel?: number | null) => {
   return React.useMemo(() => {
     const completedProgress = progress.filter(p => p.completed);
     // Count ALL non-completed modules as in progress (started modules)
@@ -40,24 +40,27 @@ export const useProgressMetrics = (progress: StudentProgressSchema[]) => {
       completedCount: completedProgress.length,
       inProgressCount,
       totalStarted: progress.length,
-      // Calculate reading level based on completed modules and average score
-      readingLevel: completedProgress.length > 0 
-        ? Math.min(10, Math.max(1, Math.round(
-            (completedProgress.length * 0.3) + 
-            (completedProgress.reduce((acc, curr) => acc + (curr.score || 0), 0) / completedProgress.length * 0.07)
-          )))
-        : 1,
+      // Use reading level from profile if available, otherwise fallback to calculation
+      readingLevel: profileReadingLevel !== null && profileReadingLevel !== undefined 
+        ? profileReadingLevel 
+        : completedProgress.length > 0 
+          ? Math.min(10, Math.max(1, Math.round(
+              (completedProgress.length * 0.3) + 
+              (completedProgress.reduce((acc, curr) => acc + (curr.score || 0), 0) / completedProgress.length * 0.07)
+            )))
+          : 1,
       // Recent activity (modules worked on in last 7 days)
       recentActivity,
     };
-  }, [progress]);
+  }, [progress, profileReadingLevel]);
 };
 
 interface AnalyticsDashboardProps {
   metrics: ReturnType<typeof useProgressMetrics>;
+  profile?: any;
 }
 
-export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics }) => (
+export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, profile }) => (
   <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">

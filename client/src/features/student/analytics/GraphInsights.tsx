@@ -26,7 +26,9 @@ import {
   Line,
   Legend,
 } from 'recharts';
-import { Brain } from 'lucide-react';
+import { Brain, BarChart3, Clock, TrendingUp, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface GenreStats {
   genre: ModuleGenre;
@@ -45,6 +47,52 @@ interface ProgressData {
   date: string;
   score: number;
 }
+
+// Empty State Components
+const GenreEmptyState: React.FC = () => (
+  <div className="flex flex-col items-center justify-center h-[300px] sm:h-[400px] text-center p-6">
+    <div className="p-4 bg-muted/50 rounded-full mb-4">
+      <BarChart3 className="h-8 w-8 text-muted-foreground" />
+    </div>
+    <h3 className="text-lg font-semibold mb-2">No Genre Data Yet</h3>
+    <p className="text-muted-foreground mb-4 max-w-md">
+      Start reading modules to see your genre preferences and completion patterns.
+    </p>
+    <Button asChild size="sm">
+      <Link href="/student/modules">Browse Modules</Link>
+    </Button>
+  </div>
+);
+
+const TimeEmptyState: React.FC = () => (
+  <div className="flex flex-col items-center justify-center h-[300px] sm:h-[400px] text-center p-6">
+    <div className="p-4 bg-muted/50 rounded-full mb-4">
+      <Clock className="h-8 w-8 text-muted-foreground" />
+    </div>
+    <h3 className="text-lg font-semibold mb-2">No Time Pattern Data</h3>
+    <p className="text-muted-foreground mb-4 max-w-md">
+      Complete reading activities throughout the day to see your optimal reading times.
+    </p>
+    <Button asChild size="sm">
+      <Link href="/student/modules">Start Reading</Link>
+    </Button>
+  </div>
+);
+
+const ProgressEmptyState: React.FC = () => (
+  <div className="flex flex-col items-center justify-center h-[300px] sm:h-[400px] text-center p-6">
+    <div className="p-4 bg-muted/50 rounded-full mb-4">
+      <TrendingUp className="h-8 w-8 text-muted-foreground" />
+    </div>
+    <h3 className="text-lg font-semibold mb-2">No Progress Data Available</h3>
+    <p className="text-muted-foreground mb-4 max-w-md">
+      Complete modules with scores to track your progress over time.
+    </p>
+    <Button asChild size="sm">
+      <Link href="/student/modules">Find Modules</Link>
+    </Button>
+  </div>
+);
 
 const GraphInsights: React.FC = () => {
   const { data: progress = [], isLoading: progressLoading } = useMyProgressQuery();
@@ -195,6 +243,13 @@ const GraphInsights: React.FC = () => {
   const timePatterns = analyzeTimePatterns;
   const progressOverTime = analyzeProgressOverTime;
 
+  // Check for empty states
+  const hasGenreData = genres.some(genre => genre.completed > 0 || genre.inProgress > 0);
+  const hasTimeData = timePatterns.length > 0 && timePatterns.some(pattern => 
+    pattern.activeModules > 0 || pattern.timeSpent > 0 || pattern.completed > 0
+  );
+  const hasProgressData = progressOverTime.length > 0;
+
   console.log('Genres:', genres);
   console.log('Time Patterns:', timePatterns);
   console.log('Progress Over Time:', progressOverTime);
@@ -253,201 +308,213 @@ const GraphInsights: React.FC = () => {
           </TabsList>
 
           <TabsContent value="genres" className="w-full mt-4">
-            <div className="w-full h-[300px] sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
-              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                <BarChart data={genres} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
-                  <CartesianGrid vertical={false} stroke="#F5F5F5" />
-                  <XAxis
-                    dataKey="genre"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tick={{ fill: "#666666", fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis 
-                    tick={{ fill: "#666666", fontSize: 11 }} 
-                    width={40}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#FFFFFF",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: "var(--radius)",
-                      color: "#666666",
-                      fontSize: "11px",
-                      padding: "8px 12px",
-                    }}
-                    labelStyle={{ 
-                      color: "#666666",
-                      fontWeight: "bold",
-                      marginBottom: "4px",
-                      fontSize: "11px"
-                    }}
-                    itemStyle={{
-                      color: "#666666",
-                      padding: "4px 0",
-                      fontSize: "11px"
-                    }}
-                  />
-                  <Legend 
-                    wrapperStyle={{ 
-                      color: "#666666", 
-                      paddingTop: "60px",
-                      fontSize: "11px"
-                    }} 
-                  />
-                  <Bar 
-                    dataKey="completed" 
-                    fill="#4BAE4F" 
-                    radius={4}
-                    activeBar={{ fill: "#4BAE4F", opacity: 0.7 }}
-                  />
-                  <Bar 
-                    dataKey="inProgress" 
-                    fill="#B19CD9" 
-                    radius={4}
-                    activeBar={{ fill: "#B19CD9", opacity: 0.7 }}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {hasGenreData ? (
+              <div className="w-full h-[300px] sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
+                <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+                  <BarChart data={genres} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
+                    <CartesianGrid vertical={false} stroke="#F5F5F5" />
+                    <XAxis
+                      dataKey="genre"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      tick={{ fill: "#666666", fontSize: 11 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis 
+                      tick={{ fill: "#666666", fontSize: 11 }} 
+                      width={40}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#FFFFFF",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: "var(--radius)",
+                        color: "#666666",
+                        fontSize: "11px",
+                        padding: "8px 12px",
+                      }}
+                      labelStyle={{ 
+                        color: "#666666",
+                        fontWeight: "bold",
+                        marginBottom: "4px",
+                        fontSize: "11px"
+                      }}
+                      itemStyle={{
+                        color: "#666666",
+                        padding: "4px 0",
+                        fontSize: "11px"
+                      }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ 
+                        color: "#666666", 
+                        paddingTop: "60px",
+                        fontSize: "11px"
+                      }} 
+                    />
+                    <Bar 
+                      dataKey="completed" 
+                      fill="#4BAE4F" 
+                      radius={4}
+                      activeBar={{ fill: "#4BAE4F", opacity: 0.7 }}
+                    />
+                    <Bar 
+                      dataKey="inProgress" 
+                      fill="#B19CD9" 
+                      radius={4}
+                      activeBar={{ fill: "#B19CD9", opacity: 0.7 }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <GenreEmptyState />
+            )}
           </TabsContent>
 
           <TabsContent value="time" className="w-full mt-4">
-            <div className="w-full h-[300px] sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
-              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                <BarChart data={timePatterns} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                  <CartesianGrid vertical={false} stroke="#F5F5F5" />
-                  <XAxis
-                    dataKey="timeOfDay"
-                    tickLine={false}
-                    tickMargin={8}
-                    axisLine={false}
-                    tick={{ fill: "#666666", fontSize: 10 }}
-                    interval={0}
-                  />
-                  <YAxis 
-                    tick={{ fill: "#666666", fontSize: 10 }} 
-                    width={35}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#FFFFFF",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: "var(--radius)",
-                      color: "#666666",
-                      fontSize: "11px",
-                      padding: "8px 12px",
-                    }}
-                    labelStyle={{ 
-                      color: "#666666",
-                      fontWeight: "bold",
-                      marginBottom: "4px",
-                      fontSize: "11px"
-                    }}
-                    itemStyle={{
-                      color: "#666666",
-                      padding: "2px 0",
-                      fontSize: "11px"
-                    }}
-                    formatter={(value, name) => {
-                      if (name === 'Reading Time') return [`${value} min`, name];
-                      return [value, name];
-                    }}
-                  />
-                  <Legend 
-                    wrapperStyle={{ 
-                      color: "#666666", 
-                      fontSize: "10px",
-                      paddingTop: "8px"
-                    }}
-                    iconSize={10}
-                  />
-                  <Bar dataKey="completed" fill="#4BAE4F" radius={2} name="Completed" />
-                  <Bar dataKey="activeModules" fill="#B19CD9" radius={2} name="Active" />
-                  <Bar dataKey="timeSpent" fill="#2EBBE7" radius={2} name="Reading Time" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {hasTimeData ? (
+              <div className="w-full h-[300px] sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
+                <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+                  <BarChart data={timePatterns} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                    <CartesianGrid vertical={false} stroke="#F5F5F5" />
+                    <XAxis
+                      dataKey="timeOfDay"
+                      tickLine={false}
+                      tickMargin={8}
+                      axisLine={false}
+                      tick={{ fill: "#666666", fontSize: 10 }}
+                      interval={0}
+                    />
+                    <YAxis 
+                      tick={{ fill: "#666666", fontSize: 10 }} 
+                      width={35}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#FFFFFF",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: "var(--radius)",
+                        color: "#666666",
+                        fontSize: "11px",
+                        padding: "8px 12px",
+                      }}
+                      labelStyle={{ 
+                        color: "#666666",
+                        fontWeight: "bold",
+                        marginBottom: "4px",
+                        fontSize: "11px"
+                      }}
+                      itemStyle={{
+                        color: "#666666",
+                        padding: "2px 0",
+                        fontSize: "11px"
+                      }}
+                      formatter={(value, name) => {
+                        if (name === 'Reading Time') return [`${value} min`, name];
+                        return [value, name];
+                      }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ 
+                        color: "#666666", 
+                        fontSize: "10px",
+                        paddingTop: "8px"
+                      }}
+                      iconSize={10}
+                    />
+                    <Bar dataKey="completed" fill="#4BAE4F" radius={2} name="Completed" />
+                    <Bar dataKey="activeModules" fill="#B19CD9" radius={2} name="Active" />
+                    <Bar dataKey="timeSpent" fill="#2EBBE7" radius={2} name="Reading Time" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <TimeEmptyState />
+            )}
           </TabsContent>
 
           <TabsContent value="progress" className="w-full mt-4">
-            <div className="w-full h-[300px] sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
-              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                <LineChart
-                  data={progressOverTime}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 60 }}
-                >
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="#F5F5F5" 
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={{ stroke: "#F5F5F5" }}
-                    tickMargin={8}
-                    tick={{ fill: "#666666", fontSize: 11 }}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tickLine={false}
-                    axisLine={{ stroke: "#F5F5F5" }}
-                    tick={{ fill: "#666666", fontSize: 11 }}
-                    width={40}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#FFFFFF",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: "var(--radius)",
-                      color: "#666666",
-                      fontSize: "11px",
-                      padding: "8px 12px",
-                    }}
-                    labelStyle={{ 
-                      color: "#666666",
-                      fontWeight: "bold",
-                      marginBottom: "4px",
-                      fontSize: "11px"
-                    }}
-                    itemStyle={{
-                      color: "#666666",
-                      padding: "4px 0",
-                      fontSize: "11px"
-                    }}
-                  />
-                  <Legend 
-                    wrapperStyle={{ 
-                      color: "#666666", 
-                      paddingTop: "60px",
-                      fontSize: "11px"
-                    }} 
-                  />
-                  <Line
-                    dataKey="score"
-                    type="monotone"
-                    stroke="#2EBBE7"
-                    strokeWidth={2}
-                    dot={{ 
-                      fill: "#2EBBE7", 
-                      strokeWidth: 2,
-                      r: 4
-                    }}
-                    activeDot={{ 
-                      r: 6, 
-                      fill: "#2EBBE7",
-                      stroke: "#2EBBE7",
-                      strokeWidth: 2
-                    }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {hasProgressData ? (
+              <div className="w-full h-[300px] sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
+                <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+                  <LineChart
+                    data={progressOverTime}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 60 }}
+                  >
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="#F5F5F5" 
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={{ stroke: "#F5F5F5" }}
+                      tickMargin={8}
+                      tick={{ fill: "#666666", fontSize: 11 }}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      tickLine={false}
+                      axisLine={{ stroke: "#F5F5F5" }}
+                      tick={{ fill: "#666666", fontSize: 11 }}
+                      width={40}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#FFFFFF",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: "var(--radius)",
+                        color: "#666666",
+                        fontSize: "11px",
+                        padding: "8px 12px",
+                      }}
+                      labelStyle={{ 
+                        color: "#666666",
+                        fontWeight: "bold",
+                        marginBottom: "4px",
+                        fontSize: "11px"
+                      }}
+                      itemStyle={{
+                        color: "#666666",
+                        padding: "4px 0",
+                        fontSize: "11px"
+                      }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ 
+                        color: "#666666", 
+                        paddingTop: "60px",
+                        fontSize: "11px"
+                      }} 
+                    />
+                    <Line
+                      dataKey="score"
+                      type="monotone"
+                      stroke="#2EBBE7"
+                      strokeWidth={2}
+                      dot={{ 
+                        fill: "#2EBBE7", 
+                        strokeWidth: 2,
+                        r: 4
+                      }}
+                      activeDot={{ 
+                        r: 6, 
+                        fill: "#2EBBE7",
+                        stroke: "#2EBBE7",
+                        strokeWidth: 2
+                      }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ProgressEmptyState />
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

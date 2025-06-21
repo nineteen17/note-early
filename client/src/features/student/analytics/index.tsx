@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useMyProgressQuery } from '@/hooks/api/student/progress/useMyProgressQuery';
 import { useStudentActivityQuery } from '@/hooks/api/student/progress/useStudentActivityQuery';
+import { useAuthStore } from '@/store/authStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -43,9 +44,10 @@ interface ProgressItem {
 }
 
 const AnalyticsFeature: React.FC = () => {
+  const profile = useAuthStore(state => state.profile);
   const { data: progress = [], isLoading: progressLoading } = useMyProgressQuery();
   const { data: activityData, isLoading: activityLoading } = useStudentActivityQuery();
-  const progressMetrics = useProgressMetrics(progress);
+  const progressMetrics = useProgressMetrics(progress, profile?.readingLevel);
   const isLoading = progressLoading || activityLoading;
 
   if (isLoading) {
@@ -82,7 +84,7 @@ const AnalyticsFeature: React.FC = () => {
         description="Track your reading progress and module completion"
       />
     <div className="space-y-4 ">
-      <AnalyticsDashboard metrics={progressMetrics} />
+      <AnalyticsDashboard metrics={progressMetrics} profile={profile} />
       <GraphInsights />
 
       {/* <ReadingInsights /> */}

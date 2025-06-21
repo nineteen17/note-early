@@ -158,13 +158,6 @@ const useProgressMetrics = (progress: any[]) => {
       completedCount: completedProgress.length,
       inProgressCount,
       totalStarted: progress.length,
-      // Calculate reading level based on completed modules and average score
-      readingLevel: completedProgress.length > 0 
-        ? Math.min(10, Math.max(1, Math.round(
-            (completedProgress.length * 0.3) + 
-            (completedProgress.reduce((acc, curr) => acc + (curr.score || 0), 0) / completedProgress.length * 0.07)
-          )))
-        : 1,
       // Recent activity (modules worked on in last 7 days)
       recentActivity: progress.filter(p => {
         const weekAgo = new Date();
@@ -325,21 +318,36 @@ const ModuleCard: React.FC<{ latestModule: any; isLoading: boolean }> = ({ lates
   );
 };
 
-const ProgressCard: React.FC<{ metrics: ReturnType<typeof useProgressMetrics> }> = ({ metrics }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Trophy className="h-5 w-5" />
-        Reading Progress
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-4">
-        {/* Current Reading Level */}
-        <div className="text-center p-3 bg-muted/50 rounded-lg">
-          <p className="text-sm text-muted-foreground">Current Reading Level</p>
-          <p className="text-3xl font-bold text-accent">Level {metrics.readingLevel}</p>
-        </div>
+const ProgressCard: React.FC<{ 
+  metrics: ReturnType<typeof useProgressMetrics>;
+  profile: any;
+}> = ({ metrics, profile }) => {
+  // Use profile reading level if available, otherwise calculate it
+  const readingLevel = profile?.readingLevel || 
+    (metrics.completedCount > 0 
+      ? Math.min(10, Math.max(1, Math.round(
+          (metrics.completedCount * 0.3) + 
+          (metrics.averageScore * 0.07)
+        )))
+      : 1);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Trophy className="h-5 w-5" />
+          Reading Progress
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Current Reading Level */}
+          <div className="text-center p-3 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              {profile?.readingLevel ? 'Assigned Reading Level' : 'Calculated Reading Level'}
+            </p>
+            <p className="text-3xl font-bold text-accent">Level {readingLevel}</p>
+          </div>
         
         {/* Average Score Progress Bar */}
         <div className="space-y-2">
@@ -376,7 +384,8 @@ const ProgressCard: React.FC<{ metrics: ReturnType<typeof useProgressMetrics> }>
       </div>
     </CardContent>
   </Card>
-);
+  );
+};
 
 const CalendarStats: React.FC<{ stats: ReturnType<typeof useCalendarStats> }> = ({ stats }) => (
   <div className="grid grid-cols-3 gap-4 text-sm pt-2 border-t">
@@ -634,7 +643,7 @@ export function StudentHome() {
         {/* Top Cards */}
         <div className="grid gap-6 lg:grid-cols-2">
           <ModuleCard latestModule={latestModule} isLoading={isLoadingLatestModule} />
-          <ProgressCard metrics={progressMetrics} />
+          <ProgressCard metrics={progressMetrics} profile={profile} />
         </div>
         
         {/* Middle Row */}
