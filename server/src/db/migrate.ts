@@ -1,8 +1,8 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
-import { env } from '@/config/env';
-import { UserRole, SubscriptionPlan, SubscriptionStatus } from '@/db/schema/profiles';
+import { env } from '../config/env.js';
+import { UserRole, SubscriptionPlan, SubscriptionStatus } from '../db/schema/profiles';
 
 // For migrations, we need a different connection instance that doesn't use pooling
 const migrationClient = postgres(env.DATABASE_URL, { max: 1 });
