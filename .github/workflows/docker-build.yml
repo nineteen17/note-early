@@ -123,3 +123,70 @@ jobs:
             docker-compose ps
             
             echo "✅ Deployment complete!"
+
+      - name: Run database migrations
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "🔄 Running database migrations..."
+            cd /opt/noteearly
+            
+            # Wait for backend to be healthy
+            echo "⏳ Waiting for backend to be ready..."
+            sleep 30
+            
+            # Check if backend is healthy
+            for i in {1..12}; do
+              if docker-compose ps | grep -q "noteearly-backend.*healthy"; then
+                echo "✅ Backend is healthy, proceeding with migration"
+                break
+              fi
+              echo "⏳ Waiting for backend health check... ($i/12)"
+              sleep 10
+            done
+            
+            # Run migrations using the compiled migration file
+            echo "🗃️ Running database migrations..."
+            docker exec noteearly-backend node dist/db/migrate.js
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ Database migrations completed successfully!"
+            else
+              echo "❌ Migration failed, but deployment continues"
+              exit 0  # Don't fail the deployment if migration fails
+            fi
+
+  # Health check after deployment
+  health-check:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Verify application health
+        run: |
+          echo "🏥 Checking application health..."
+          
+          # Wait a bit for services to stabilize
+          sleep 30
+          
+          # Check frontend
+          if curl -f -s https://noteearly.com > /dev/null; then
+            echo "✅ Frontend is healthy"
+          else
+            echo "❌ Frontend health check failed"
+            exit 1
+          fi
+          
+          # Check API
+          if curl -f -s https://api.noteearly.com/health > /dev/null; then
+            echo "✅ API is healthy"
+          else
+            echo "❌ API health check failed"
+            exit 1
+          fi
+          
+          echo "🎉 All services are healthy and ready!"

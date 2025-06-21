@@ -30,6 +30,11 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 
+# Copy migration files and source code for migrations
+COPY --from=builder --chown=nodejs:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=nodejs:nodejs /app/src ./src
+COPY --from=builder --chown=nodejs:nodejs /app/drizzle.config.js ./drizzle.config.js
+
 # Switch to non-root user
 USER nodejs
 
