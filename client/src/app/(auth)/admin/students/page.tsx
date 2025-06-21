@@ -29,7 +29,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-// Define props for the table, including edit handler
+
 interface StudentListTableProps {
   students: ProfileDTO[];
   onCreateClick: () => void;
@@ -110,7 +110,7 @@ interface StudentRowProps {
 function StudentRow({ student, onRowClick }: StudentRowProps) {
   const { data: progressList } = useAdminStudentProgressListQuery(student.profileId);
 
-  // Count submissions awaiting marking (either score or feedback)
+
   const awaitingMarkingCount = progressList?.filter(progress => 
     progress.completed && (!progress.score || !progress.teacherFeedback)
   ).length ?? 0;

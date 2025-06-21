@@ -12,7 +12,7 @@ import { ScrollToTop } from '@/components/ScrollToTop';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "NoteEarly Client", // Updated title
+  title: "NoteEarly",
   description: "NoteEarly Platform - Client Application",
 };
 

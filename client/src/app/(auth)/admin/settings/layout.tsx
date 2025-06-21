@@ -14,7 +14,7 @@ import {
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageContainer } from '@/components/layout/PageContainer';
 
-// Define tabs configuration - only subscription and security
+
 const settingsTabs = [
   { value: "subscription", label: "Subscription" },
   { value: "security", label: "Security" },
@@ -28,11 +28,10 @@ export default function AdminSettingsLayout({
   const pathname = usePathname();
   const router = useRouter();
 
-  // Determine active tab from the last segment of the pathname
-  const segments = pathname.split('/').filter(Boolean); // Filter out empty strings
-  const activeTab = segments[segments.length - 1] || settingsTabs[0].value; // Default to first tab if no segment
 
-  // Handler for mobile Select change
+  const segments = pathname.split('/').filter(Boolean);
+  const activeTab = segments[segments.length - 1] || settingsTabs[0].value;
+
   const handleTabChange = (value: string) => {
     router.push(`/admin/settings/${value}`);
   };
@@ -44,9 +43,9 @@ export default function AdminSettingsLayout({
         description="Manage your account settings and preferences"
       />
 
-      {/* Use Tabs purely for visual grouping and value state based on URL */}
+
       <Tabs value={activeTab} className="w-full space-y-4">
-        {/* Select dropdown for mobile - uses router.push */}
+
         <div className="block md:hidden">
           <Select value={activeTab} onValueChange={handleTabChange}>
             <SelectTrigger className="w-full">
@@ -62,7 +61,6 @@ export default function AdminSettingsLayout({
           </Select>
         </div>
 
-        {/* Standard TabsList for desktop - uses Link component */}
         <div className="hidden md:block">
           <TabsList className="flex w-full">
             {settingsTabs.map((tab) => (
@@ -75,8 +73,8 @@ export default function AdminSettingsLayout({
           </TabsList>
         </div>
 
-        {/* Render the active tab's page content */}
-        <div className="mt-0"> {/* Add some margin top */} 
+
+        <div className="mt-0">
            {children}
         </div>
 

@@ -165,10 +165,7 @@ export default function ModuleDetailPage() {
   const totalParagraphs = moduleContent?.paragraphCount || 0;
   const isModuleComplete = submissionsCount === totalParagraphs && totalParagraphs > 0;
   
-  // Fix marking logic: A module is only truly marked complete if:
-  // 1. It has been marked (score or feedback exists)
-  // 2. The student has completed ALL current paragraphs (in case module was edited)
-  // 3. The progress is explicitly marked as completed
+
   const isMarkingComplete = isModuleComplete && 
                           details?.progress?.completed === true &&
                           (details?.progress?.score !== null && details?.progress?.score !== undefined || 
@@ -245,7 +242,6 @@ export default function ModuleDetailPage() {
     );
   }
 
-  // First check if the module exists
   if (!module) {
     console.error('ModuleDetailPage - Module not found:', { moduleId, availableModules: activeModules?.map(m => m.id) });
     return (
@@ -274,7 +270,6 @@ export default function ModuleDetailPage() {
             ]}
           />
 
-          {/* Enhanced Header Card */}
           <Card className="border-0 shadow-sm">
             <CardHeader className="">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

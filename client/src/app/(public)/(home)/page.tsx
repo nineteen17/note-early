@@ -10,7 +10,7 @@ import { NoteEarlyLogo } from '@/components/NoteEarlyLogo';
 import { motion } from 'framer-motion';
 import { BookOpen, Users, TrendingUp, Sparkles, Star, ArrowRight, CheckCircle, Menu, X } from 'lucide-react';
 
-// Data objects for easier maintenance
+
 const features = [
   {
     icon: BookOpen,
@@ -506,11 +506,11 @@ export default function Home() {
           <div>
             <h4 className="font-semibold mb-3 text-foreground">Contact Us</h4>
             <p className="text-muted-foreground">
-              hello@noteearly.com <br/>
-              123 Education Street <br/>
-              Learning City, LC 12345
+              hello@noteearly.com
             </p>
-            <Button variant="outline" size="sm" className="mt-4">Schedule Call</Button> 
+            <Button variant="outline" size="sm" className="mt-4" asChild>
+              <a href="mailto:hello@noteearly.com">Schedule Call</a>
+            </Button> 
           </div>
         </div>
         <div className="px-4 md:px-6 mt-8 text-center text-xs text-muted-foreground border-t border-border/40 pt-6"> 

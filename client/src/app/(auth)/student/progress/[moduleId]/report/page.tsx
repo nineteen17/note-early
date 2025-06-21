@@ -129,8 +129,7 @@ export default function ModuleReportPage({ params }: ModuleReportPageProps) {
   }
 
   const progress = progressDetails.progress;
-  
-  // Route guard for incomplete modules
+
   if (!progress.completed) {
     router.push(`/student/progress/${moduleId}/reading`);
     return null;
