@@ -55,6 +55,7 @@ const pricingPlans = [
     features: ["1 student", "Basic modules", "Limited features", "Community support"],
     buttonText: "Get Started",
     buttonColor: "bg-primary hover:bg-primary/90 text-primary-foreground",
+    href: "/signup",
     mostPopular: false
   },
   {
@@ -65,6 +66,7 @@ const pricingPlans = [
     features: ["5 students", "All modules", "10 custom modules", "Basic analytics", "Email support"],
     buttonText: "Choose Home",
     buttonColor: "bg-accent hover:bg-accent/90 text-accent-foreground",
+    href: "/signup",
     mostPopular: true
   },
   {
@@ -75,6 +77,7 @@ const pricingPlans = [
     features: ["30 students", "All modules", "30 custom modules", "Advanced analytics", "Priority support"],
     buttonText: "Choose Pro",
     buttonColor: "bg-secondary hover:bg-secondary/90 text-secondary-foreground",
+    href: "/signup",
     mostPopular: false
   }
 ];
@@ -281,9 +284,11 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4, duration: 0.6 }}
                 > 
-                  <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto group">
-                    <Link href="/signup">Get Started</Link>
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto group" asChild>
+                    <Link href="/signup">
+                      Get Started
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Link>
                   </Button>
                   <Button size="lg" variant="outline" asChild className="w-full sm:w-auto">
                      <Link href="/login">Login</Link>
@@ -454,8 +459,10 @@ export default function Home() {
                       </ul>
                       
                       <div className="mt-auto">
-                        <Button className={`w-full ${plan.buttonColor}`}>
-                          {plan.buttonText}
+                        <Button className={`w-full ${plan.buttonColor}`} asChild>
+                          <Link href={plan.href}>
+                            {plan.buttonText}
+                          </Link>
                         </Button>
                       </div>
                     </CardContent>
