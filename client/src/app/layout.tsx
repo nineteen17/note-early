@@ -9,11 +9,17 @@ import { AuthProvider } from "@/providers/AuthProvider";
 import { TopLoader } from "@/components/skeletons/TopLoader";
 import { ScrollToTop } from '@/components/ScrollToTop';
 
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "NoteEarly",
   description: "NoteEarly Platform - Client Application",
+  icons: {
+    icon: '/note-early-icon-logo.png',
+    shortcut: '/note-early-icon-logo.png',
+    apple: '/note-early-icon-logo.png',
+  },
 };
 
 export default function RootLayout({
