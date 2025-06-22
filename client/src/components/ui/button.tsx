@@ -22,6 +22,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         accent: "w-full h-11 bg-accent hover:bg-accent/90 text-accent-foreground font-medium",
         "primary-alt": "bg-accent text-accent-foreground shadow-xs hover:bg-accent/90 hover:text-accent-foreground dark:bg-accent dark:text-accent-foreground dark:hover:bg-accent/90",
+        scroll: "bg-primary/80 text-primary-foreground shadow-xs dark:bg-gradient-to-r dark:from-slate-50/80 dark:to-slate-100/80 dark:text-blue-800 dark:hover:from-slate-100/80 dark:hover:to-slate-200/80 dark:hover:text-blue-900",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

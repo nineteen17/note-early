@@ -66,8 +66,8 @@ export default function StudentLayout({
             <Alert variant="destructive" className="max-w-lg">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error Loading Student Data</AlertTitle>
-                <AlertDescription>
-                    Could not load required user profile information. Please try logging in again.
+                  <AlertDescription>
+                      Could not load required user profile information. Please try refreshing the page.
                 </AlertDescription>
             </Alert>
         </div>

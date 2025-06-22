@@ -75,7 +75,7 @@ export default function AdminLayout({
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error Loading Admin Data</AlertTitle>
                 <AlertDescription>
-                    Could not load required user profile information. Please try logging in again.
+                    Could not load required user profile information. Please try refreshing the page.
                 </AlertDescription>
             </Alert>
         </div>
