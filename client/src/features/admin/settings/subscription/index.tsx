@@ -265,7 +265,7 @@ export function SubscriptionFeature() {
                                                 <div key={plan.id} className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
                                                     isCurrentSpecificPlan 
                                                         ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700' 
-                                                        : 'bg-background hover:bg-muted/50 border-border'
+                                                        : 'bg-muted hover:bg-muted/50 border-border'
                                                 }`}>
                                                     <div className="space-y-1">
                                                         <p className="font-medium">{plan.name}</p>

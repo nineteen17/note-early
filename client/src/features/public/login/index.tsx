@@ -65,6 +65,18 @@ export function LoginFeature() {
     }
   });
 
+  // Helper function to clean server error messages for user display
+  const cleanErrorMessage = (message: string): string => {
+    // Remove technical prefixes like "Authentication error:", "Validation error:", etc.
+    const colonIndex = message.indexOf(':');
+    if (colonIndex > 0) {
+      const cleanedMessage = message.substring(colonIndex + 1).trim();
+      // Only return the cleaned version if it's not empty
+      return cleanedMessage.length > 0 ? cleanedMessage : message;
+    }
+    return message;
+  };
+
   const { mutate: loginMutate, isPending: isLoggingIn } = useLoginAdminMutation({
     onSuccess: async (data) => {
       toast.success('Login successful!');
@@ -80,29 +92,30 @@ export function LoginFeature() {
       }
     },
     onError: (error: ApiError) => {
-      const message = error.message || 'Login failed. Please try again.';
+      const rawMessage = error.message || 'Login failed. Please try again.';
+      const cleanMessage = cleanErrorMessage(rawMessage);
       
-      // Check for email verification errors - be more specific
+
       const isVerificationError = (
-        message.toLowerCase().includes('verify') || 
-        message.toLowerCase().includes('verification') ||
-        message.toLowerCase().includes('unverified') ||
-        message.toLowerCase().includes('not verified') ||
-        message.toLowerCase().includes('email verification') ||
-        (error.status === 403 && message.toLowerCase().includes('email'))
+        rawMessage.toLowerCase().includes('verify') || 
+        rawMessage.toLowerCase().includes('verification') ||
+        rawMessage.toLowerCase().includes('unverified') ||
+        rawMessage.toLowerCase().includes('not verified') ||
+        rawMessage.toLowerCase().includes('email verification') ||
+        (error.status === 403 && rawMessage.toLowerCase().includes('email'))
       );
       
       if (isVerificationError) {
         const email = getValues('email');
         setUnverifiedEmail(email);
-        return; // Don't show toast, verification screen will handle UX
+        return;
       }
       
-      // For all other errors (including wrong password), show toast and form error
-      toast.error('Login Failed', { description: message });
+
+      toast.error('Login Failed', { description: cleanMessage });
       setFormError('root.serverError', {
         type: String(error.status || 500),
-        message: message
+        message: cleanMessage
       });
     },
   });
@@ -136,6 +149,7 @@ export function LoginFeature() {
   }
 
   const serverError = formErrors.root?.serverError?.message;
+  console.log("serverError", serverError);
 
   return (
     <div className="min-h-screen flex flex-col">

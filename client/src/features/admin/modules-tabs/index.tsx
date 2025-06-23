@@ -359,7 +359,7 @@ const PublicModulesList = () => {
             setFilterState={setFilterState}
             storageKey={STORAGE_KEY_PUBLIC}
           />
-          <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+          <Card className="shadow-xl border-2 border-border/50">
             <CardContent className="p-8 text-center">
               <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
                 <BookOpen className="h-8 w-8 text-popover-foreground" />
@@ -382,7 +382,7 @@ const PublicModulesList = () => {
             setFilterState={setFilterState}
             storageKey={STORAGE_KEY_PUBLIC}
           />
-          <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+          <Card className="shadow-xl border-2 border-border/50 ">
             <CardContent className="p-8 text-center">
               <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
                 <AlertCircle className="h-8 w-8 text-popover-foreground" />
@@ -433,7 +433,7 @@ const CustomModulesList = () => {
             setFilterState={setFilterState}
             storageKey={STORAGE_KEY_CUSTOM}
           />
-          <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+          <Card className="shadow-xl border-2 border-border/50">
             <CardContent className="p-8 text-center">
               <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
                 <Plus className="h-8 w-8 text-popover-foreground" />
@@ -463,7 +463,7 @@ const CustomModulesList = () => {
             setFilterState={setFilterState}
             storageKey={STORAGE_KEY_CUSTOM}
           />
-          <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+          <Card className="shadow-xl border-2 border-border/50">
             <CardContent className="p-8 text-center">
               <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
                 <AlertCircle className="h-8 w-8 text-popover-foreground" />
@@ -544,7 +544,7 @@ const AllModulesList = () => {
               setFilterState={setFilterState}
               storageKey={STORAGE_KEY_ALL}
             />
-            <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+            <Card className="shadow-xl border-2 border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
                   <BookOpen className="h-8 w-8 text-popover-foreground" />
@@ -574,7 +574,7 @@ const AllModulesList = () => {
               setFilterState={setFilterState}
               storageKey={STORAGE_KEY_ALL}
             />
-            <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+            <Card className="shadow-xl border-2 border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg w-fit mx-auto mb-6">
                   <AlertCircle className="h-8 w-8 text-popover-foreground" />
@@ -820,7 +820,7 @@ export function ModulesFeature() {
           {showCreateFeatures ? (
             <CustomModulesList />
           ) : (
-            <Card className="shadow-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-card/95 dark:from-card dark:via-card dark:to-card/90">
+            <Card className="shadow-xl border-2 border-border/50">
                 <CardHeader className="pb-6 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-b-2 border-primary/10">
                     <CardTitle className="flex items-center gap-3 text-xl">
                         <div className="p-2 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 shadow-lg">

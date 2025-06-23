@@ -447,7 +447,7 @@ export function ReadingProgressFeature({ moduleId }: ReadingProgressFeatureProps
                              </div>
                              <Textarea
                                id="cumulativeSummary"
-                               placeholder="Summarize the story so far..."
+                               placeholder="Summarize the module so far..."
                                value={cumulativeSummary}
                                onChange={(e) => setCumulativeSummary(e.target.value)}
                                className="min-h-[150px]"
@@ -713,7 +713,7 @@ export function ReadingProgressFeature({ moduleId }: ReadingProgressFeatureProps
                                 </div>
                                 <Textarea
                                   id="cumulativeSummary"
-                                  placeholder="Summarize the story so far..."
+                                  placeholder="Summarize the module so far..."
                                   value={cumulativeSummary}
                                   onChange={(e) => setCumulativeSummary(e.target.value)}
                                   className="min-h-[120px]"

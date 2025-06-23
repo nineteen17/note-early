@@ -31,19 +31,19 @@ const features = [
 
 const testimonials = [
   {
-    name: "Sarah Chen",
+    name: "Sarah Kim",
     role: "3rd Grade Teacher",
-    content: "My students' reading scores improved by 40% in just 3 months. The engagement is incredible!"
+    content: "This is a great initiative to help children learn to understand what they read. The platform is easy to use and I have full control over the content."
   },
   {
-    name: "Michael Rodriguez", 
+    name: "Michael Robson", 
     role: "Homeschool Parent",
-    content: "Finally, a platform that makes my twins excited about reading. The progress tracking is amazing."
+    content: "NoteEarly is a great platform that makes my child loves using it. I like how I can create my own content and track their progress."
   },
   {
-    name: "Emma Thompson",
-    role: "Reading Specialist", 
-    content: "The adaptive difficulty levels are perfect. Each child gets exactly the challenge they need."
+    name: "Emma Thompson-Nguyen",
+    role: "School Principal", 
+    content: "Being able to create content where teachers can adapt difficulty levels are great. Each child gets exactly the challenge they need."
   }
 ];
 
@@ -65,7 +65,7 @@ const pricingPlans = [
     description: "Great for families", 
     features: ["5 students", "All modules", "10 custom modules", "Basic analytics", "Email support"],
     buttonText: "Choose Home",
-    buttonColor: "bg-accent hover:bg-accent/90 text-accent-foreground",
+    buttonColor: "bg-accent hover:bg-accent/80 text-accent-foreground hover:text-accent-foreground/80",
     href: "/signup",
     mostPopular: true
   },
@@ -304,13 +304,12 @@ export default function Home() {
                 >
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">4.9/5</span>
+                    <span className="font-medium">4/5</span>
                     <span className="text-muted-foreground">rating</span>
                   </div>
                   <div className="w-px h-4 bg-border" />
-                  <div className="text-muted-foreground">25,000+ happy students</div>
-                  <div className="text-muted-foreground">1,000+ Classrooms</div>
-                </motion.div>
+                    <div className="text-muted-foreground">100+ happy students</div>
+                  </motion.div>
               </motion.div>
             </div>
           </div>
@@ -338,13 +337,13 @@ export default function Home() {
                   viewport={{ once: true }}
                   whileHover={{ y: -5 }}
                 >
-                  <Card className="bg-card text-card-foreground border border-border/50 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"> 
+                  <Card className=" border border-border/50 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"> 
                     <CardHeader className="items-center pt-8 pb-4"> 
                       <AnimatedIcon icon={feature.icon} delay={index * 0.1} />
                     </CardHeader>
                     <CardContent className="text-center px-6 pb-8"> 
                       <CardTitle className="mb-2 text-xl">{feature.title}</CardTitle> 
-                      <p className="text-card-foreground/80 text-sm">
+                      <p className="text-muted-foreground text-sm">
                         {feature.description}
                       </p>
                     </CardContent>
@@ -362,7 +361,7 @@ export default function Home() {
               <div className="text-center mb-12">
                 <h2 className="text-3xl font-bold mb-4 text-foreground">Loved by Educators</h2>
                 <div className="flex justify-center items-center gap-2 mb-8">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(4)].map((_, i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, scale: 0 }}
@@ -373,7 +372,7 @@ export default function Home() {
                       <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                     </motion.div>
                   ))}
-                  <span className="ml-2 text-muted-foreground">4.9/5 from 2,000+ reviews</span>
+                  <span className="ml-2 text-muted-foreground">4/5 from 100+ reviews</span>
                 </div>
               </div>
             </SectionMotion>
@@ -388,7 +387,7 @@ export default function Home() {
                   viewport={{ once: true }}
                   whileHover={{ y: -2 }}
                 >
-                  <Card className="bg-card border border-border/50 p-6 hover:shadow-lg transition-shadow duration-300">
+                  <Card className="bg-card border border-border/50 p-6 hover:shadow-lg transition-shadow duration-300 min-h-[300px]">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground font-semibold text-sm">
                         {testimonial.name.split(' ').map(n => n[0]).join('')}
@@ -428,13 +427,13 @@ export default function Home() {
                   viewport={{ once: true }}
                   whileHover={{ y: plan.mostPopular ? -8 : -5 }}
                 >
-                  <Card className={`flex flex-col bg-card text-card-foreground rounded-lg overflow-hidden transition-shadow duration-300 h-[480px] ${
+                  <Card className={`flex flex-col  text-card-foreground rounded-lg overflow-hidden transition-shadow duration-300 h-[480px] ${
                     plan.mostPopular 
                       ? 'border-2 border-primary hover:shadow-xl relative' 
                       : 'border border-border/50 hover:shadow-lg'
                   }`}> 
                     {plan.mostPopular && (
-                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 text-sm font-semibold rounded-full">
+                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-accent text-accent-foreground px-6 py-2 text-sm font-semibold rounded-full">
                         Most Popular
                       </div>
                     )}

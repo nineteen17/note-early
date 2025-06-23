@@ -46,6 +46,18 @@ export function SignupForm() {
         resolver: zodResolver(adminSignupSchema),
     });
 
+    // Helper function to clean server error messages for user display
+    const cleanErrorMessage = (message: string): string => {
+        // Remove technical prefixes like "Authentication error:", "Validation error:", etc.
+        const colonIndex = message.indexOf(':');
+        if (colonIndex > 0) {
+            const cleanedMessage = message.substring(colonIndex + 1).trim();
+            // Only return the cleaned version if it's not empty
+            return cleanedMessage.length > 0 ? cleanedMessage : message;
+        }
+        return message;
+    };
+
     // Setup the mutation hook - let the hook handle redirect
     const { 
         mutate: signupMutate,
@@ -71,12 +83,13 @@ export function SignupForm() {
                 return;
             }
             
-            const message = error.message || 'Signup failed. Please try again.';
-            toast.error("Signup Failed", { description: message });
+            const rawMessage = error.message || 'Signup failed. Please try again.';
+            const cleanMessage = cleanErrorMessage(rawMessage);
+            toast.error("Signup Failed", { description: cleanMessage });
             
             setFormError('root.serverError', {
                 type: String(error.status || 500),
-                message: message,
+                message: cleanMessage,
             });
         },
     });
