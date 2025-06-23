@@ -12,6 +12,7 @@ import Tos from "./tos";
 import PrivacyPolicy from "./privacy-policy";
 import CookiePolicy from "./cookie-policy";
 import DataProcessing from "./data-processing";
+import { useTheme } from "next-themes";
 
 const legalItems = [
   {
@@ -49,6 +50,7 @@ const LegalFeature = ({ selectedItem }: { selectedItem: string }) => {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
+  const { theme } = useTheme();
   
   // Get the document from URL params, fallback to selectedItem prop, then default to first item
   const urlDoc = searchParams.get('doc');
@@ -70,18 +72,16 @@ const LegalFeature = ({ selectedItem }: { selectedItem: string }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with Logo and Navigation */}
       <header className="sticky top-0 z-50 border-b border-primary/20 bg-primary text-primary-foreground">
         <div className="flex h-14 items-center px-4 sm:px-6 lg:px-8">
           <Link href="/">
             <NoteEarlyLogo className="text-primary-foreground hover:text-accent"/>
           </Link>
-            {/* Desktop Auth Buttons */}
             <div className="flex flex-1 items-center justify-end space-x-2">
               <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
                 <Link href="/login">Login</Link>
               </Button>
-              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
+              <Button variant={theme === "dark" ? "default" : "accent"} className="w-24 sm:w-auto " asChild>
                 <Link href="/signup">Register</Link>
               </Button>
               <ThemeToggle /> 
@@ -131,7 +131,6 @@ const LegalFeature = ({ selectedItem }: { selectedItem: string }) => {
       </div>
 
       <div className="flex">
-        {/* Desktop Sidebar Navigation */}
         <div className="hidden lg:block w-80 min-h-screen border-r border-border bg-muted/20">
           <div className="sticky top-14 p-6 max-h-[calc(100vh-3.5rem)] overflow-y-auto">
             <Card>
@@ -155,7 +154,7 @@ const LegalFeature = ({ selectedItem }: { selectedItem: string }) => {
                       className={`w-full justify-start gap-2 h-auto py-3 px-3 ${
                         isActive 
                           ? "bg-primary text-primary-foreground shadow-sm" 
-                          : "hover:bg-accent hover:text-accent-foreground"
+                          : "hover:bg-accent/80 hover:text-accent-foreground"
                       }`}
                     >
                       <Icon className="w-4 h-4 flex-shrink-0" />
@@ -173,7 +172,6 @@ const LegalFeature = ({ selectedItem }: { selectedItem: string }) => {
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="flex-1">
           <div className="p-4 sm:p-6 lg:p-8">
             <Card className="shadow-sm">

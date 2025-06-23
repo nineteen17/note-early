@@ -20,7 +20,7 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
-        accent: "w-full h-11 bg-accent hover:bg-accent/90 text-accent-foreground font-medium",
+        accent: "w-full h-11 bg-accent hover:bg-accent/80 text-accent-foreground font-medium hover:text-primary border-accent hover:border-accent ",
         "primary-alt": "bg-accent text-accent-foreground shadow-xs hover:bg-accent/90 hover:text-accent-foreground dark:bg-accent dark:text-accent-foreground dark:hover:bg-accent/90",
         scroll: "bg-primary/80 text-primary-foreground shadow-xs dark:bg-gradient-to-r dark:from-slate-50/80 dark:to-slate-100/80 dark:text-blue-800 dark:hover:from-slate-100/80 dark:hover:to-slate-200/80 dark:hover:text-blue-900",
       },

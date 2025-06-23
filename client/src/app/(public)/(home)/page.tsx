@@ -9,7 +9,7 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { NoteEarlyLogo } from '@/components/NoteEarlyLogo';
 import { motion } from 'framer-motion';
 import { BookOpen, Users, TrendingUp, Sparkles, Star, ArrowRight, CheckCircle, Menu, X } from 'lucide-react';
-
+import { useTheme } from 'next-themes';
 
 const features = [
   {
@@ -109,7 +109,7 @@ const SectionMotion = ({ children, delay = 0 }: { children: React.ReactNode, del
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const { theme } = useTheme();
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */} 
@@ -143,7 +143,7 @@ export default function Home() {
               <Button variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
                 <Link href="/login">Login</Link>
               </Button>
-              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto group" asChild>
+              <Button variant={theme === "dark" ? "default" : "accent"} className="w-full sm:w-auto group" asChild>
                 <Link href="/signup">Register</Link>
               </Button>
               <ThemeToggle /> 
@@ -193,7 +193,8 @@ export default function Home() {
                   <Link href="/login">Login</Link>
                 </Button>
                 <Button 
-                  className="justify-start bg-accent hover:bg-accent/90 text-accent-foreground" 
+                  variant={theme === "dark" ? "default" : "accent"}
+                  className="justify-start" 
                   asChild
                 >
                   <Link href="/signup">Register</Link>
@@ -284,7 +285,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4, duration: 0.6 }}
                 > 
-                  <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto group" asChild>
+                  <Button size="lg" variant={theme === "dark" ? "default" : "accent"} className="w-full sm:w-auto group" asChild>
                     <Link href="/signup">
                       Get Started
                       <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -429,7 +430,7 @@ export default function Home() {
                 >
                   <Card className={`flex flex-col  text-card-foreground rounded-lg overflow-hidden transition-shadow duration-300 h-[480px] ${
                     plan.mostPopular 
-                      ? 'border-2 border-primary hover:shadow-xl relative' 
+                      ? 'border-2 border-accent hover:shadow-xl relative' 
                       : 'border border-border/50 hover:shadow-lg'
                   }`}> 
                     {plan.mostPopular && (
