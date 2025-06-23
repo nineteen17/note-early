@@ -256,7 +256,7 @@ export default function Home() {
                   transition={{ delay: 0.2, duration: 0.4 }}
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>Trusted by 10,000+ educators</span>
+                  <span>Trusted by 50+ educators</span>
                 </motion.div>
 
                 <motion.h1 
@@ -372,7 +372,7 @@ export default function Home() {
                       <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                     </motion.div>
                   ))}
-                  <span className="ml-2 text-muted-foreground">4/5 from 100+ reviews</span>
+                  <span className="ml-2 text-muted-foreground">4/5 from 20+ reviews</span>
                 </div>
               </div>
             </SectionMotion>
