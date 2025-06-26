@@ -109,10 +109,16 @@ jobs:
             echo "🚀 Starting deployment..."
             cd /opt/noteearly
             
+            # Pull latest code including docker-compose.yaml
+            echo "📥 Pulling latest code..."
+            git pull origin main
+            
             # Pull latest images
+            echo "🐳 Pulling latest Docker images..."
             docker-compose pull
             
             # Stop and restart containers
+            echo "🔄 Restarting containers..."
             docker-compose down
             docker-compose up -d
             

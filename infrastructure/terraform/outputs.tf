@@ -52,9 +52,9 @@ output "next_steps" {
   value = [
     "1. Wait for cloud-init to complete (~5-10 minutes)",
     "2. SSH to server: ssh root@${digitalocean_droplet.noteearly_server.ipv4_address}",
-    "3. Check Coolify status: docker ps",
-    "4. Access Coolify UI: http://${digitalocean_droplet.noteearly_server.ipv4_address}:8080",
-    "5. Configure your applications in Coolify",
+    "3. Check Docker status: docker ps",
+    "4. Deploy your applications using Docker Compose",
+    "5. Configure your applications",
     "6. Point your domain DNS to the server IP"
   ]
 } 

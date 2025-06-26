@@ -16,6 +16,13 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   },
   
+  // Remove console statements in production builds
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'], // Keep error and warn logs even in production
+    } : false,
+  },
+  
   // Production optimizations
   // experimental: {
   //   optimizeCss: true, // Temporarily disabled - requires 'critters' package

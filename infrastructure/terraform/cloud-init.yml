@@ -28,9 +28,6 @@ runcmd:
   - curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - chmod +x /usr/local/bin/docker-compose
   
-  # Install Coolify
-  - curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
-  
   # Create application directories
   - mkdir -p /opt/noteearly/{frontend,backend}
   - chown -R root:root /opt/noteearly
@@ -62,12 +59,11 @@ write_files:
       
       This server is configured with:
       - Docker & Docker Compose
-      - Coolify (accessible at http://server-ip:8080)
       - UFW Firewall
       - Fail2ban for SSH protection
       
       ## Quick Start
-      1. Access Coolify: http://your-server-ip:8080
+      1. Deploy your applications using Docker Compose
       2. Configure your applications
       3. Deploy from your Git repositories
       
@@ -79,7 +75,7 @@ final_message: |
   NoteEarly server setup complete!
   
   Next steps:
-  1. Access Coolify at http://your-server-ip:8080
+  1. Deploy your applications using Docker Compose
   2. Configure your applications
   3. Deploy your code
   
